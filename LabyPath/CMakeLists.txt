@@ -206,6 +206,12 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_polygontools.cpp
         tests/test_orientedribbon.cpp
         tests/test_segmentps.cpp
+        tests/test_queuecost.cpp
+        tests/test_randominteger.cpp
+        tests/test_randomunidist.cpp
+        tests/test_hqnoiseutils.cpp
+        tests/test_simplifylines.cpp
+        tests/test_poissongenerator.cpp
     )
 
     target_link_libraries(labypath_tests

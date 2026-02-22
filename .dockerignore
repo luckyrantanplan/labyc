@@ -1,0 +1,12 @@
+.git
+build/
+cmake-build-*/
+__pycache__/
+*.pyc
+.pytest_cache/
+.vscode/
+.idea/
+.project
+.cproject
+.pydevproject
+.settings/

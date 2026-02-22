@@ -15,7 +15,14 @@ CMakeCache.txt
 CMakeFiles/
 compile_commands.json
 
-# IDE
+# IDE – Eclipse / CDT / PyDev
+.project
+.cproject
+.pydevproject
+.settings/
+*.launch
+
+# IDE – others
 .vscode/
 .idea/
 

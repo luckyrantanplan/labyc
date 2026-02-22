@@ -1,0 +1,129 @@
+/**
+ * @file test_poissongenerator.cpp
+ * @brief Unit tests for PoissonGenerator point structures and grid.
+ */
+
+#include <gtest/gtest.h>
+#include <cmath>
+#include "generator/PoissonGenerator.h"
+
+using laby::generator::sPoint;
+using laby::generator::sGridPoint;
+using laby::generator::sGrid;
+using laby::generator::PoissonPoints;
+
+// ── sPoint ─────────────────────────────────────────────────────────────────
+
+TEST(SPointTest, DefaultConstruction) {
+    sPoint p;
+    EXPECT_DOUBLE_EQ(p.x, 0.0);
+    EXPECT_DOUBLE_EQ(p.y, 0.0);
+    EXPECT_FALSE(p.m_Valid);
+}
+
+TEST(SPointTest, ParameterizedConstruction) {
+    sPoint p(0.5, 0.3);
+    EXPECT_DOUBLE_EQ(p.x, 0.5);
+    EXPECT_DOUBLE_EQ(p.y, 0.3);
+    EXPECT_TRUE(p.m_Valid);
+}
+
+TEST(SPointTest, IsInRectangleInside) {
+    EXPECT_TRUE(sPoint(0.5, 0.5).IsInRectangle());
+    EXPECT_TRUE(sPoint(0.0, 0.0).IsInRectangle());
+    EXPECT_TRUE(sPoint(1.0, 1.0).IsInRectangle());
+}
+
+TEST(SPointTest, IsInRectangleOutside) {
+    EXPECT_FALSE(sPoint(-0.1, 0.5).IsInRectangle());
+    EXPECT_FALSE(sPoint(0.5, 1.1).IsInRectangle());
+    EXPECT_FALSE(sPoint(1.1, 0.5).IsInRectangle());
+}
+
+TEST(SPointTest, IsInCircleCenter) {
+    EXPECT_TRUE(sPoint(0.5, 0.5).IsInCircle());
+}
+
+TEST(SPointTest, IsInCircleBoundary) {
+    // On the boundary: distance from center (0.5, 0.5) to (1.0, 0.5) is 0.5
+    EXPECT_TRUE(sPoint(1.0, 0.5).IsInCircle());
+}
+
+TEST(SPointTest, IsInCircleOutside) {
+    EXPECT_FALSE(sPoint(0.0, 0.0).IsInCircle());
+    EXPECT_FALSE(sPoint(1.0, 1.0).IsInCircle());
+}
+
+// ── sGrid ──────────────────────────────────────────────────────────────────
+
+TEST(SGridTest, ImageToGrid) {
+    sGrid grid(10, 10, 0.1);
+    sPoint p(0.25, 0.35);
+    sGridPoint gp = grid.ImageToGrid(p, 0.1);
+    EXPECT_EQ(gp.x, 2);
+    EXPECT_EQ(gp.y, 3);
+}
+
+TEST(SGridTest, GetSqDistance) {
+    sGrid grid(10, 10, 0.1);
+    sPoint a(0.0, 0.0);
+    sPoint b(3.0, 4.0);
+    EXPECT_DOUBLE_EQ(grid.GetSqDistance(a, b), 25.0);
+}
+
+TEST(SGridTest, GetSqDistanceSamePoint) {
+    sGrid grid(10, 10, 0.1);
+    sPoint a(1.0, 1.0);
+    EXPECT_DOUBLE_EQ(grid.GetSqDistance(a, a), 0.0);
+}
+
+TEST(SGridTest, InsertAndNeighbourhood) {
+    double cellSize = 0.1;
+    int w = static_cast<int>(std::ceil(1.0 / cellSize));
+    int h = w;
+    sGrid grid(w, h, cellSize);
+
+    sPoint p(0.5, 0.5);
+    grid.Insert(p);
+
+    // A nearby point should be in neighbourhood
+    sPoint nearby(0.51, 0.51);
+    EXPECT_TRUE(grid.IsInNeighbourhood(nearby, 0.01, cellSize));
+
+    // A far point should not be in neighbourhood
+    sPoint far(0.1, 0.1);
+    EXPECT_FALSE(grid.IsInNeighbourhood(far, 0.001, cellSize));
+}
+
+// ── PoissonPoints generation ──────────────────────────────────────────────
+
+TEST(PoissonPointsTest, GenerateProducesPoints) {
+    auto points = PoissonPoints::generate(50, 30, false);
+    EXPECT_GT(points.size(), 0u);
+    EXPECT_LE(points.size(), 50u);
+}
+
+TEST(PoissonPointsTest, GeneratedPointsInRectangle) {
+    auto points = PoissonPoints::generate(100, 30, false);
+    for (const auto& p : points) {
+        EXPECT_GE(p.x, 0.0);
+        EXPECT_LE(p.x, 1.0);
+        EXPECT_GE(p.y, 0.0);
+        EXPECT_LE(p.y, 1.0);
+    }
+}
+
+TEST(PoissonPointsTest, GeneratedPointsMinDistance) {
+    auto points = PoissonPoints::generate(30, 30, false);
+    double minDist = std::sqrt(6.3 / 300.0);  // approximate MinDist for 30 points
+    double sqMinDist = minDist * minDist * 0.9; // slight tolerance
+
+    for (size_t i = 0; i < points.size(); ++i) {
+        for (size_t j = i + 1; j < points.size(); ++j) {
+            double dx = points[i].x - points[j].x;
+            double dy = points[i].y - points[j].y;
+            double sqDist = dx * dx + dy * dy;
+            EXPECT_GE(sqDist, sqMinDist * 0.5);
+        }
+    }
+}

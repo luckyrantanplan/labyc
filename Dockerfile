@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS builder
 
 LABEL maintainer="LabyPath Project"
 LABEL description="Build environment for the LabyPath C++ project"
@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++-14 \
     gcc-14 \
     cmake \
-    make \
     ninja-build \
     pkg-config \
     # CGAL and its dependencies
@@ -32,8 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmsgsl-dev \
     # Google Test
     libgtest-dev \
-    # Utilities
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set GCC 14 as the default compiler
@@ -56,5 +53,19 @@ RUN cmake -B build \
 # ─── Run tests ───────────────────────────────────────────────────────────────
 RUN cd build && ctest --output-on-failure
 
-# ─── Default command ─────────────────────────────────────────────────────────
-ENTRYPOINT ["/app/LabyPath/build/labypath"]
+# ─── Runtime image ───────────────────────────────────────────────────────────
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgmp10 \
+    libmpfr6 \
+    libprotobuf-lite32t64 \
+    libfftw3-double3 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/LabyPath/build/labypath /usr/local/bin/labypath
+
+ENTRYPOINT ["labypath"]
