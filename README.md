@@ -20,6 +20,8 @@ LabyPath generates labyrinth-style artwork from SVG shapes using Voronoi diagram
 | **Boost** | 1.74+ | Multi-array, geometry utilities |
 | **Protobuf** | 3.21+ | Configuration message serialization |
 | **FFTW3** | 3.3+ | FFT for noise generation (optional) |
+| **SVG++** | 1.3+ | SVG parsing library |
+| **MS GSL** | 4.0+ | Microsoft Guidelines Support Library |
 | **GTest** | 1.14+ | Unit testing framework |
 | **CMake** | 3.20+ | Build system |
 
@@ -34,6 +36,7 @@ sudo apt-get install -y \
     libboost-all-dev \
     libprotobuf-dev protobuf-compiler \
     libfftw3-dev \
+    libsvgpp-dev libmsgsl-dev \
     libgtest-dev
 ```
 
@@ -88,7 +91,8 @@ LabyPath/
 ├── CMakeLists.txt          # CMake build configuration
 ├── .clang-tidy             # Linter configuration
 ├── API/                    # Protobuf definitions
-├── include/                # Bundled header-only libraries (svgpp, rapidxml, gsl)
+├── include/                # Legacy bundled headers (svgpp, rapidxml, gsl, CGAL)
+│                           # Note: system packages are used instead at build time
 ├── src/
 │   ├── Main.cpp            # Entry point
 │   ├── MessageIO.*         # JSON config parsing via Protobuf
