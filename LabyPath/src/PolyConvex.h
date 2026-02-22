@@ -8,8 +8,8 @@
 #ifndef POLYCONVEX_H_
 #define POLYCONVEX_H_
 
-#include <bits/move.h>
-#include <bits/stdint-intn.h>
+#include <utility>
+#include <cstdint>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Union_find.h>
 #include <algorithm>

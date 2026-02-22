@@ -8,7 +8,7 @@
 #ifndef BASIC_NUMERICRANGE_H_
 #define BASIC_NUMERICRANGE_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <optional>
 
 namespace laby {

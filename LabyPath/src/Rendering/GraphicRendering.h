@@ -8,7 +8,7 @@
 #ifndef GRAPHICRENDERING_H_
 #define GRAPHICRENDERING_H_
 
-//#include <bits/stdint-intn.h>
+//#include <cstdint>
 
 #include <complex>
 #include <vector>

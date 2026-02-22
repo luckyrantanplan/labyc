@@ -8,7 +8,7 @@
 #ifndef BASIC_RANDOMUNIDIST_H_
 #define BASIC_RANDOMUNIDIST_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <algorithm>
 #include <random>
 

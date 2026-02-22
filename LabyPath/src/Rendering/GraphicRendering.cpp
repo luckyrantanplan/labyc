@@ -7,7 +7,7 @@
 
 #include "GraphicRendering.h"
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <CGAL/Bbox_2.h>
 #include <svgpp/factory/integer_color.hpp>
 #include <iostream>

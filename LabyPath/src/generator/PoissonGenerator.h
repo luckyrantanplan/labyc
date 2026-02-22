@@ -33,7 +33,7 @@
  *		1.0		May  6, 2014
  */
 
-#include <bits/move.h>
+#include <utility>
 #include <CGAL/Bbox_2.h>
 #include <algorithm>
 #include <cmath>

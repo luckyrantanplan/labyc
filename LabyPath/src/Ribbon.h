@@ -8,7 +8,7 @@
 #ifndef RIBBON_H_
 #define RIBBON_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 
 #include <cstddef>
 #include <vector>

@@ -7,7 +7,7 @@
 
 #include "HqNoise.h"
 
-#include <bits/std_abs.h>
+#include <cmath>
 #include <cmath>
 #include <limits>
 

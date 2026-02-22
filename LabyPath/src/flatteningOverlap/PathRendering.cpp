@@ -7,7 +7,7 @@
 
 #include "PathRendering.h"
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/box_intersection_d.h>
 #include <CGAL/Bbox_2.h>

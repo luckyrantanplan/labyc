@@ -7,7 +7,7 @@
 
 #include "PenStroke.h"
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/number_utils.h>

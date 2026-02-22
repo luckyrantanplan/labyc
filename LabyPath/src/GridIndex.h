@@ -8,7 +8,7 @@
 #ifndef GRIDINDEX_H_
 #define GRIDINDEX_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <cstddef>
 #include <unordered_map>
 #include <vector>

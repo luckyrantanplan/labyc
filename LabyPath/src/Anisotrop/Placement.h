@@ -8,8 +8,8 @@
 #ifndef ANISOTROP_PLACEMENT_H_
 #define ANISOTROP_PLACEMENT_H_
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
+#include <cstdint>
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 

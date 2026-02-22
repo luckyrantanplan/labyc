@@ -8,7 +8,7 @@
 #ifndef ANISOTROP_ROUTING_H_
 #define ANISOTROP_ROUTING_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 

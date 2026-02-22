@@ -8,7 +8,7 @@
 #ifndef BASIC_COLOR_H_
 #define BASIC_COLOR_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <svgpp/factory/integer_color.hpp>
 
 namespace laby {

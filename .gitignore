@@ -7,3 +7,14 @@ RemoteSystemsTempFiles
 .metadata
 LabyPath/wisdom3.txt
 __pycache__/
+
+# CMake build artifacts
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+
+# IDE
+.vscode/
+.idea/

@@ -8,7 +8,7 @@
 #ifndef NODE_H_
 #define NODE_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <cstddef>
 #include <iostream>
 #include <unordered_map>

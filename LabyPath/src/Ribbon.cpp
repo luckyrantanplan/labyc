@@ -7,7 +7,7 @@
 
 #include "Ribbon.h"
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <CGAL/Arr_dcel_base.h>
 #include <CGAL/Arr_geometry_traits/Curve_data_aux.h>

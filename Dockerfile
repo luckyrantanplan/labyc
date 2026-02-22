@@ -1,0 +1,56 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="LabyPath Project"
+LABEL description="Build environment for the LabyPath C++ project"
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ─── Install build tools and dependencies ────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Compiler and build tools
+    g++-14 \
+    gcc-14 \
+    cmake \
+    make \
+    ninja-build \
+    pkg-config \
+    # CGAL and its dependencies
+    libcgal-dev \
+    libgmp-dev \
+    libmpfr-dev \
+    # Boost
+    libboost-all-dev \
+    # Protocol Buffers
+    libprotobuf-dev \
+    protobuf-compiler \
+    # FFTW3
+    libfftw3-dev \
+    # Google Test
+    libgtest-dev \
+    # Utilities
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set GCC 14 as the default compiler
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
+    && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+
+# ─── Copy project sources ───────────────────────────────────────────────────
+WORKDIR /app
+COPY LabyPath/ /app/LabyPath/
+
+# ─── Build the project ──────────────────────────────────────────────────────
+WORKDIR /app/LabyPath
+RUN cmake -B build \
+    -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_COMPILER=g++-14 \
+    -DLABYPATH_BUILD_TESTS=ON \
+    && cmake --build build --parallel "$(nproc)"
+
+# ─── Run tests ───────────────────────────────────────────────────────────────
+RUN cd build && ctest --output-on-failure
+
+# ─── Default command ─────────────────────────────────────────────────────────
+ENTRYPOINT ["/app/LabyPath/build/labypath"]

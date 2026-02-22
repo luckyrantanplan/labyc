@@ -8,7 +8,7 @@
 #ifndef SMOOTHING_H_
 #define SMOOTHING_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 
 #include "Polyline.h"
 

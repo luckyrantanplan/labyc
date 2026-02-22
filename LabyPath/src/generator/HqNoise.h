@@ -8,7 +8,7 @@
 #ifndef HQNOISE_H_
 #define HQNOISE_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <algorithm>
 #include <complex>
 #include <random>

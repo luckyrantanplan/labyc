@@ -7,7 +7,7 @@
 
 #include "Cell.h"
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>

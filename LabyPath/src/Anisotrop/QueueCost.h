@@ -8,7 +8,7 @@
 #ifndef ANISOTROP_QUEUECOST_H_
 #define ANISOTROP_QUEUECOST_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <iostream>
 #include <tuple>
 #include <unordered_map>

@@ -7,7 +7,7 @@
 
 #include "NumericRange.h"
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <optional>
 
 namespace laby {

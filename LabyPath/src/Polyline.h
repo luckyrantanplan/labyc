@@ -8,7 +8,7 @@
 #ifndef POLYLINE_H_
 #define POLYLINE_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cmath>

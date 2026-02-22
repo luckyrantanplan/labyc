@@ -8,7 +8,7 @@
 #ifndef SVGSHAPETOGRID_H_
 #define SVGSHAPETOGRID_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>

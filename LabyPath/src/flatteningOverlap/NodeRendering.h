@@ -8,7 +8,7 @@
 #ifndef NODERENDERING_H_
 #define NODERENDERING_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <vector>
 
 #include "../basic/AugmentedPolygonSet.h"

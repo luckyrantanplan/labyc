@@ -8,7 +8,7 @@
 #ifndef BASIC_AUGMENTEDPOLYGONSET_H_
 #define BASIC_AUGMENTEDPOLYGONSET_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/Arr_consolidated_curve_data_traits_2.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>

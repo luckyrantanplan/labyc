@@ -7,7 +7,7 @@
 
 #include "Routing.h"
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/pairing_heap.hpp>
 #include <CGAL/Arr_extended_dcel.h>

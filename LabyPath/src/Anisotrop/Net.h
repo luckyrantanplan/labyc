@@ -9,7 +9,7 @@
 #define ANISOTROP_NET_H_
 
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <complex>
 #include <cstddef>
 #include <vector>

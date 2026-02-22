@@ -8,7 +8,7 @@
 #ifndef BASIC_RANDOMINTEGER_H_
 #define BASIC_RANDOMINTEGER_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <random>
 
 namespace laby {
