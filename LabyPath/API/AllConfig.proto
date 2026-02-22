@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package proto;
+
+message Filepaths {
+	string outputfile = 1;
+	string inputfile = 2;
+}
+
+message PenStroke {
+	double thickness = 1;
+	double antisymmetric_amplitude = 2;
+	double antisymmetric_freq = 3;
+	double antisymmetric_seed = 4;
+	double symmetric_amplitude = 5;
+	double symmetric_freq = 6;
+	double symmetric_seed = 7;
+	double resolution = 8;
+}
+
+message GraphicRendering {
+	string outputfile = 1;
+	string inputfile = 2;
+	double smoothing_tension = 3;
+	double smoothing_iterations = 4;
+	PenStroke penConfig = 9;
+}
+
+message SkeletonGrid {
+	string outputfile = 1;
+	string inputfile = 2;
+	double simplificationOfOriginalSVG = 3;
+	double max_sep = 4;
+	double min_sep = 5;
+	uint32 seed = 6;
+}
+
+message RoutingCost {
+	uint32 seed = 1;
+	int32 max_random = 2;
+	int32 distance_unit_cost = 3;
+	int32 via_unit_cost = 4;
+}
+
+message Cell {
+	uint32 seed = 1;
+	uint32 maxPin = 2;
+	uint32 startNet = 3;
+	double resolution = 4;
+}
+
+message Placement {
+	double initial_thickness = 1;
+	double decrement_factor = 2;
+	double minimal_thickness = 3;
+	double smoothing_tension = 4;
+	uint32 smoothing_iteration = 5;
+	uint64 max_routing_attempt = 6;
+	RoutingCost routing = 7;
+	Cell cell = 8;
+}
+
+message AlternateRouting {
+	double maxThickness = 1;
+	double minThickness = 2;
+	uint32 pruning = 3;
+	double thicknessPercent = 4;
+	double simplifyDist = 5;
+}
+
+message Routing {
+	Filepaths filepaths = 1;
+	Placement placement = 2;
+	AlternateRouting alternateRouting = 3;
+}
+
+message AllConfig {
+	Routing routing = 1;
+	GraphicRendering gGraphicRendering = 2;
+	SkeletonGrid skeletonGrid = 3;
+}

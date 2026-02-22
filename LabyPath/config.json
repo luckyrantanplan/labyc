@@ -1,0 +1,36 @@
+{
+	"width": 800,
+	"heigth": 800,
+	"axisScales": {
+		"x": 1.0,
+		"y": 1.0,
+		"z": 1.0
+	},
+	"CellularDistance2Indicies": {
+		"first": 0,
+		"second": 1
+	},
+	"cellularNoiseLookup": {
+		"Type": "Simplex",
+		"frequency": 0.02
+	},
+	"perturb": {
+		"Amp": 0,
+		"fractalGain": 0,
+		"fractalLacunarity": 0,
+		"fractalOctaves": 0,
+		"frequency": 0,
+		"normaliseLength": 0,
+		"perturbType": "None"
+	},
+	"seed": 1337,
+	"frequency": 0.01,
+	"noiseType": "Cellular",
+	"fractalType": "None",
+	"cellularDistanceFunction": "Euclidian",
+	"cellularReturnType": "CellValue",
+	"cellularJitter": 0,
+	"fractalGain": 0,
+	"fractalLacunarity": 0,
+	"fractalOctaves": 0
+}

@@ -1,0 +1,38 @@
+width: 1800
+heigth: 1000
+cellularReturnType: Distance2
+axisScales {
+  x: 1
+  y: 1
+  z: 1
+}
+cellularDistance2Indicies {
+  first: 1
+  second: 2
+}
+cellularNoiseLookup {
+  type: Simplex
+  frequency: 0.1
+}
+fractal {
+  gain: 0.5
+  lacunarity: 2
+  octaves: 3        
+  type:FBM
+}
+seed: 1201
+cellularDistanceFunction: Euclidean
+type: SimplexFractal
+frequency: 0.01
+cellularJitter: 0.707
+perturb {
+  type: GradientFractal
+  fractal {
+    gain: 0.5
+    lacunarity: 2
+    octaves: 9
+  }
+  amp: 10
+  normaliseLength: 1000
+  frequency: 0.1
+}

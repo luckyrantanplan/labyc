@@ -1,0 +1,9 @@
+RemoteSystemsTempFiles
+*/Debug/
+*/Release2/
+*/Release/
+*/release/
+*/output/
+.metadata
+LabyPath/wisdom3.txt
+__pycache__/

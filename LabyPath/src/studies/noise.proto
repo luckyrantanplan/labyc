@@ -1,0 +1,97 @@
+syntax = "proto2";
+
+package labyMessage;
+
+enum FractalType {
+	FBM = 0;
+	Billow = 1;
+	RigidMulti = 2;
+};
+
+enum PerturbType {
+	None = 0;
+	Gradient = 1;
+	GradientFractal = 2;
+	Normalise = 3;
+	Gradient_Normalise = 4;
+	GradientFractal_Normalise = 5;
+};
+
+enum CellularDistanceFunction {
+	Euclidean = 0;
+	Manhattan = 1;
+	Natural = 2;
+};
+
+enum CellularReturnType {
+	CellValue = 0;
+	Distance = 1;
+	Distance2 = 2;
+	Distance2Add = 3;
+	Distance2Sub = 4;
+	Distance2Mul = 5;
+	Distance2Div = 6;
+	NoiseLookup = 7;
+	Distance2Cave = 8;
+};
+
+enum NoiseType {
+	Value = 0;
+	ValueFractal = 1;
+	Perlin=2;
+	PerlinFractal = 3; 
+	Simplex =4; 
+	SimplexFractal=5 ;
+	WhiteNoise =  6;
+	Cellular=7  ;
+	Cubic = 8;
+	CubicFractal =9; 
+}
+
+message Fractal {
+	optional float gain = 1;
+	optional float lacunarity = 2;
+	optional float octaves = 3;
+	optional FractalType type = 4;
+}
+
+message Perturb {
+	optional PerturbType type = 1;
+	optional Fractal fractal = 2;
+	optional float amp = 3;
+	optional float normaliseLength = 4;
+	optional float frequency = 5;
+}
+
+message Noise {
+	optional int32 width = 1;
+	optional int32 heigth = 2;
+	message AxisScales {
+		optional float x = 1;
+		optional float y = 2;
+		optional float z = 3;
+	}
+
+	optional AxisScales axisScales = 4;
+	message CellularDistance2Indicies {
+		optional int32 first = 1;
+		optional int32 second = 2;
+	}
+
+	optional CellularReturnType cellularReturnType = 3;
+	optional CellularDistance2Indicies cellularDistance2Indicies = 5;
+	message CellularNoiseLookup {
+		optional NoiseType type = 1;
+		optional float frequency = 2;
+	}
+
+	optional CellularNoiseLookup cellularNoiseLookup = 6;
+	optional CellularDistanceFunction cellularDistanceFunction = 9;
+	optional float cellularJitter = 13;
+	optional Fractal fractal = 7;
+	optional int32 seed = 8;
+	optional NoiseType type = 11;
+	optional float frequency = 12;
+	optional Perturb  perturb  = 14;
+}
+

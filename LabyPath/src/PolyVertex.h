@@ -1,0 +1,59 @@
+/*
+ * PolyVertexList.h
+ *
+ *  Created on: Jun 5, 2018
+ *      Author: florian
+ */
+
+#ifndef POLYVERTEX_H_
+#define POLYVERTEX_H_
+
+#include <bits/stdint-intn.h>
+#include <iostream>
+#include <vector>
+
+#include "GeomData.h"
+#include "Polyline.h"
+
+namespace laby {
+
+class PolyVertex {
+public:
+    int32_t number() const {
+        return _number;
+    }
+
+    const std::vector<Vertex*>& vertexList() const {
+        return _vertexList;
+    }
+    std::vector<Vertex*>& vertexList() {
+        return _vertexList;
+    }
+
+    PolyVertex(const int32_t number = 0, const std::vector<Vertex*>& vertex = { }) :
+            _number { number }, _vertexList { vertex } {
+    }
+
+    void print(std::ostream& os) const {
+
+        os << " number " << _number << " vertex size " << _vertexList.size();
+
+    }
+
+    Polyline polyline() const {
+        Polyline pl(_number);
+        for (Vertex* v : _vertexList) {
+            pl.points.emplace_back(v->point());
+        }
+        return pl;
+    }
+private:
+
+    int32_t _number;
+    std::vector<Vertex*> _vertexList;
+
+};
+
+} /* namespace laby */
+
+#endif /* POLYVERTEX_H_ */
