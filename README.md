@@ -187,7 +187,7 @@ ctest --output-on-failure
 |--------|---------|-------------|
 | `LABYPATH_BUILD_TESTS` | `ON` | Build unit tests |
 | `LABYPATH_WERROR` | `OFF` | Treat compiler warnings as errors |
-| `LABYPATH_ENABLE_PROFILER` | `OFF` | Enable easy\_profiler integration |
+| `LABYPATH_ENABLE_PROFILER` | `OFF` | Enable easy_profiler integration |
 
 ## Docker
 
