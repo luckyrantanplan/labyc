@@ -9,7 +9,6 @@
 #define ANISOTROP_PLACEMENT_H_
 
 #include <cstdint>
-#include <cstdint>
 #include <cstddef>
 #include <vector>
 

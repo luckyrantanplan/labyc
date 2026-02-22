@@ -8,7 +8,6 @@
 #include "StreamLine.h"
 
 #include <cstdint>
-#include <cstdint>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>

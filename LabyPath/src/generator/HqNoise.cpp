@@ -8,7 +8,6 @@
 #include "HqNoise.h"
 
 #include <cmath>
-#include <cmath>
 #include <limits>
 
 #include "../basic/RandomUniDist.h"
