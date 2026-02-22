@@ -32,7 +32,7 @@ private:
     double _thickness1;
     double _thickness2;
     double _sq_length;
-    const Point_2& origin;
+    Point_2 origin;
     CGAL::Vector_2<Kernel> _vec;
 };
 

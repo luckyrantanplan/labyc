@@ -20,7 +20,7 @@ public:
     static constexpr uint32_t mask = 0x000000FF;
 
     static uint32_t get_colorp(const uint32_t color, const int offset) {
-        return color >> offset & 0x000000FF;
+        return (color >> offset) & 0x000000FF;
 
     }
 

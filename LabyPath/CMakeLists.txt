@@ -197,6 +197,15 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_vertexinfo.cpp
         tests/test_ribbon.cpp
         tests/test_geomdata.cpp
+        tests/test_smoothing.cpp
+        tests/test_color.cpp
+        tests/test_pairinteger.cpp
+        tests/test_numericrange.cpp
+        tests/test_lineargradient.cpp
+        tests/test_circleintersection.cpp
+        tests/test_polygontools.cpp
+        tests/test_orientedribbon.cpp
+        tests/test_segmentps.cpp
     )
 
     target_link_libraries(labypath_tests

@@ -33,9 +33,13 @@ void OrientedRibbon::addCW(const Kernel::Segment_2& segment) {
 }
 
 void OrientedRibbon::addCCW(const Kernel::Segment_2& segment) {
+    // CCW segments have inverted left/right classification compared to CW
+    if (isRight(segment.source(), segment.target())) {
+        _left.emplace_back(segment);
+        return;
+    }
 
-    addCW(segment);
-
+    _right.emplace_back(segment);
 }
 
 Ribbon OrientedRibbon::createOrientedRibbon() const {
