@@ -18,3 +18,8 @@ compile_commands.json
 # IDE
 .vscode/
 .idea/
+
+# Python
+.pytest_cache/
+*.pyc
+*.egg-info/

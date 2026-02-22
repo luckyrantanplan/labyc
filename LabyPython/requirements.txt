@@ -1,0 +1,3 @@
+PyQt6>=6.6
+protobuf>=4.25
+watchdog>=4.0

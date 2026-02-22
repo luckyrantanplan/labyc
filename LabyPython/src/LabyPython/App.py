@@ -8,10 +8,9 @@ import sys
 import os
 import shutil
 import subprocess
-from PyQt5.Qt import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
 import LabyPython.AllConfig_pb2
 import LabyPython.watchAndLaunch
 from LabyPython.mazeCreator import Ui_MainWindow
@@ -39,14 +38,14 @@ class AppWindow(QMainWindow):
     def deleteFile(self, getFileName, model, view):
         fileToDelete = getFileName()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 model.remove(view.currentIndex())
         pass
     
     def getSelectedFile(self, model, view):
         if (not view.currentIndex().isValid()):
-            view.setCurrentIndex(view.rootIndex().child(0, 0))
+            view.setCurrentIndex(model.index(0, 0, view.rootIndex()))
         return model.filePath(view.currentIndex())
 
     def resetPath(self, model, view):
@@ -63,15 +62,15 @@ class AppWindow(QMainWindow):
         print ("newRenderingGenerationFile")
         routeConfFile = self.getSelectedRenderConfigFile() 
         if (not routeConfFile):
-            QMessageBox.warning(self, 'Render Conf File Absent', "Cannot find Render Conf", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Render Conf File Absent', "Cannot find Render Conf", QMessageBox.StandardButton.Ok)
         else:
             self.watch.addWork(lambda:self.callGeometryGeneration(routeConfFile, self.parseProtoConfig(routeConfFile).gGraphicRendering.outputfile))
 
     def deleteRenderingGenerationFile(self):
         fileToDelete = self.getSelectedRenderingGenerationFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelRenderingGeneration.remove(self.viewRenderingGeneration.currentIndex())
 
     def editInkscapeRenderingGeneration(self):
@@ -80,7 +79,7 @@ class AppWindow(QMainWindow):
 
     def getSelectedRenderingGenerationFile(self):
         if (not self.viewRenderingGeneration.currentIndex().isValid()):
-            self.viewRenderingGeneration.setCurrentIndex(self.viewRenderingGeneration.rootIndex().child(0, 0))
+            self.viewRenderingGeneration.setCurrentIndex(self.modelRenderingGeneration.index(0, 0, self.viewRenderingGeneration.rootIndex()))
         return self.modelRenderingGeneration.filePath(self.viewRenderingGeneration.currentIndex())
     
     def renderingGenerationResetPath(self):
@@ -91,7 +90,7 @@ class AppWindow(QMainWindow):
         self.viewRenderingGeneration = self.ui.ResultList;
         self.modelRenderingGeneration = QFileSystemModel(self.viewRenderingGeneration);
         
-        self.modelRenderingGeneration.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelRenderingGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelRenderingGeneration.setNameFilters(["*render.svg"])
         self.modelRenderingGeneration.setNameFilterDisables(False)
@@ -117,14 +116,14 @@ class AppWindow(QMainWindow):
     
     def getSelectedRenderConfigFile(self):
         if (not self.viewRenderConfig.currentIndex().isValid()):
-            self.viewRenderConfig.setCurrentIndex(self.viewRenderConfig.rootIndex().child(0, 0))
+            self.viewRenderConfig.setCurrentIndex(self.modelRenderConfig.index(0, 0, self.viewRenderConfig.rootIndex()))
         return self.modelRenderConfig.filePath(self.viewRenderConfig.currentIndex())
     
     def newRenderConfigFile(self):
         print ("newRenderConfigFile")
         fileOriginal = os.path.basename(self.getSelectedRoutingGenerationFile())
         if (not fileOriginal):
-            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.StandardButton.Ok)
         else:
             fileOriginalPrefix = os.path.splitext(fileOriginal)[0]
             i = 1
@@ -143,11 +142,6 @@ class AppWindow(QMainWindow):
             else:   
                 allConf.gGraphicRendering.smoothing_tension = 0.5 
                 allConf.gGraphicRendering.smoothing_iterations = 3 
-                allConf.gGraphicRendering.translate = 10 
-                allConf.gGraphicRendering.color_r = 0 
-                allConf.gGraphicRendering.color_g = 0 
-                allConf.gGraphicRendering.color_b = 0 
-                allConf.gGraphicRendering.smoothing_tension = 1 
                 allConf.gGraphicRendering.penConfig.thickness = 0.25 
                 
                 allConf.gGraphicRendering.penConfig.antisymmetric_amplitude = 0.3 
@@ -170,8 +164,8 @@ class AppWindow(QMainWindow):
     def deleteRenderConfigFile(self):
         fileToDelete = self.getSelectedRenderConfigFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelRenderConfig.remove(self.viewRenderConfig.currentIndex())
         pass
     
@@ -189,7 +183,7 @@ class AppWindow(QMainWindow):
         self.viewRenderConfig = self.ui.ConfForRenderingList;
         self.modelRenderConfig = QFileSystemModel(self.viewRenderConfig);
         
-        self.modelRenderConfig.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelRenderConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelRenderConfig.setNameFilters(["*render.json"])
         self.modelRenderConfig.setNameFilterDisables(False)
@@ -214,15 +208,15 @@ class AppWindow(QMainWindow):
         print ("newRoutingGenerationFile")
         routeConfFile = self.getSelectedRouteConfigFile() 
         if (not routeConfFile):
-            QMessageBox.warning(self, 'Route AltRouteFile Absent', "Cannot find Route Conf", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Route AltRouteFile Absent', "Cannot find Route Conf", QMessageBox.StandardButton.Ok)
         else:
             self.watch.addWork(lambda:self.callGeometryGeneration(routeConfFile, self.parseProtoConfig(routeConfFile).routing.filepaths.outputfile))
 
     def deleteRoutingGenerationFile(self):
         fileToDelete = self.getSelectedRoutingGenerationFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelRoutingGeneration.remove(self.viewRoutingGeneration.currentIndex())
 
     def editInkscapeRoutingGeneration(self):
@@ -231,7 +225,7 @@ class AppWindow(QMainWindow):
 
     def getSelectedRoutingGenerationFile(self):
         if (not self.viewRoutingGeneration.currentIndex().isValid()):
-            self.viewRoutingGeneration.setCurrentIndex(self.viewRoutingGeneration.rootIndex().child(0, 0))
+            self.viewRoutingGeneration.setCurrentIndex(self.modelRoutingGeneration.index(0, 0, self.viewRoutingGeneration.rootIndex()))
         return self.modelRoutingGeneration.filePath(self.viewRoutingGeneration.currentIndex())
     
     def routingGenerationResetPath(self):
@@ -242,7 +236,7 @@ class AppWindow(QMainWindow):
         self.viewRoutingGeneration = self.ui.RoutingResultList;
         self.modelRoutingGeneration = QFileSystemModel(self.viewRoutingGeneration);
         
-        self.modelRoutingGeneration.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelRoutingGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelRoutingGeneration.setNameFilters(["*route.svg"])
         self.modelRoutingGeneration.setNameFilterDisables(False)
@@ -268,14 +262,14 @@ class AppWindow(QMainWindow):
     
     def getSelectedRouteConfigFile(self):
         if (not self.viewRouteConfig.currentIndex().isValid()):
-            self.viewRouteConfig.setCurrentIndex(self.viewRouteConfig.rootIndex().child(0, 0))
+            self.viewRouteConfig.setCurrentIndex(self.modelRouteConfig.index(0, 0, self.viewRouteConfig.rootIndex()))
         return self.modelRouteConfig.filePath(self.viewRouteConfig.currentIndex())
     
     def newRouteConfigFile(self):
         print ("newRouteConfigFile")
         fileOriginal = os.path.basename(self.getSelectedGridGenerationFile())
         if (not fileOriginal):
-            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.StandardButton.Ok)
         else:
             fileOriginalPrefix = os.path.splitext(fileOriginal)[0]
             i = 1
@@ -318,8 +312,8 @@ class AppWindow(QMainWindow):
     def deleteRouteConfigFile(self):
         fileToDelete = self.getSelectedRouteConfigFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelRouteConfig.remove(self.viewRouteConfig.currentIndex())
         pass
     
@@ -337,7 +331,7 @@ class AppWindow(QMainWindow):
         self.viewRouteConfig = self.ui.ConfForRoutingList;
         self.modelRouteConfig = QFileSystemModel(self.viewRouteConfig);
         
-        self.modelRouteConfig.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelRouteConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelRouteConfig.setNameFilters(["*route.json"])
         self.modelRouteConfig.setNameFilterDisables(False)
@@ -364,7 +358,7 @@ class AppWindow(QMainWindow):
         print ("newGridGenerationFile")
         gridConfFile = self.getSelectedGridFile() 
         if (not gridConfFile):
-            QMessageBox.warning(self, 'Grid Conf File Absent', "Cannot find Grid Conf", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Grid Conf File Absent', "Cannot find Grid Conf", QMessageBox.StandardButton.Ok)
         else:
             self.watch.addWork(lambda:self.callGeometryGeneration(gridConfFile, self.parseProtoConfig(gridConfFile).skeletonGrid.outputfile))
             pass
@@ -372,8 +366,8 @@ class AppWindow(QMainWindow):
     def deleteGridGenerationFile(self):
         fileToDelete = self.getSelectedGridGenerationFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelGridGeneration.remove(self.viewGridGeneration.currentIndex())
         pass
         pass
@@ -388,7 +382,7 @@ class AppWindow(QMainWindow):
 
     def getSelectedGridGenerationFile(self):
         if (not self.viewGridGeneration.currentIndex().isValid()):
-            self.viewGridGeneration.setCurrentIndex(self.viewGridGeneration.rootIndex().child(0, 0))
+            self.viewGridGeneration.setCurrentIndex(self.modelGridGeneration.index(0, 0, self.viewGridGeneration.rootIndex()))
         return self.modelGridGeneration.filePath(self.viewGridGeneration.currentIndex())
     
     def gridGenerationResetPath(self):
@@ -399,7 +393,7 @@ class AppWindow(QMainWindow):
         self.viewGridGeneration = self.ui.GridList;
         self.modelGridGeneration = QFileSystemModel(self.viewGridGeneration);
         
-        self.modelGridGeneration.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelGridGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelGridGeneration.setNameFilters(["*grid.svg"])
         self.modelGridGeneration.setNameFilterDisables(False)
@@ -426,14 +420,14 @@ class AppWindow(QMainWindow):
     
     def getSelectedGridFile(self):
         if (not self.viewGridConfig.currentIndex().isValid()):
-            self.viewGridConfig.setCurrentIndex(self.viewGridConfig.rootIndex().child(0, 0))
+            self.viewGridConfig.setCurrentIndex(self.modelGridConfig.index(0, 0, self.viewGridConfig.rootIndex()))
         return self.modelGridConfig.filePath(self.viewGridConfig.currentIndex())
     
     def newGridConfigFile(self):
         print ("newGridConfigFile")
         fileOriginal = os.path.basename(self.getSelectedOriginalFile())
         if (not fileOriginal):
-            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.Ok)
+            QMessageBox.warning(self, 'Original File Absent', "Cannot find original svg image", QMessageBox.StandardButton.Ok)
         else:
             fileOriginalPrefix = os.path.splitext(fileOriginal)[0]
             i = 1
@@ -467,8 +461,8 @@ class AppWindow(QMainWindow):
     def deleteGridConfigFile(self):
         fileToDelete = self.getSelectedGridFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelGridConfig.remove(self.viewGridConfig.currentIndex())
         pass
     
@@ -486,7 +480,7 @@ class AppWindow(QMainWindow):
         self.viewGridConfig = self.ui.gridConfigList;
         self.modelGridConfig = QFileSystemModel(self.viewGridConfig);
         
-        self.modelGridConfig.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelGridConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelGridConfig.setNameFilters(["*grid.json"])
         self.modelGridConfig.setNameFilterDisables(False)
@@ -526,8 +520,8 @@ class AppWindow(QMainWindow):
     def deleteOriginalFile(self):
         fileToDelete = self.getSelectedOriginalFile()
         if (fileToDelete):
-            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if msg == QMessageBox.Yes:
+            msg = QMessageBox.warning(self, 'File deletion', "Do you want to remove this file ?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+            if msg == QMessageBox.StandardButton.Yes:
                 self.modelOriginal.remove(self.viewOriginal.currentIndex())
     
     def editInkscapeOriginal(self):
@@ -540,14 +534,14 @@ class AppWindow(QMainWindow):
     
     def getSelectedOriginalFile(self):
         if (not self.viewOriginal.currentIndex().isValid()):
-            self.viewOriginal.setCurrentIndex(self.viewOriginal.rootIndex().child(0, 0))
+            self.viewOriginal.setCurrentIndex(self.modelOriginal.index(0, 0, self.viewOriginal.rootIndex()))
         return self.modelOriginal.filePath (self.viewOriginal.currentIndex())
         
     def originalImageSetup(self):
         self.viewOriginal = self.ui.OriginalImageList;
         self.modelOriginal = QFileSystemModel(self.viewOriginal);
         
-        self.modelOriginal.setFilter(QDir.NoDotAndDotDot | QDir.Files)
+        self.modelOriginal.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
         self.modelOriginal.setNameFilters(["*orig.svg"])
         self.modelOriginal.setNameFilterDisables(False)
@@ -602,4 +596,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     w = AppWindow()
     w.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
