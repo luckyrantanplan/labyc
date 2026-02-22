@@ -21,7 +21,7 @@
 #include <CGAL/Point_2.h>
 #include <CGAL/Point_set_2.h>
 #include <CGAL/Triangulation_vertex_base_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <map>
 #include <queue>
 #include <utility>

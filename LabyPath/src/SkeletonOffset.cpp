@@ -88,7 +88,7 @@ void SkeletonOffset::create_offset(const basic::Arrangement_2Node& arr3, double 
 
     if (offset_distance <= 0) {
         for (const basic::HalfedgeNode& he : RangeHelper::make(arr3.edges_begin(), arr3.edges_end())) {
-            if (he.curve().data().find(basic::EdgeNodeInfo(+1)) != he.curve().data().end()) {
+            if (basic::edgeHasPolygonId(he, +1)) {
                 result2.emplace_back(he.source()->point(), he.target()->point());
             }
         }
@@ -100,9 +100,9 @@ void SkeletonOffset::create_offset(const basic::Arrangement_2Node& arr3, double 
 
     for (const basic::HalfedgeNode& he : RangeHelper::make(arr3.edges_begin(), arr3.edges_end())) {
         // we meet polygon edge
-        if (he.curve().data().find(basic::EdgeNodeInfo(+1)) != he.curve().data().end()) {
+        if (basic::edgeHasPolygonId(he, +1)) {
             // we must test if this is a hole
-            if (he.next()->curve().data().find(basic::EdgeNodeInfo(+1)) != he.next()->curve().data().end()) {
+            if (basic::edgeHasPolygonId(*he.next(), +1)) {
                 offset_face(*he.twin(), result2, offset_distance, vertices_cache);
                 offset_corner(*he.twin(), result2, offset_distance, vertices_cache);
 
@@ -145,11 +145,11 @@ void SkeletonOffset::offset_corner(const basic::HalfedgeNode& he, std::vector<Ke
     }
     basic::Arrangement_2Node::Halfedge_around_vertex_const_circulator circ = o.incident_halfedges();
 
-    while (circ->curve().data().find(basic::EdgeNodeInfo(+1)) == circ->curve().data().end()) {
+    while (!basic::edgeHasPolygonId(*circ, +1)) {
         ++circ;
     }
 
-    while (circ->curve().data().find(basic::EdgeNodeInfo(+1)) != circ->curve().data().end()) {
+    while (basic::edgeHasPolygonId(*circ, +1)) {
         ++circ;
     }
 

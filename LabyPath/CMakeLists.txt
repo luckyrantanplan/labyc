@@ -154,7 +154,6 @@ add_library(labypath_lib STATIC ${LABYPATH_SOURCES})
 target_include_directories(labypath_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${Protobuf_INCLUDE_DIRS}
 )
 

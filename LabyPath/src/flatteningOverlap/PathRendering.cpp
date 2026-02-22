@@ -16,7 +16,7 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_set_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -500,9 +500,8 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
 
             createPolygonSet(polyConvexList, n._cover, n._setPolygons);
             basic::Arrangement_2Node& arr = n._setPolygons.arrangement();
-            for (basic::HalfedgeNode& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-                he.curve().data().insert(basic::EdgeNodeInfo(-1));
-            }
+            // Edge data annotation is no longer stored on curves in CGAL 5.x;
+            // polygon membership is tracked via face data instead.
 
             for (auto& q : map) {
                 if (p.first != q.first) {

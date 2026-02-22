@@ -12,7 +12,7 @@
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Iterator_transform.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cstddef>
 #include <list>
@@ -28,11 +28,6 @@ void NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) 
 
     for (Node* n : _nodes) {
         Arrangement_2Node& arr = n->_setPolygons.arrangement();
-        for (HalfedgeNode& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-            if (he.curve().data().find(EdgeNodeInfo(-1)) != he.curve().data().end()) {
-                he.curve().data().insert(EdgeNodeInfo(polygonIndex));
-            }
-        }
         for (FaceNode& face : RangeHelper::make(arr.faces_begin(), arr.faces_end())) {
             face.setPolygonId(polygonIndex);
         }
@@ -42,8 +37,7 @@ void NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) 
 
 bool NodeOverlap::testSeg(int32_t index, const basic::HalfedgeNode& he) {
     using namespace basic;
-    const CGAL::_Unique_list<EdgeNodeInfo>& curve = he.curve().data();
-    return (curve.find(EdgeNodeInfo(index)) != curve.end());
+    return edgeHasPolygonId(he, index);
 }
 
 
@@ -84,9 +78,10 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
         if (!has_face(res)) {
 
             for (HalfedgeNode& he : RangeHelper::make(res.edges_begin(), res.edges_end())) {
-                const CGAL::_Unique_list<EdgeNodeInfo>& curve = he.curve().data();
-
-                if (curve.size() > 1) {
+                // Check if edge is shared between multiple polygons
+                const auto& faceData = he.face()->data();
+                const auto& twinData = he.twin()->face()->data();
+                if (faceData.size() + twinData.size() > 1) {
                     oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
 
                 }

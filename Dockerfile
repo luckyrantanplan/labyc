@@ -26,6 +26,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     protobuf-compiler \
     # FFTW3
     libfftw3-dev \
+    # SVG++ and rapidxml_ns
+    libsvgpp-dev \
+    # Microsoft GSL (Guidelines Support Library)
+    libmsgsl-dev \
     # Google Test
     libgtest-dev \
     # Utilities

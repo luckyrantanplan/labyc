@@ -17,9 +17,9 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/squared_distance_2_1.h>
+#include <CGAL/squared_distance_2.h>
 #include <CGAL/Vector_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <cmath>
 
 #include "Net.h"

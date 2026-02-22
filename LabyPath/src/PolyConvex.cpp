@@ -9,8 +9,8 @@
 
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Segment_2.h>
-#include <CGAL/Segment_2_Segment_2_intersection.h>
-#include <easy/profiler.h>
+#include <CGAL/intersection_2.h>
+#include "basic/EasyProfilerCompat.h"
 
 #include "basic/LinearGradient.h"
 

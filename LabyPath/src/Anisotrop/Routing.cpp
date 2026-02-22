@@ -14,7 +14,7 @@
 #include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Point_set_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>

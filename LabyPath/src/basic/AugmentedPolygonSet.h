@@ -93,7 +93,10 @@ typedef CGAL::Exact_predicates_exact_constructions_kernel KernelAug;
 typedef std::vector<CGAL::Point_2<KernelAug>> ContainerNode;
 typedef CGAL::Arr_segment_traits_2<KernelAug> Segment_traits_2;
 typedef CGAL::Arr_consolidated_curve_data_traits_2<Segment_traits_2, EdgeNodeInfo> SegTraitNode;
-typedef CGAL::Gps_segment_traits_2<KernelAug, ContainerNode, SegTraitNode> GpsSegTraitNode;
+
+// Use plain segment traits for Gps_segment_traits_2 to avoid
+// Polygon_2_curve_iterator incompatibility with curve data traits in CGAL 5.x.
+typedef CGAL::Gps_segment_traits_2<KernelAug, ContainerNode> GpsSegTraitNode;
 
 typedef CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename GpsSegTraitNode::Point_2>, CGAL::Gps_halfedge_base<typename GpsSegTraitNode::X_monotone_curve_2>, FaceNodeInfo> DcelNode;
 
@@ -111,6 +114,18 @@ typedef CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
         Overlay_label> Overlay_traitsNode;
 
 } /* namespace basic */
+
+// Helper to check if a halfedge is on the boundary of a polygon with the given ID.
+// Replaces the old pattern: he.curve().data().find(EdgeNodeInfo(id)) != he.curve().data().end()
+// which relied on Arr_consolidated_curve_data_traits_2 (incompatible with CGAL 5.x).
+namespace basic {
+inline bool edgeHasPolygonId(const HalfedgeNode& he, int32_t id) {
+    bool faceHas = he.face()->data().count(id) > 0;
+    bool twinFaceHas = he.twin()->face()->data().count(id) > 0;
+    return faceHas || twinFaceHas;
+}
+}
+
 } /* namespace laby */
 
 #endif /* BASIC_AUGMENTEDPOLYGONSET_H_ */

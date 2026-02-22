@@ -8,7 +8,7 @@
 #include "Family.h"
 
 #include <CGAL/Box_intersection_d/Box_with_handle_d.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <cstdlib>
 #include <iostream>
 #include <utility>

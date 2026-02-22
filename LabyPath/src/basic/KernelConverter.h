@@ -1,5 +1,5 @@
 /*
- * KernelConverer.h
+ * KernelConverter.h
  *
  *  Created on: Jun 28, 2018
  *      Author: florian
@@ -13,19 +13,18 @@
 #include <CGAL/Cartesian_converter.h>
 
 namespace laby {
-struct Lazy_gmpq_to_Expr_converter: //
-public std::unary_function<CGAL::Lazy_exact_nt<CGAL::Gmpq>, CORE::Expr> {
-    CORE::Expr operator()(const CGAL::Lazy_exact_nt<CGAL::Gmpq> &a) const {
-        return ::CORE::BigRat(exact(a).mpq());
+
+struct Lazy_gmpq_to_Expr_converter {
+    template<typename T>
+    CORE::Expr operator()(const T &a) const {
+        return CORE::Expr(CGAL::to_double(a));
     }
 };
 
-struct Expr_to_Lazy_gmpq_converter: //
-public std::unary_function<CORE::Expr, CGAL::Lazy_exact_nt<CGAL::Gmpq> > {
-    CGAL::Lazy_exact_nt<CGAL::Gmpq> operator()(const CORE::Expr &a) const {
-        a.approx(120, 2048);
-        return CGAL::Lazy_exact_nt<CGAL::Gmpq>(a.BigRatValue().get_mp());
-
+struct Expr_to_Lazy_gmpq_converter {
+    template<typename T>
+    auto operator()(const T &a) const {
+        return typename CGAL::Epeck::FT(CGAL::to_double(a));
     }
 };
 

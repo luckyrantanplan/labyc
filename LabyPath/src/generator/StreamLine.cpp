@@ -25,7 +25,7 @@
 #include <CGAL/Triangulation_ds_face_base_2.h>
 #include <CGAL/Triangulation_utils_2.h>
 #include <CGAL/Vector_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cmath>
 #include <future>
