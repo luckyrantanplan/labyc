@@ -30,11 +30,8 @@ TEST(HqNoiseUtilsTest, FastFloorNegativeFraction) {
 }
 
 TEST(HqNoiseUtilsTest, FastFloorNegativeInteger) {
-    // Implementation quirk: fastFloor uses `(int)f - 1` for all negatives,
-    // so exact negative integers return one less than std::floor would.
-    // E.g. fastFloor(-3.0) → (int)(-3.0) - 1 = -4, not -3.
-    // This is the intended behavior the codebase relies on.
-    EXPECT_EQ(HqNoiseUtils::fastFloor(-3.0), -4);
+    // fastFloor(-3.0) should return -3 (same as std::floor for exact integers)
+    EXPECT_EQ(HqNoiseUtils::fastFloor(-3.0), -3);
 }
 
 // ── lerp ───────────────────────────────────────────────────────────────────

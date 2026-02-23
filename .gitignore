@@ -30,3 +30,7 @@ compile_commands.json
 .pytest_cache/
 *.pyc
 *.egg-info/
+
+# CodeQL analysis artifacts
+_codeql_*/
+*/_codeql_*/

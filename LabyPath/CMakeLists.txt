@@ -144,10 +144,7 @@ set(LABYPATH_SOURCES
     src/protoc/AllConfig.pb.cc
 )
 
-# FFT sources (conditional)
-if(FFTW3_FOUND)
-    list(APPEND LABYPATH_SOURCES src/fft/fftw++.cc)
-endif()
+# FFTW3 is used directly via fftw3.h (no vendored wrapper)
 
 add_library(labypath_lib STATIC ${LABYPATH_SOURCES})
 
@@ -182,19 +179,12 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter"
 )
 
-# Suppress warnings in third-party code (agg, fft)
+# Suppress warnings in third-party code (agg)
 set_source_files_properties(
     src/agg/agg_arc.cpp
     src/agg/agg_curve.cpp
     PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-float-conversion -Wno-double-promotion"
 )
-if(FFTW3_FOUND)
-    set_source_files_properties(
-        src/fft/fftw++.cc
-        src/generator/HqNoise.cpp
-        PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter -Wno-double-promotion -Wno-float-conversion -Wno-ignored-qualifiers"
-    )
-endif()
 
 # ─── Main Executable ─────────────────────────────────────────────────────────
 add_executable(labypath src/Main.cpp)
