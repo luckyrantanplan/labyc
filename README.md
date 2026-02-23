@@ -342,7 +342,7 @@ LabyPython/
 | `test_polyconvex` | PolyConvex construction, adjacency, intersection, reset | 13 |
 | `test_graph_coloring` | Graph coloring, StateSelect, NodeOverlap sort, Family | 9 |
 
-**Coverage summary:** 22 of 54 functional source modules have unit tests (~41%).
+**Coverage summary:** 24 of 54 functional source modules have unit tests (~44%).
 The `test_smoke_svg` qualification tests validate end-to-end geometric correctness:
 coordinates within viewBox, finite values, polyline integrity, output SVG structure,
 and skeleton bounds matching input bounds.
