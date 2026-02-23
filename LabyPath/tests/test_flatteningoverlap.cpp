@@ -155,7 +155,7 @@ TEST(StateSelectTest, SkipsOccupiedStates) {
     EXPECT_EQ(next, 1);
 }
 
-TEST(StateSelectTest, AddInvalidIndexIgnored) {
+TEST(StateSelectTest, MarkOccupiedInvalidIndexIgnored) {
     Node opp1(1);
     opp1.setState(-1);
     std::vector<Node*> opposites = {&opp1};

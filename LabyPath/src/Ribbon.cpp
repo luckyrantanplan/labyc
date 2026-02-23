@@ -123,22 +123,22 @@ Arrangement_2 Ribbon::createArr() const {
 }
 
 std::vector<std::size_t> Ribbon::middleOrder(std::size_t min, std::size_t max) const {
-    std::queue<Ele> queue;
+    std::queue<IndexRange> queue;
     std::vector<std::size_t> result;
     result.reserve(max - min);
-    queue.push(Ele(min, max));
+    queue.push(IndexRange(min, max));
 
     while (!queue.empty()) {
 
-        Ele e = queue.front();
+        IndexRange range = queue.front();
         queue.pop();
-        std::size_t middle = (e.min + e.max) / 2;
+        std::size_t middle = (range.min + range.max) / 2;
         result.push_back(middle);
-        if (middle != e.min) {
-            queue.push( { e.min, middle - 1 });
+        if (middle != range.min) {
+            queue.push( { range.min, middle - 1 });
         }
-        if (middle != e.max) {
-            queue.push( { middle + 1, e.max });
+        if (middle != range.max) {
+            queue.push( { middle + 1, range.max });
         }
     }
     return result;

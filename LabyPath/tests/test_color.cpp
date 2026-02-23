@@ -40,17 +40,17 @@ TEST(ColorTest, CreateAndExtractMixed) {
 
 TEST(ColorTest, NormalizedRedValues) {
     uint32_t color = Color::create(255, 0, 0);
-    EXPECT_NEAR(Color::get_redp(color), 1.0, 1e-9);
-    EXPECT_NEAR(Color::get_greenp(color), 0.0, 1e-9);
-    EXPECT_NEAR(Color::get_bluep(color), 0.0, 1e-9);
+    EXPECT_NEAR(Color::get_red_normalized(color), 1.0, 1e-9);
+    EXPECT_NEAR(Color::get_green_normalized(color), 0.0, 1e-9);
+    EXPECT_NEAR(Color::get_blue_normalized(color), 0.0, 1e-9);
 }
 
 TEST(ColorTest, NormalizedMidValues) {
     uint32_t color = Color::create(128, 128, 128);
     double expected = 128.0 / 255.0;
-    EXPECT_NEAR(Color::get_redp(color), expected, 1e-9);
-    EXPECT_NEAR(Color::get_greenp(color), expected, 1e-9);
-    EXPECT_NEAR(Color::get_bluep(color), expected, 1e-9);
+    EXPECT_NEAR(Color::get_red_normalized(color), expected, 1e-9);
+    EXPECT_NEAR(Color::get_green_normalized(color), expected, 1e-9);
+    EXPECT_NEAR(Color::get_blue_normalized(color), expected, 1e-9);
 }
 
 TEST(ColorTest, SetRedPreservesOthers) {

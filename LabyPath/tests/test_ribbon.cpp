@@ -86,10 +86,10 @@ TEST(RibbonTest, GetPoints) {
     EXPECT_EQ(pts.size(), 2U);
 }
 
-TEST(EleTest, Construction) {
-    Ele e(3, 10);
-    EXPECT_EQ(e.min, 3U);
-    EXPECT_EQ(e.max, 10U);
+TEST(IndexRangeTest, Construction) {
+    IndexRange range(3, 10);
+    EXPECT_EQ(range.min, 3U);
+    EXPECT_EQ(range.max, 10U);
 }
 
 } // namespace

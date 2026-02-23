@@ -304,7 +304,7 @@ void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
                 int32_t state = node._state;
 
                 StateSelect stateSelect(node._opposite);
-                stateSelect.add(state);
+                stateSelect.markOccupied(state);
 
                 for (Node* opp : node._opposite) {
                     int32_t& ostate = opp->_state;

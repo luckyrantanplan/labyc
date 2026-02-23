@@ -54,13 +54,13 @@ public:
 
         os << "id" << _nodeId << " s" << _state;
         os << " opp [";
-        for (Node* nopp : _opposite) {
-            os << nopp->_nodeId << " s" << nopp->_state << " ";
+        for (Node* opposite_node : _opposite) {
+            os << opposite_node->_nodeId << " s" << opposite_node->_state << " ";
         }
         os << " ] ";
-        os << " add [";
-        for (Node* nopp : _adjacents) {
-            os << nopp->_nodeId << " s" << nopp->_state << " ";
+        os << " adj [";
+        for (Node* adjacent_node : _adjacents) {
+            os << adjacent_node->_nodeId << " s" << adjacent_node->_state << " ";
         }
         os << " ] ";
     }
@@ -76,31 +76,34 @@ public:
 };
 class StateSelect {
 public:
-    explicit StateSelect(const std::vector<Node*>& opposite) : _stateSelect(opposite.size(), false) {
+    explicit StateSelect(const std::vector<Node*>& opposite) : _occupied_states(opposite.size(), false) {
         for (Node* opp : opposite) {
-            add(opp->_state);
+            markOccupied(opp->_state);
         }
     }
 
-    void add(int32_t i) {
-        if (-1 < i and i < static_cast<int32_t>(_stateSelect.size())) {
-            _stateSelect.at(static_cast<std::size_t>(i)) = true;
+    void markOccupied(int32_t state_index) {
+        if (state_index >= 0 && state_index < static_cast<int32_t>(_occupied_states.size())) {
+            _occupied_states.at(static_cast<std::size_t>(state_index)) = true;
         }
     }
-
-    ;
 
     int32_t getNext() {
-        for (; ite < _stateSelect.size(); ++ite) {
-            if (!_stateSelect.at(ite)) {
-                _stateSelect.at(ite) = true;
-                return static_cast<int32_t>(ite);
+        for (; _current_index < _occupied_states.size(); ++_current_index) {
+            if (!_occupied_states.at(_current_index)) {
+                _occupied_states.at(_current_index) = true;
+                return static_cast<int32_t>(_current_index);
             }
         }
-        return static_cast<int32_t>(ite);
+        return static_cast<int32_t>(_current_index);
     }
-    std::size_t ite = 0;
-    std::vector<bool> _stateSelect;
+
+    std::size_t currentIndex() const { return _current_index; }
+    const std::vector<bool>& occupiedStates() const { return _occupied_states; }
+
+private:
+    std::size_t _current_index = 0;
+    std::vector<bool> _occupied_states;
 };
 struct NodeQueue {
 public:

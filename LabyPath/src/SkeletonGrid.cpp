@@ -43,7 +43,7 @@ void SkeletonGrid::create(const svgp::Loader & load) {
     for (const Ribbon& rib : load.ribList()) {
         std::vector<CGAL::Polygon_with_holes_2<Kernel> > polygons = SVGShapeToGrid::get_polygons(rib);
 
-        const double blue = laby::basic::Color::get_bluep(static_cast<uint32_t>(rib.fill_color()));
+        const double blue = laby::basic::Color::get_blue_normalized(static_cast<uint32_t>(rib.fill_color()));
 
         const uint32_t fillColor = laby::basic::Color::set_blue(static_cast<uint32_t>(rib.fill_color()), static_cast<uint32_t>(ribNumber));
         ++ribNumber;
