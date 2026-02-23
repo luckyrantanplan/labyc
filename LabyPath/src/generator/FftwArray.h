@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <complex>
 #include <cstdint>
 #include <stdexcept>
@@ -71,16 +72,18 @@ public:
         return reinterpret_cast<const std::complex<double>*>(data_)[i];
     }
     std::complex<double>& operator[](int32_t i) {
+        assert(i >= 0);
         return reinterpret_cast<std::complex<double>*>(data_)[i];
     }
     const std::complex<double>& operator[](int32_t i) const {
+        assert(i >= 0);
         return reinterpret_cast<const std::complex<double>*>(data_)[i];
     }
 
     std::complex<double>& operator()(uint32_t i) { return (*this)[i]; }
     const std::complex<double>& operator()(uint32_t i) const { return (*this)[i]; }
-    std::complex<double>& operator()(int32_t i) { return (*this)[i]; }
-    const std::complex<double>& operator()(int32_t i) const { return (*this)[i]; }
+    std::complex<double>& operator()(int32_t i) { assert(i >= 0); return (*this)[static_cast<uint32_t>(i)]; }
+    const std::complex<double>& operator()(int32_t i) const { assert(i >= 0); return (*this)[static_cast<uint32_t>(i)]; }
 };
 
 /**
@@ -146,9 +149,11 @@ public:
         return reinterpret_cast<const std::complex<double>*>(data_) + i * ny_;
     }
     std::complex<double>* operator[](int32_t i) {
+        assert(i >= 0);
         return reinterpret_cast<std::complex<double>*>(data_) + static_cast<uint32_t>(i) * ny_;
     }
     const std::complex<double>* operator[](int32_t i) const {
+        assert(i >= 0);
         return reinterpret_cast<const std::complex<double>*>(data_) + static_cast<uint32_t>(i) * ny_;
     }
 
@@ -159,9 +164,11 @@ public:
         return reinterpret_cast<const std::complex<double>*>(data_)[i * ny_ + j];
     }
     std::complex<double>& operator()(int32_t i, int32_t j) {
+        assert(i >= 0 && j >= 0);
         return reinterpret_cast<std::complex<double>*>(data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
     }
     const std::complex<double>& operator()(int32_t i, int32_t j) const {
+        assert(i >= 0 && j >= 0);
         return reinterpret_cast<const std::complex<double>*>(data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
     }
 };
