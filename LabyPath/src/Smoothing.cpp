@@ -30,21 +30,21 @@ Polyline Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tensio
     return nl;
 }
 Polyline Smoothing::getSmootherChaikin(const Polyline& line, double cuttingDist) {
-    Polyline nl(line.number);
+    Polyline nl(line.id);
     nl.closed = line.closed;
     if (line.points.at(0) != line.points.back() or !line.closed) {
         nl.points.emplace_back(line.points.at(0));
-        chaitKinPointCompute(line, cuttingDist, nl);
+        chaikinPointCompute(line, cuttingDist, nl);
         //'always add the last point
         nl.points.emplace_back(line.points.back());
     } else {
-        chaitKinPointCompute(line, cuttingDist, nl);
+        chaikinPointCompute(line, cuttingDist, nl);
         nl.points.emplace_back(nl.points.at(0));
     }
     return nl;
 }
 
-void Smoothing::chaitKinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl) {
+void Smoothing::chaikinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl) {
     for (std::size_t i = 1; i < line.points.size(); ++i) {
         nl.points.emplace_back(CGAL::barycenter(line.points.at(i - 1), 1 - cuttingDist, line.points.at(i)));
         nl.points.emplace_back(CGAL::barycenter(line.points.at(i - 1), cuttingDist, line.points.at(i)));

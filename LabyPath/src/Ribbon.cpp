@@ -52,7 +52,7 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
             for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 Segment_2 s { c_previous, c };
-                std::size_t coordinate = static_cast<std::size_t>(pl.number);
+                std::size_t coordinate = static_cast<std::size_t>(pl.id);
                 listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
                 c_previous = c;
             }
@@ -163,7 +163,7 @@ void Ribbon::order_lines() {
     });
 
     for (std::size_t i = 0; i < _lines.size(); ++i) {
-        _lines.at(i).number = static_cast<int32_t>(i);
+        _lines.at(i).id = static_cast<int32_t>(i);
     }
 }
 
@@ -178,7 +178,7 @@ Ribbon Ribbon::give_space(const double& space, const double& subdivision_factor,
 Ribbon Ribbon::subdived(const double& thickness) const {
     Ribbon result(_fill_color);
     for (const Polyline& polyline : _lines) {
-        result._lines.emplace_back(polyline.number);
+        result._lines.emplace_back(polyline.id);
         std::vector<Kernel::Point_2>& pt_list = result._lines.back().points;
         pt_list.emplace_back(polyline.points.front());
         for (std::size_t i = 1; i < polyline.points.size(); ++i) {
@@ -211,7 +211,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
     std::map<int32_t, std::vector<Polyline>> flattenRibbonMap;
 
     for (const Polyline& polyline : _lines) {
-        std::vector<Polyline>& p = flattenRibbonMap[polyline.number];
+        std::vector<Polyline>& p = flattenRibbonMap[polyline.id];
         p.push_back(polyline);
     }
 
@@ -236,7 +236,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
                         CGAL::compare_squared_distance(vh->point(), p, space * space) != CGAL::LARGER) {
 
                     if (isLongEnough(coarse, minimal_length)) {
-                        coarseq.lines().push_back(Polyline { polyline.number, coarse });
+                        coarseq.lines().push_back(Polyline { polyline.id, coarse });
                         pointSet.insert(coarse.begin(), coarse.end());
                     }
                     coarse.clear();
@@ -246,7 +246,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
             }
             if (isLongEnough(coarse, minimal_length)) {
 
-                coarseq.lines().push_back(Polyline { polyline.number, coarse });
+                coarseq.lines().push_back(Polyline { polyline.id, coarse });
                 pointSet.insert(coarse.begin(), coarse.end());
             }
         }

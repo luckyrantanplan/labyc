@@ -62,7 +62,7 @@ TEST(RibbonTest, MutableLinesAccess) {
 
     r.lines().push_back(pl);
     EXPECT_EQ(r.lines().size(), 1U);
-    EXPECT_EQ(r.lines()[0].number, 1);
+    EXPECT_EQ(r.lines()[0].id, 1);
 }
 
 TEST(RibbonTest, GetSegments) {

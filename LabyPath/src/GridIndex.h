@@ -17,6 +17,13 @@
 
 namespace laby {
 
+/// Grid channel type, encoded in the green channel of the ribbon fill color.
+enum class GridChannel : uint32_t {
+    Circular = 50,   ///< Circular (concentric) skeleton path
+    Radial   = 100,  ///< Radial (spoke) skeleton path
+    Limit    = 150   ///< Boundary limit path
+};
+
 class GridIndex {
 public:
     static std::unordered_map<uint32_t, GridIndex> getIndexMap(const std::vector<Ribbon>& ribList);

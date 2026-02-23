@@ -24,15 +24,15 @@ std::unordered_map<uint32_t, GridIndex> GridIndex::getIndexMap(const std::vector
         const uint32_t green = laby::basic::Color::get_green(static_cast<uint32_t>(rib.fill_color()));
         GridIndex& gridIndex = mapOfGrids.try_emplace(blue).first->second;
         switch (green) {
-        case 50: {
+        case static_cast<uint32_t>(GridChannel::Circular): {
             gridIndex._circular = i;
             break;
         }
-        case 100: {
+        case static_cast<uint32_t>(GridChannel::Radial): {
             gridIndex._radial = i;
             break;
         }
-        case 150: {
+        case static_cast<uint32_t>(GridChannel::Limit): {
             gridIndex._limit = i;
             break;
         }

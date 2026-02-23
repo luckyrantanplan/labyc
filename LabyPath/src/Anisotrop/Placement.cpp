@@ -182,8 +182,8 @@ std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<Pol
         pl = Smoothing::getCurveSmoothingChaikin(pl, _config.smoothing_tension(), _config.smoothing_iteration());
 
         pl.simplify(0.1);
-        if (pl.number != net_id) {
-            net_id = pl.number;
+        if (pl.id != net_id) {
+            net_id = pl.id;
             ribbon.lines().emplace_back(net_id);
             ribbon.lines().back().points.emplace_back(pl.points.front());
         }
@@ -195,7 +195,7 @@ std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<Pol
 
     SpatialIndex si(polyConvexList);
     for (Polyline& poly : ribbon.lines()) {
-        Net& net = *netMap.at(poly.number);
+        Net& net = *netMap.at(poly.id);
         basic::LinearGradient lgrad = net.gradient();
         std::size_t begin = polyConvexList.size();
         for (std::size_t i = 1; i < poly.points.size(); ++i) {

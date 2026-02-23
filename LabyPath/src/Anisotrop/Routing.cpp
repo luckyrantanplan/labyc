@@ -179,7 +179,7 @@ void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
         int i = edge.second;
         SegmentPS seg(&*fh->vertex(PS::cw(i)), &*fh->vertex(PS::ccw(i)));
 
-        if (!uf.same_set(polyConvexList.at(map.at(seg._v1).front()).handle, polyConvexList.at(map.at(seg._v2).front()).handle)) {
+        if (!uf.same_set(polyConvexList.at(map.at(seg.source()).front()).handle, polyConvexList.at(map.at(seg.target()).front()).handle)) {
 
             vectSeg.emplace_back(seg);
         }
@@ -190,23 +190,23 @@ void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
     double thickness = 2.;
 
     for (const SegmentPS& seg : vectSeg) {
-        std::size_t pcId1 = map.at(seg._v1).front();
-        std::size_t pcId2 = map.at(seg._v2).front();
+        std::size_t pcId1 = map.at(seg.source()).front();
+        std::size_t pcId2 = map.at(seg.target()).front();
         CGAL::Union_find<std::size_t>::handle& handle1 = polyConvexList.at(pcId1).handle;
         CGAL::Union_find<std::size_t>::handle& handle2 = polyConvexList.at(pcId2).handle;
         if (!uf.same_set(handle1, handle2)) {
 
             // create a PolyConvex
 
-            basic::LinearGradient lgrad(seg._v1->point(), thickness, seg._v2->point(), thickness);
+            basic::LinearGradient lgrad(seg.source()->point(), thickness, seg.target()->point(), thickness);
 
-            polyConvexList.emplace_back(seg._v1->point(), seg._v2->point(), polyConvexList.size(), lgrad);
+            polyConvexList.emplace_back(seg.source()->point(), seg.target()->point(), polyConvexList.size(), lgrad);
             //warning : references are undefined now ( we have increase the size of the vector)
 
             PolyConvex& newPoly = polyConvexList.back();
 
-            PolyConvex::connect(newPoly._id, pcId1, polyConvexList, seg._v1->point());
-            PolyConvex::connect(newPoly._id, pcId2, polyConvexList, seg._v2->point());
+            PolyConvex::connect(newPoly._id, pcId1, polyConvexList, seg.source()->point());
+            PolyConvex::connect(newPoly._id, pcId2, polyConvexList, seg.target()->point());
             // connect with others
 
             uf.unify_sets(polyConvexList.at(pcId1).handle, polyConvexList.at(pcId2).handle);

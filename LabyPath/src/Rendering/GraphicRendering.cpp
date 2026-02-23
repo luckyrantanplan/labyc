@@ -42,7 +42,7 @@ GraphicRendering::GraphicRendering(const proto::GraphicRendering& config) :
 
     for (std::size_t i = 0; i < ribbon.lines().size(); ++i) {
         Polyline& pl = ribbon.lines().at(i);
-        pl.number = static_cast<int32_t>(i);
+        pl.id = static_cast<int32_t>(i);
     }
 
     Arrangement_2 arr = ribbon.createArr();

@@ -113,22 +113,22 @@ Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
     Ribbon result(ribbon.fill_color());
     for (SegmentPS& seg : vectSeg) {
 
-        if (set.count(seg._v1) == 0 and set.count(seg._v2) == 0) {
+        if (set.count(seg.source()) == 0 and set.count(seg.target()) == 0) {
 
-            if (CGAL::to_double(CGAL::squared_distance(seg._v1->point(), seg._v2->point())) < 1) {
+            if (CGAL::to_double(CGAL::squared_distance(seg.source()->point(), seg.target()->point())) < 1) {
 
-                Point_2 mid = CGAL::midpoint(seg._v1->point(), seg._v2->point());
-                changeLine(mid, map, seg._v1);
-                changeLine(mid, map, seg._v2);
+                Point_2 mid = CGAL::midpoint(seg.source()->point(), seg.target()->point());
+                changeLine(mid, map, seg.source());
+                changeLine(mid, map, seg.target());
             } else {
 
                 result.lines().emplace_back();
                 Polyline& poly = result.lines().back();
-                poly.points.emplace_back(seg._v1->point());
-                poly.points.emplace_back(seg._v2->point());
+                poly.points.emplace_back(seg.source()->point());
+                poly.points.emplace_back(seg.target()->point());
             }
-            set.emplace(seg._v1);
-            set.emplace(seg._v2);
+            set.emplace(seg.source());
+            set.emplace(seg.target());
         }
     }
 

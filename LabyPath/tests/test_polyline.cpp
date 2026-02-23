@@ -12,21 +12,21 @@ namespace {
 TEST(PolylineTest, DefaultConstruction) {
     Polyline pl;
     EXPECT_TRUE(pl.empty());
-    EXPECT_EQ(pl.number, 0);
+    EXPECT_EQ(pl.id, 0);
     EXPECT_FALSE(pl.closed);
 }
 
 TEST(PolylineTest, ConstructWithNumber) {
     Polyline pl(42);
     EXPECT_TRUE(pl.empty());
-    EXPECT_EQ(pl.number, 42);
+    EXPECT_EQ(pl.id, 42);
 }
 
 TEST(PolylineTest, ConstructWithPoints) {
     std::vector<Point_2> pts = {Point_2(0, 0), Point_2(1, 0), Point_2(1, 1)};
     Polyline pl(7, pts);
     EXPECT_FALSE(pl.empty());
-    EXPECT_EQ(pl.number, 7);
+    EXPECT_EQ(pl.id, 7);
     EXPECT_EQ(pl.points.size(), 3U);
 }
 

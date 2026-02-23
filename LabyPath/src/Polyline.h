@@ -27,16 +27,16 @@ struct Polyline {
     Polyline() {
     }
 
-    Polyline(const int32_t num, const std::vector<Point_2>& pts) :
-            number { num }, points { pts } {
+    Polyline(const int32_t id, const std::vector<Point_2>& pts) :
+            id { id }, points { pts } {
     }
 
-    explicit Polyline(const int32_t num) :
-            number { num } {
+    explicit Polyline(const int32_t id) :
+            id { id } {
     }
 
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) :
-            number { 0 }, points { } {
+            id { 0 }, points { } {
 
         points = poly.container();
         closed = true;
@@ -50,7 +50,7 @@ struct Polyline {
 
     void print(std::ostream& os) const {
 
-        os << " number " << number << " points " << points;
+        os << " id " << id << " points " << points;
 
     }
 
@@ -70,7 +70,7 @@ struct Polyline {
 
     void simplify(double distance);
 
-    int32_t number = 0;
+    int32_t id = 0;
     std::vector<Point_2> points;
     bool closed = false;
     Point_2 min_point;
