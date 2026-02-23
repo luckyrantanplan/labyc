@@ -316,7 +316,7 @@ TEST_F(AlternateRouteSmokeTest, ConfigSetup) {
 
     EXPECT_DOUBLE_EQ(altConfig.maxthickness(), 15.0);
     EXPECT_DOUBLE_EQ(altConfig.minthickness(), 1.0);
-    EXPECT_EQ(altConfig.pruning(), 3u);
+    EXPECT_EQ(altConfig.pruning(), 3);
     EXPECT_DOUBLE_EQ(altConfig.thicknesspercent(), 0.4);
     EXPECT_DOUBLE_EQ(altConfig.simplifydist(), 1e-7);
 
