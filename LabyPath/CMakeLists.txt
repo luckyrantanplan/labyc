@@ -217,6 +217,7 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_simplifylines.cpp
         tests/test_poissongenerator.cpp
         tests/test_flatteningoverlap.cpp
+        tests/test_smoke_svg.cpp
     )
 
     target_link_libraries(labypath_tests
