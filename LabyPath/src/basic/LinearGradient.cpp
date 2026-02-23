@@ -21,10 +21,10 @@ LinearGradient::LinearGradient(const Point_2& p1, const double thickness1, const
 
 }
 
-double LinearGradient::f(double t, double _thickness1, double _thickness2) {
+double LinearGradient::f(double t, double thickness1, double thickness2) {
     t = t * t;
     t = t * t;
-    return (_thickness1 * (1 - t) + _thickness2 * t);
+    return (thickness1 * (1 - t) + thickness2 * t);
 }
 
 double LinearGradient::thickness(const Point_2& p) {

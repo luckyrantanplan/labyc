@@ -48,7 +48,7 @@ class HqNoise1D {
 public:
     const HqNoiseConfig config;
     fft::Array1D arr;
-    static double sgn(int32_t val);
+    static double sgn(uint32_t val);
     explicit HqNoise1D(const HqNoiseConfig& config);
 
     double get(double x) const;
@@ -63,7 +63,7 @@ public:
     const HqNoiseConfig config;
     fft::Array2D arr;
 
-    static double sgn(int32_t x, int32_t y);
+    static double sgn(uint32_t x, uint32_t y);
 
     explicit HqNoise2D(const HqNoiseConfig& config);
 

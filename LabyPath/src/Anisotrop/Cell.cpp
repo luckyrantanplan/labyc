@@ -182,8 +182,8 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, const double quantity, cons
     }
 
     std::size_t begin = listVertex.size();
-    for (uint32_t i = 0; i < allvertices.size(); ++i) {
-        if (NumericHelper::reduce(i, allvertices.size(), quantity).has_value()) {
+    for (std::size_t i = 0; i < allvertices.size(); ++i) {
+        if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()), static_cast<int32_t>(quantity)).has_value()) {
             Vertex_handle handle = CGAL::insert_point(_arr, allvertices.at(i));
             handle->data().setType(VertexInfo::PIN);
 
@@ -196,7 +196,7 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, const double quantity, cons
     std::complex<double> o = (corner1 + corner2) / 2.;
     std::vector<Segment_info_2> listSeg;
 
-    for (uint32_t i = begin; i < listVertex.size(); ++i) {
+    for (std::size_t i = begin; i < listVertex.size(); ++i) {
         Vertex* v = listVertex.at(i);
         std::complex<double> c { CGAL::to_double(v->point().x()), CGAL::to_double(v->point().y()) };
 
@@ -207,7 +207,7 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, const double quantity, cons
         listSeg.emplace_back(Segment_2(v->point(), Point_2 { vect.real(), vect.imag() }), EdgeInfo { EdgeInfo::Type::CELL });
     }
 
-    for (uint32_t i = begin + 1; i < listVertex.size(); ++i) {
+    for (std::size_t i = begin + 1; i < listVertex.size(); ++i) {
         Segment_2 s { listVertex.at(i - 1)->point(), listVertex.at(i)->point() };
         listSeg.emplace_back(s, EdgeInfo { EdgeInfo::Type::CELL });
     }

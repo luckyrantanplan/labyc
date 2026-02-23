@@ -92,20 +92,20 @@ void PenStroke::move_to(svg::Path& cr, const Point_2& p) {
 
 PenStroke PenStroke::createPenStroke(const proto::PenStroke& config, const CGAL::Bbox_2& bbox) {
     generator::HqNoiseConfig config_sym;
-    config_sym.maxN = std::max(bbox.xmax(), bbox.ymax());
+    config_sym.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
     config_sym.seed = config.symmetric_seed();
     config_sym.amplitude = config.symmetric_amplitude();
-    config_sym.accuracy = std::ceil(1. / config.resolution());
+    config_sym.accuracy = static_cast<uint32_t>(std::ceil(1. / config.resolution()));
     config_sym.gaussian.frequency = config_sym.maxN * 100.;
     config_sym.powerlaw.frequency = config_sym.maxN / config.symmetric_freq();
     config_sym.powerlaw.power = 2;
     config_sym.complex = false;
 
     generator::HqNoiseConfig config_anti;
-    config_anti.maxN = std::max(bbox.xmax(), bbox.ymax());
+    config_anti.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
     config_anti.seed = config.antisymmetric_seed();
     config_anti.amplitude = config.antisymmetric_amplitude();
-    config_anti.accuracy = std::ceil(1. / config.resolution());
+    config_anti.accuracy = static_cast<uint32_t>(std::ceil(1. / config.resolution()));
     config_anti.gaussian.frequency = config_sym.maxN * 100.;
     config_anti.powerlaw.frequency = config_sym.maxN / config.antisymmetric_freq();
     config_anti.powerlaw.power = 2;

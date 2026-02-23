@@ -49,10 +49,10 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
         if (!pl.points.empty()) {
 
             Point_2 c_previous = pl.points.at(0);
-            for (uint32_t i = 1; i < pl.points.size(); ++i) {
+            for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 Segment_2 s { c_previous, c };
-                std::size_t coordinate = pl.number;
+                std::size_t coordinate = static_cast<std::size_t>(pl.number);
                 listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
                 c_previous = c;
             }
@@ -82,7 +82,7 @@ std::vector<Kernel::Segment_2> Ribbon::get_segments() const {
         if (!pl.points.empty()) {
 
             Point_2 c_previous = pl.points.at(0);
-            for (uint32_t i = 1; i < pl.points.size(); ++i) {
+            for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 if (c_previous == c) {
                     std::cout << "segment is degenerate !!" << std::endl;
@@ -163,7 +163,7 @@ void Ribbon::order_lines() {
     });
 
     for (std::size_t i = 0; i < _lines.size(); ++i) {
-        _lines.at(i).number = i;
+        _lines.at(i).number = static_cast<int32_t>(i);
     }
 }
 
@@ -188,8 +188,8 @@ Ribbon Ribbon::subdived(const double& thickness) const {
             if (l > thickness) {
                 double weight = l / thickness;
 
-                for (double i = 1; i < weight; ++i) {
-                    const Kernel::Point_2 test = CGAL::barycenter(b, i / weight, a);
+                for (double j = 1; j < weight; ++j) {
+                    const Kernel::Point_2 test = CGAL::barycenter(b, j / weight, a);
                     pt_list.emplace_back(test);
                 }
             }

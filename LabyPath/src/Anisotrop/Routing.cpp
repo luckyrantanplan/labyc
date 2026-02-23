@@ -38,7 +38,7 @@ Routing::Routing(Arrangement_2& arr, const proto::RoutingCost& config) :
 
     edgesQList.reserve(_arr.number_of_edges());
     for (Vertex& ve : RangeHelper::make(_arr.vertices_begin(), _arr.vertices_end())) {
-        ve.data().setId(edgesQList.size());
+        ve.data().setId(static_cast<int32_t>(edgesQList.size()));
         edgesQList.emplace_back(ve);
     }
 
@@ -288,9 +288,9 @@ void Routing::commitNewPath(const int32_t& targetId, Net& net) {
     Pin & pin2 = net.target();
     std::size_t begin = _convexList.size();
 
-    for (int32_t id = targetId; id != -1; id = edgesQList.at(id).parent) {
+    for (int32_t id = targetId; id != -1; id = edgesQList.at(static_cast<std::size_t>(id)).parent) {
 
-        PolyConvex& pc = edgesQList.at(id)._pc;
+        PolyConvex& pc = edgesQList.at(static_cast<std::size_t>(id))._pc;
         if (!pc.empty()) {
             pc._id = _convexList.size();
             _convexList.emplace_back(pc);
@@ -322,7 +322,7 @@ bool Routing::findRoute(Net & net) {
     const Pin& pin2 = net.target();
     const int32_t& sourceId = pin1.vertex().data().id();
 
-    QueueElement& qEle = edgesQList.at(sourceId);
+    QueueElement& qEle = edgesQList.at(static_cast<std::size_t>(sourceId));
     const int32_t& targetId = pin2.vertex().data().id();
     basic::LinearGradient lgrad = net.gradient();
 
@@ -349,29 +349,29 @@ bool Routing::findRoute(Net & net) {
     int32_t priority_number = 0;
     bool solved = false;
     while (!queue.empty()) {
-        QueueElement & qEle = *queue.top();
+        QueueElement & topEle = *queue.top();
 
-        Vertex& vertex = qEle._vertex;
+        Vertex& vertex = topEle._vertex;
         if (vertex.data().id() == targetId) {
-            std::cout << "END !!!!" << qEle.cost << "\n";
+            std::cout << "END !!!!" << topEle.cost << "\n";
             solved = true;
             break;
         }
         queue.pop();
-        qEle.resetHandle();
+        topEle.resetHandle();
 
-        int32_t degree = vertex.degree();
+        std::size_t degree = vertex.degree();
 
         for (Halfedge& he : RangeHelper::make(vertex.incident_halfedges())) {
             //avoid going back
-            if (qEle._pc.empty() || &he.curve() != &qEle._pc._supportHe->curve()) {
+            if (topEle._pc.empty() || &he.curve() != &topEle._pc._supportHe->curve()) {
 
-                QueueCost cost = qEle.cost;
+                QueueCost cost = topEle.cost;
 
-                cost.memory_source = qEle.cost.future_memory_source;
+                cost.memory_source = topEle.cost.future_memory_source;
 
                 cost.future_memory_source.clear();
-                cost.memory_target = qEle.cost.future_memory_target;
+                cost.memory_target = topEle.cost.future_memory_target;
 
                 cost.future_memory_target.clear();
 
@@ -395,20 +395,20 @@ bool Routing::findRoute(Net & net) {
                         }
                     }
                 }
-                if (qEle.direction != -1 && newDir != qEle.direction) {
+                if (topEle.direction != -1 && newDir != topEle.direction) {
 
                     cost.distance += _config.via_unit_cost();
                 }
 
                 int32_t newId = he.source()->data().id(); // vertex id
 
-                QueueElement& newqEle = edgesQList.at(newId);
+                QueueElement& newqEle = edgesQList.at(static_cast<std::size_t>(newId));
                 if (cost.congestion == 0 and (newqEle.cost.distance == -1 or newqEle.cost > cost)) {
                     cost.randomization = _random.get(); //priority_number;
                     --priority_number;
                     newqEle.cost = cost;
                     newqEle.direction = newDir;
-                    newqEle.parent = qEle._vertex.data().id();
+                    newqEle.parent = topEle._vertex.data().id();
                     newqEle._pc = pc;
                     if (newqEle.isInQueue()) {
                         queue.update(newqEle.handle);

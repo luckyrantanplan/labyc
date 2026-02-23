@@ -21,7 +21,7 @@
 
 namespace laby {
 
-void NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) {
+void NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& /*polyConvexList*/) {
     EASY_FUNCTION();
     using namespace basic;
     int32_t polygonIndex = 0;

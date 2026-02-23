@@ -66,8 +66,8 @@ std::complex<double> HqNoise2D::getComplex(const double x, const double y) const
     return HqNoiseUtils::lerpC(xf0, xf1, ys);
 }
 
-double HqNoise2D::sgn(int32_t x, int32_t y) {
-    return ((y + x) % 2) * 2 - 1;
+double HqNoise2D::sgn(uint32_t x, uint32_t y) {
+    return (static_cast<int32_t>((y + x) % 2)) * 2 - 1;
 }
 
 void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
@@ -75,7 +75,7 @@ void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
     double minVal = std::numeric_limits<double>::max();
     for (uint32_t i = 0; i < nx; i++) {
         for (uint32_t j = 0; j < ny; j++) {
-            double value = sgn(static_cast<int32_t>(i), static_cast<int32_t>(j)) * arr[static_cast<int32_t>(i)][static_cast<int32_t>(j)].real();
+            double value = sgn(i, j) * arr[i][j].real();
             maxVal = std::max(maxVal, value);
             minVal = std::min(minVal, value);
         }
@@ -85,8 +85,8 @@ void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
 
     for (uint32_t y = 0; y < ny; ++y) {
         for (uint32_t x = 0; x < nx; ++x) {
-            double norm2 = arr[static_cast<int32_t>(x)][static_cast<int32_t>(y)].real() * sgn(static_cast<int32_t>(x), static_cast<int32_t>(y)) - mid;
-            arr[static_cast<int32_t>(x)][static_cast<int32_t>(y)].real(norm2 * maxAmpl);
+            double norm2 = arr[x][y].real() * sgn(x, y) - mid;
+            arr[x][y].real(norm2 * maxAmpl);
         }
     }
     if (config.complex) {
@@ -95,7 +95,7 @@ void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
         minVal = std::numeric_limits<double>::max();
         for (uint32_t i = 0; i < nx; i++) {
             for (uint32_t j = 0; j < ny; j++) {
-                double value = sgn(static_cast<int32_t>(i), static_cast<int32_t>(j)) * arr[static_cast<int32_t>(i)][static_cast<int32_t>(j)].imag();
+                double value = sgn(i, j) * arr[i][j].imag();
                 maxVal = std::max(maxVal, value);
                 minVal = std::min(minVal, value);
             }
@@ -105,8 +105,8 @@ void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
         maxAmpl = 2. * config.amplitude / (maxVal - minVal);
         for (uint32_t y = 0; y < ny; ++y) {
             for (uint32_t x = 0; x < nx; ++x) {
-                double norm2 = arr[static_cast<int32_t>(x)][static_cast<int32_t>(y)].imag() * sgn(static_cast<int32_t>(x), static_cast<int32_t>(y)) - mid;
-                arr[static_cast<int32_t>(x)][static_cast<int32_t>(y)].imag(norm2 * maxAmpl);
+                double norm2 = arr[x][y].imag() * sgn(x, y) - mid;
+                arr[x][y].imag(norm2 * maxAmpl);
             }
         }
     }
@@ -118,7 +118,7 @@ HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
 
     uint32_t nx = config.maxN * config.accuracy + 2;
     uint32_t ny = config.maxN * config.accuracy + 2;
-    basic::RandomUniDist distribution(0, 100.0, config.seed);
+    basic::RandomUniDist distribution(0, 100.0, static_cast<uint32_t>(config.seed));
 
     // Create FFTW plans before filling data (FFTW_ESTIMATE does not touch the array)
     fft::Plan forward{fftw_plan_dft_2d(
@@ -131,12 +131,10 @@ HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
     for (uint32_t i = 0; i < nx; i++) {
         for (uint32_t j = 0; j < ny; j++) {
             double x = distribution.get();
-            auto si = static_cast<int32_t>(i);
-            auto sj = static_cast<int32_t>(j);
             if (config.complex) {
-                arr(si, sj) = std::complex<double>(x * sgn(si, sj), distribution.get() * sgn(si, sj));
+                arr(i, j) = std::complex<double>(x * sgn(i, j), distribution.get() * sgn(i, j));
             } else {
-                arr(si, sj) = std::complex<double>(x * sgn(si, sj), 0);
+                arr(i, j) = std::complex<double>(x * sgn(i, j), 0);
             }
         }
     }
@@ -151,7 +149,7 @@ HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
     double gaussVariance = 2. * gfreq * gfreq;
 
     // cut freq 0
-    arr[static_cast<int32_t>(nx / 2)][static_cast<int32_t>(ny / 2)] = 0;
+    arr[nx / 2][ny / 2] = 0;
 
     for (uint32_t i = 0; i < nx; i++) {
         for (uint32_t j = 0; j < ny; j++) {
@@ -160,10 +158,10 @@ HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
             double d = xx * xx + yy * yy;
             double dquot = d / quot;
             if (dquot >= 1.) {
-                arr[static_cast<int32_t>(i)][static_cast<int32_t>(j)] *= pow(dquot, -power);
+                arr[i][j] *= pow(dquot, -power);
             }
             if (gaussVariance > 0) {
-                arr[static_cast<int32_t>(i)][static_cast<int32_t>(j)] *= exp(-d / gaussVariance);
+                arr[i][j] *= exp(-d / gaussVariance);
             }
         }
     }
@@ -172,37 +170,37 @@ HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
     normalize(nx, ny);
 }
 
-double HqNoise1D::sgn(int32_t val) {
-    return ((val) % 2) * 2 - 1;
+double HqNoise1D::sgn(uint32_t val) {
+    return (static_cast<int32_t>(val % 2)) * 2 - 1;
 }
 
 void HqNoise1D::normalize(uint32_t nx) {
     double maxVal = std::numeric_limits<double>::min();
     double minVal = std::numeric_limits<double>::max();
     for (uint32_t i = 0; i < nx; ++i) {
-        double value = sgn(static_cast<int32_t>(i)) * arr[static_cast<int32_t>(i)].real();
+        double value = sgn(i) * arr[i].real();
         maxVal = std::max(maxVal, value);
         minVal = std::min(minVal, value);
     }
     double mid = (maxVal + minVal) / 2.;
     double maxAmpl = 2. * config.amplitude / (maxVal - minVal);
     for (uint32_t x = 0; x < nx; ++x) {
-        double norm2 = arr[static_cast<int32_t>(x)].real() * sgn(static_cast<int32_t>(x)) - mid;
-        arr[static_cast<int32_t>(x)].real(norm2 * maxAmpl);
+        double norm2 = arr[x].real() * sgn(x) - mid;
+        arr[x].real(norm2 * maxAmpl);
     }
     if (config.complex) {
         maxVal = std::numeric_limits<double>::min();
         minVal = std::numeric_limits<double>::max();
         for (uint32_t i = 0; i < nx; ++i) {
-            double value = sgn(static_cast<int32_t>(i)) * arr[static_cast<int32_t>(i)].imag();
+            double value = sgn(i) * arr[i].imag();
             maxVal = std::max(maxVal, value);
             minVal = std::min(minVal, value);
         }
         mid = (maxVal + minVal) / 2.;
         maxAmpl = 2. * config.amplitude / (maxVal - minVal);
         for (uint32_t x = 0; x < nx; ++x) {
-            double norm2 = arr[static_cast<int32_t>(x)].imag() * sgn(static_cast<int32_t>(x)) - mid;
-            arr[static_cast<int32_t>(x)].imag(norm2 * maxAmpl);
+            double norm2 = arr[x].imag() * sgn(x) - mid;
+            arr[x].imag(norm2 * maxAmpl);
         }
     }
 }
@@ -226,18 +224,17 @@ HqNoise1D::HqNoise1D(const HqNoiseConfig& iconfig)
 
     for (uint32_t i = 0; i < nx; i++) {
         double x = distribution(generator);
-        auto si = static_cast<int32_t>(i);
         if (config.complex) {
-            arr(si) = std::complex<double>(x * sgn(si), distribution(generator) * sgn(si));
+            arr(i) = std::complex<double>(x * sgn(i), distribution(generator) * sgn(i));
         } else {
-            arr(si) = std::complex<double>(x * sgn(si), 0);
+            arr(i) = std::complex<double>(x * sgn(i), 0);
         }
     }
 
     forward.execute();
 
     // cut freq 0
-    arr[static_cast<int32_t>(nx / 2)] = 0;
+    arr[nx / 2] = 0;
 
     double power = config.powerlaw.power;
     double pfreq = config.powerlaw.frequency;
@@ -249,10 +246,10 @@ HqNoise1D::HqNoise1D(const HqNoiseConfig& iconfig)
         double xx = static_cast<double>(i) - nx / 2.;
         double dquot = std::abs(xx) / pfreq;
         if (dquot >= 1.) {
-            arr[static_cast<int32_t>(i)] *= pow(dquot, -power);
+            arr[i] *= pow(dquot, -power);
         }
         if (gaussVariance > 0) {
-            arr[static_cast<int32_t>(i)] *= exp(-(xx * xx) / gaussVariance);
+            arr[i] *= exp(-(xx * xx) / gaussVariance);
         }
     }
 

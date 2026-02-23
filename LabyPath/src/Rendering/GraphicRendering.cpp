@@ -35,14 +35,14 @@ GraphicRendering::GraphicRendering(const proto::GraphicRendering& config) :
     Ribbon& ribbon = load.ribList().at(0);
 
     for (const Polyline& line : ribbon.lines()) {
-        Polyline pl = Smoothing::getCurveSmoothingChaikin(line, _config.smoothing_tension(), _config.smoothing_iterations());
+        Polyline pl = Smoothing::getCurveSmoothingChaikin(line, _config.smoothing_tension(), static_cast<uint32_t>(_config.smoothing_iterations()));
         gpt.createStroke(pl);
 
     }
 
     for (std::size_t i = 0; i < ribbon.lines().size(); ++i) {
         Polyline& pl = ribbon.lines().at(i);
-        pl.number = i;
+        pl.number = static_cast<int32_t>(i);
     }
 
     Arrangement_2 arr = ribbon.createArr();
@@ -72,8 +72,8 @@ GraphicRendering::GraphicRendering(const proto::GraphicRendering& config) :
     }
 
     using laby::basic::Color;
-    const uint32_t c = ribbon.fill_color();
-    svg::Path path(svg::Color(Color::get_red(c), Color::get_green(c), Color::get_blue(c)), svg::Color::Transparent);
+    const uint32_t c = static_cast<uint32_t>(ribbon.fill_color());
+    svg::Path path(svg::Color(static_cast<int32_t>(Color::get_red(c)), static_cast<int32_t>(Color::get_green(c)), static_cast<int32_t>(Color::get_blue(c))), svg::Color::Transparent);
 
     gpt.draw_outline(path);
     docSvg << path;
@@ -91,8 +91,8 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
     for (const Ribbon& ribbon : ribbonList) {
 
         using laby::basic::Color;
-        const uint32_t c = ribbon.fill_color();
-        svg::Stroke stroke(thickness, svg::Color(Color::get_red(c), Color::get_green(c), Color::get_blue(c)));
+        const uint32_t c = static_cast<uint32_t>(ribbon.fill_color());
+        svg::Stroke stroke(thickness, svg::Color(static_cast<int32_t>(Color::get_red(c)), static_cast<int32_t>(Color::get_green(c)), static_cast<int32_t>(Color::get_blue(c))));
 
         svg::Path path(svg::Color::Transparent, stroke);
 

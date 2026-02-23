@@ -20,8 +20,8 @@ std::unordered_map<uint32_t, GridIndex> GridIndex::getIndexMap(const std::vector
         // put it on fill color, in order to make the arrangement with different circular, radial info
         const Ribbon& rib = ribList.at(i);
 
-        const uint32_t blue = laby::basic::Color::get_blue(rib.fill_color());
-        const uint32_t green = laby::basic::Color::get_green(rib.fill_color());
+        const uint32_t blue = laby::basic::Color::get_blue(static_cast<uint32_t>(rib.fill_color()));
+        const uint32_t green = laby::basic::Color::get_green(static_cast<uint32_t>(rib.fill_color()));
         GridIndex& gridIndex = mapOfGrids.try_emplace(blue).first->second;
         switch (green) {
         case 50: {

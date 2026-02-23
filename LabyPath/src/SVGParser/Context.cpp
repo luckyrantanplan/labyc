@@ -24,6 +24,7 @@ BaseContext::BaseContext() :
 }
 
 BaseContext::BaseContext(BaseContext & parent) :
+        Stylable(),
         _vectRibbonRef(parent._vectRibbonRef) {
 
 }

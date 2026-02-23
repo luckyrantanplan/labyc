@@ -147,7 +147,7 @@ public:
     }
 
     template<class IRI>
-    void set(AttributeTag tag, IRI const & /*iri*/) {
+    void set(AttributeTag /*tag*/, IRI const & /*iri*/) {
         throw std::runtime_error("Non-local references aren't supported");
     }
 

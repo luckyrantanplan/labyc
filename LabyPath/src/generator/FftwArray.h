@@ -64,6 +64,12 @@ public:
     fftw_complex* raw() { return data_; }
     const fftw_complex* raw() const { return data_; }
 
+    std::complex<double>& operator[](uint32_t i) {
+        return reinterpret_cast<std::complex<double>*>(data_)[i];
+    }
+    const std::complex<double>& operator[](uint32_t i) const {
+        return reinterpret_cast<const std::complex<double>*>(data_)[i];
+    }
     std::complex<double>& operator[](int32_t i) {
         return reinterpret_cast<std::complex<double>*>(data_)[i];
     }
@@ -71,6 +77,8 @@ public:
         return reinterpret_cast<const std::complex<double>*>(data_)[i];
     }
 
+    std::complex<double>& operator()(uint32_t i) { return (*this)[i]; }
+    const std::complex<double>& operator()(uint32_t i) const { return (*this)[i]; }
     std::complex<double>& operator()(int32_t i) { return (*this)[i]; }
     const std::complex<double>& operator()(int32_t i) const { return (*this)[i]; }
 };
@@ -131,18 +139,30 @@ public:
     const fftw_complex* raw() const { return data_; }
 
     /** arr[i] returns pointer to row i, so arr[i][j] works. */
-    std::complex<double>* operator[](int32_t i) {
+    std::complex<double>* operator[](uint32_t i) {
         return reinterpret_cast<std::complex<double>*>(data_) + i * ny_;
     }
-    const std::complex<double>* operator[](int32_t i) const {
+    const std::complex<double>* operator[](uint32_t i) const {
         return reinterpret_cast<const std::complex<double>*>(data_) + i * ny_;
     }
+    std::complex<double>* operator[](int32_t i) {
+        return reinterpret_cast<std::complex<double>*>(data_) + static_cast<uint32_t>(i) * ny_;
+    }
+    const std::complex<double>* operator[](int32_t i) const {
+        return reinterpret_cast<const std::complex<double>*>(data_) + static_cast<uint32_t>(i) * ny_;
+    }
 
-    std::complex<double>& operator()(int32_t i, int32_t j) {
+    std::complex<double>& operator()(uint32_t i, uint32_t j) {
         return reinterpret_cast<std::complex<double>*>(data_)[i * ny_ + j];
     }
-    const std::complex<double>& operator()(int32_t i, int32_t j) const {
+    const std::complex<double>& operator()(uint32_t i, uint32_t j) const {
         return reinterpret_cast<const std::complex<double>*>(data_)[i * ny_ + j];
+    }
+    std::complex<double>& operator()(int32_t i, int32_t j) {
+        return reinterpret_cast<std::complex<double>*>(data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
+    }
+    const std::complex<double>& operator()(int32_t i, int32_t j) const {
+        return reinterpret_cast<const std::complex<double>*>(data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
     }
 };
 

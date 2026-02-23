@@ -240,11 +240,11 @@ void PathRendering::nodeAdjacence(std::vector<Node>& nodes, const std::vector<Po
     }
 // we simplify to have only 1 node per PolyConvex
     for (const PolyConvex& pc : polyConvexList) {
-        std::vector<Node*>& nodes = pc._nodes;
-        while (nodes.size() > 1) {
-            Node& n = *nodes.back();
-            nodes.resize(nodes.size() - 1u);
-            for (Node* m : nodes) {
+        std::vector<Node*>& pcNodes = pc._nodes;
+        while (pcNodes.size() > 1) {
+            Node& n = *pcNodes.back();
+            pcNodes.resize(pcNodes.size() - 1u);
+            for (Node* m : pcNodes) {
                 n._adjacents.emplace(m);
                 m->_adjacents.emplace(&n);
             }
@@ -499,7 +499,6 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
             Node& n = *p.second;
 
             createPolygonSet(polyConvexList, n._cover, n._setPolygons);
-            basic::Arrangement_2Node& arr = n._setPolygons.arrangement();
             // Edge data annotation is no longer stored on curves in CGAL 5.x;
             // polygon membership is tracked via face data instead.
 

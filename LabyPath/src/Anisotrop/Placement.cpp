@@ -96,7 +96,7 @@ Routing Placement::create_route(Cell& cell) {
             if (&vertex2 != &queue.front().vertex()) {
 
                 Pin pin_target { vertex2, std::max(queue.front().thickness() / _config.decrement_factor(), _config.minimal_thickness()) };
-                Net n(queue.front(), pin_target, nets.size());
+                Net n(queue.front(), pin_target, static_cast<int32_t>(nets.size()));
 
                 if (routing.findRoute(n)) {
 
@@ -123,7 +123,7 @@ void Placement::statistics(const Arrangement_2& arr) {
 
     std::size_t total_congestion = 0;
     for (const Halfedge& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-        total_congestion += he.curve().data().congestion();
+        total_congestion += static_cast<std::size_t>(he.curve().data().congestion());
     }
     std::cout << "seed  " << _config.routing().seed() << " total_congestion " << total_congestion << " number of edge " << arr.number_of_edges() << std::endl;
 

@@ -41,10 +41,10 @@ inline std::string emptyElemEnd() {
 template<typename T>
 class optional {
 public:
-    optional<T>(T const & val) :
+    optional(T const & val) :
             valid(true), type(val) {
     }
-    optional<T>() :
+    optional() :
             valid(false), type(T()) {
     }
     T * operator->() {
