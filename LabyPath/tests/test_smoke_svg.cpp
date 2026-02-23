@@ -81,7 +81,7 @@ static std::size_t totalPointCount(const laby::Ribbon& ribbon) {
     return count;
 }
 
-/// Count the number of <path or <polyline elements in SVG content.
+/// Count the number of path or polyline elements in SVG content.
 static std::size_t countSvgPathElements(const std::string& content) {
     std::size_t count = 0;
     std::size_t pos = 0;

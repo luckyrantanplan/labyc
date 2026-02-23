@@ -81,9 +81,12 @@ classDiagram
     }
 
     class StateSelect {
-        +_stateSelect : vector~bool~
-        +add(i)
+        -_occupied_states : vector~bool~
+        -_current_index : int32_t
+        +markOccupied(i)
         +getNext() int32_t
+        +capacity() int32_t
+        +currentIndex() int32_t
     }
 
     class NodeOverlap {

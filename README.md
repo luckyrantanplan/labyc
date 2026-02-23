@@ -199,7 +199,7 @@ docker run --rm labypath <config.json>
 ```
 
 The Docker image:
-1. Builds the C++ project and runs all C++ tests (190 tests)
+1. Builds the C++ project and runs all C++ tests (211 tests)
 2. Installs Python dependencies and runs Python tests (protobuf + watcher tests)
 3. Produces a minimal runtime image with both the C++ binary and the Python GUI
 
@@ -295,7 +295,7 @@ LabyPath/
 │   ├── flatteningOverlap/      # Overlap resolution & path merging (see README.md)
 │   ├── agg/                    # Anti-aliased graphics primitives
 │   └── protoc/                 # Generated Protobuf code
-├── tests/                      # Google Test unit tests (21 files, 190 tests)
+├── tests/                      # Google Test unit tests (22 files, 211 tests)
 ├── config.json                 # Example noise configuration
 └── config.txt                  # Example protobuf-text configuration
 
@@ -313,7 +313,7 @@ LabyPython/
 
 ## Test coverage
 
-### C++ tests (190 tests across 21 test files)
+### C++ tests (211 tests across 22 test files)
 
 | Test file | Module(s) tested | Tests |
 |-----------|-----------------|-------|
@@ -338,9 +338,13 @@ LabyPython/
 | `test_simplifylines` | SimplifyLines (decimation) | 5 |
 | `test_poissongenerator` | PoissonGenerator (sPoint, sGrid) | 14 |
 | `test_flatteningoverlap` | Intersection, Node, StateSelect, NodeQueue, Family | 21 |
+| `test_smoke_svg` | SVG Loader, SkeletonGrid, GraphicRendering, AlternateRoute | 20 |
 
-**Coverage summary:** 21 of 54 functional source modules have unit tests (~39%).
-Untested modules are primarily the CGAL-heavy processing stages (VoronoiMedialSkeleton, SkeletonOffset, SkeletonRadial, SVGParser, Routing, GraphicRendering) which require complex geometric setup.
+**Coverage summary:** 22 of 54 functional source modules have unit tests (~41%).
+The `test_smoke_svg` qualification tests validate end-to-end geometric correctness:
+coordinates within viewBox, finite values, polyline integrity, output SVG structure,
+and skeleton bounds matching input bounds.
+Untested modules are primarily the CGAL-heavy processing stages (VoronoiMedialSkeleton, SkeletonOffset, SkeletonRadial, SVGParser, Routing) which require complex geometric setup.
 The `flatteningOverlap` module has detailed documentation with mermaid diagrams in [`LabyPath/src/flatteningOverlap/README.md`](LabyPath/src/flatteningOverlap/README.md).
 
 ### Python tests (34 tests across 3 test files)
