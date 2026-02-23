@@ -189,21 +189,91 @@ ctest --output-on-failure
 | `LABYPATH_WERROR` | `OFF` | Treat compiler warnings as errors |
 | `LABYPATH_ENABLE_PROFILER` | `OFF` | Enable easy_profiler integration |
 
-## Docker
+## Development with VS Code (recommended)
 
-Build and run using the provided Dockerfile (Ubuntu 24.04 + GCC 14):
+The project includes a complete **Dev Container** setup so all compilation, testing, debugging, and even the Python GUI run inside a Docker container — no local toolchain installation required.
+
+### Quick start
+
+1. Install [VS Code](https://code.visualstudio.com/) and the **Remote - Containers** extension.
+2. Open this repository in VS Code.
+3. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
+4. The container builds automatically with GCC 14, CMake, CGAL, FFTW3, GDB, clang-tidy, Python 3, PyQt6.
+5. CMake configures automatically via `postCreateCommand`.
+
+### Build and test (inside the container)
+
+| Task | Keyboard shortcut | Description |
+|------|-------------------|-------------|
+| **Build C++** | `Ctrl+Shift+B` | Default build task (CMake + Ninja) |
+| **Run C++ Tests** | `Ctrl+Shift+T` → select "Run C++ Tests" | Runs all 233 Google Test tests via ctest |
+| **Run Python Tests** | `Ctrl+Shift+T` → select "Run Python Tests" | Runs pytest on LabyPython/tests/ |
+| **Run All Tests** | `Ctrl+Shift+T` → select "Run All Tests" | Runs C++ then Python tests sequentially |
+| **Launch Python GUI** | `Ctrl+Shift+T` → select "Launch Python GUI" | Starts the PyQt6 GUI (requires X11 forwarding) |
+
+### Debugging (inside the container)
+
+| Configuration | Description |
+|---------------|-------------|
+| **Debug C++ Tests** | Run all Google Tests under GDB with pretty-printing |
+| **Debug Single C++ Test** | Run a single test by name (`--gtest_filter=TestName.*`) |
+| **Debug C++ (labypath)** | Debug the main executable with a config file |
+| **Debug Python GUI** | Debug the PyQt6 GUI with debugpy |
+| **Debug Python Tests** | Debug pytest with debugpy |
+
+The container has `SYS_PTRACE` capability for GDB and `seccomp:unconfined` for valgrind.
+
+### Python GUI with X11 forwarding
+
+To run the PyQt6 GUI from inside the container, X11 forwarding must be enabled:
+
+**Linux:**
+```bash
+xhost +local:docker   # Allow local Docker containers to access X
+```
+Then reopen in container — the GUI will display on your host screen.
+
+**macOS (via XQuartz):**
+```bash
+brew install --cask xquartz
+open -a XQuartz       # Enable "Allow connections from network clients" in Preferences
+xhost +localhost
+export DISPLAY=host.docker.internal:0
+```
+
+**Windows (via VcXsrv):**
+1. Install [VcXsrv](https://sourceforge.net/projects/vcxsrv/).
+2. Launch with "Disable access control" checked.
+3. Set `DISPLAY=host.docker.internal:0` in `.devcontainer/docker-compose.yml`.
+
+### Project configuration files
+
+| File | Purpose |
+|------|---------|
+| `.devcontainer/devcontainer.json` | Dev Container configuration |
+| `.devcontainer/Dockerfile` | Development Docker image (debug tools, X11, Python venv) |
+| `.devcontainer/docker-compose.yml` | Container orchestration with X11 volumes |
+| `.vscode/settings.json` | CMake, C++, Python, editor settings |
+| `.vscode/tasks.json` | Build, test, lint, format tasks |
+| `.vscode/launch.json` | Debug configurations (GDB, debugpy) |
+| `.vscode/extensions.json` | Recommended extensions |
+
+## Docker (production)
+
+Build and run the production image (Ubuntu 24.04 + GCC 14):
 
 ```bash
 docker build -t labypath .
 docker run --rm labypath <config.json>
 ```
 
-The Docker image:
-1. Builds the C++ project and runs all C++ tests (233 tests)
+The production Docker image:
+1. Builds the C++ project and runs all 233 C++ tests
 2. Installs Python dependencies and runs Python tests (protobuf + watcher tests)
-3. Produces a minimal runtime image with both the C++ binary and the Python GUI
+3. Produces a minimal runtime image with the C++ binary and the Python GUI
 
 Note: The GUI tests that require a display (PyQt6) are skipped in the Docker build since there is no X server available.
+To run the GUI in Docker, use the dev container setup described above.
 
 ## Python GUI
 

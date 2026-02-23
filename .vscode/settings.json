@@ -1,0 +1,46 @@
+{
+    // ─── CMake ─────────────────────────────────────────────────────────
+    "cmake.buildDirectory": "${workspaceFolder}/LabyPath/build",
+    "cmake.sourceDirectory": "${workspaceFolder}/LabyPath",
+    "cmake.generator": "Ninja",
+    "cmake.configureArgs": [
+        "-DCMAKE_CXX_COMPILER=g++-14",
+        "-DLABYPATH_BUILD_TESTS=ON"
+    ],
+    "cmake.buildArgs": ["--parallel"],
+
+    // ─── C/C++ ─────────────────────────────────────────────────────────
+    "C_Cpp.default.compilerPath": "/usr/bin/g++-14",
+    "C_Cpp.default.cppStandard": "c++17",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/LabyPath/build/compile_commands.json",
+    "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "C_Cpp.codeAnalysis.clangTidy.path": "/usr/bin/clang-tidy",
+
+    // ─── Python ────────────────────────────────────────────────────────
+    "python.defaultInterpreterPath": "/home/vscode/venv/bin/python",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["LabyPython/tests"],
+
+    // ─── Files ─────────────────────────────────────────────────────────
+    "files.associations": {
+        "*.h": "cpp",
+        "*.pb.h": "cpp",
+        "*.pb.cc": "cpp"
+    },
+    "files.exclude": {
+        "**/_build": true,
+        "**/build": true,
+        "**/__pycache__": true
+    },
+
+    // ─── Editor ────────────────────────────────────────────────────────
+    "editor.formatOnSave": false,
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python"
+    }
+}

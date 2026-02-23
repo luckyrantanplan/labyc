@@ -1,0 +1,41 @@
+{
+    "name": "LabyPath Dev",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "devcontainer",
+    "workspaceFolder": "/workspace",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "xaver.clang-format",
+                "llvm-vs-code-extensions.vscode-clangd",
+                "bierner.markdown-mermaid",
+                "ms-azuretools.vscode-docker"
+            ],
+            "settings": {
+                "cmake.buildDirectory": "${workspaceFolder}/LabyPath/build",
+                "cmake.sourceDirectory": "${workspaceFolder}/LabyPath",
+                "cmake.generator": "Ninja",
+                "cmake.configureArgs": [
+                    "-DCMAKE_CXX_COMPILER=g++-14",
+                    "-DLABYPATH_BUILD_TESTS=ON"
+                ],
+                "C_Cpp.default.compilerPath": "/usr/bin/g++-14",
+                "C_Cpp.default.cppStandard": "c++17",
+                "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+                "python.defaultInterpreterPath": "/home/vscode/venv/bin/python",
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["LabyPython/tests"]
+            }
+        }
+    },
+
+    "postCreateCommand": "cd LabyPath && cmake -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-14 -DCMAKE_BUILD_TYPE=Debug -DLABYPATH_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+
+    "remoteUser": "vscode"
+}

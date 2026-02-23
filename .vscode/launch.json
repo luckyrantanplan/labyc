@@ -1,0 +1,100 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug C++ Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/LabyPath/build/labypath_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/LabyPath",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build C++"
+        },
+        {
+            "name": "Debug C++ (labypath)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/LabyPath/build/labypath",
+            "args": ["${input:configFile}"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/LabyPath",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build C++"
+        },
+        {
+            "name": "Debug Single C++ Test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/LabyPath/build/labypath_tests",
+            "args": ["--gtest_filter=${input:testFilter}"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/LabyPath",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build C++"
+        },
+        {
+            "name": "Debug Python GUI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "LabyPython.App",
+            "cwd": "${workspaceFolder}/LabyPython/src",
+            "env": { "QT_QPA_PLATFORM": "xcb" },
+            "justMyCode": true
+        },
+        {
+            "name": "Debug Python Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["LabyPython/tests/", "-v"],
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "configFile",
+            "description": "Path to JSON configuration file",
+            "type": "promptString",
+            "default": "input/config.json"
+        },
+        {
+            "id": "testFilter",
+            "description": "Google Test filter (e.g. SmoothingTest.*)",
+            "type": "promptString",
+            "default": "*"
+        }
+    ]
+}
