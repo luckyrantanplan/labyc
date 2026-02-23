@@ -21,7 +21,6 @@ namespace laby {
 
 class Node {
 public:
-
     std::unordered_set<Node*> _adjacents;
     std::vector<Node*> _opposite;
     std::vector<std::size_t> _cover;
@@ -31,31 +30,24 @@ public:
 
     basic::Polygon_set_2Node _setPolygons;
 
-    explicit Node(const int32_t nodeId) :
-            _nodeId { nodeId } {
+    explicit Node(const int32_t nodeId) : _nodeId{nodeId} {}
 
-    }
+    void setState(int32_t s) { _state = s; }
 
-    void setState(int32_t s) {
-        _state = s;
-    }
-
-    bool operator <(const Node &n) const {
+    bool operator<(const Node& n) const {
 
         if (_opposite.size() == n._opposite.size()) {
             return _adjacents.size() < n._adjacents.size();
         }
         return (_opposite.size() < n._opposite.size());
-
     }
 
-    bool operator >(const Node &n) const {
+    bool operator>(const Node& n) const {
 
         if (_opposite.size() == n._opposite.size()) {
             return _adjacents.size() > n._adjacents.size();
         }
         return (_opposite.size() > n._opposite.size());
-
     }
 
     void print(std::ostream& os) const {
@@ -84,8 +76,7 @@ public:
 };
 class StateSelect {
 public:
-    explicit StateSelect(const std::vector<Node*>& opposite) :
-            _stateSelect(opposite.size(), false) {
+    explicit StateSelect(const std::vector<Node*>& opposite) : _stateSelect(opposite.size(), false) {
         for (Node* opp : opposite) {
             add(opp->_state);
         }
@@ -110,26 +101,16 @@ public:
     }
     std::size_t ite = 0;
     std::vector<bool> _stateSelect;
-
 };
 struct NodeQueue {
 public:
-
-    explicit NodeQueue(Node& node) :
-            _node(&node) {
-
-    }
-    Node& node() {
-        return *_node;
-    }
-    Node& node() const {
-        return *_node;
-    }
+    explicit NodeQueue(Node& node) : _node(&node) {}
+    Node& node() { return *_node; }
+    Node& node() const { return *_node; }
 
     // use for priority queue , we inverse "<" to ">" because we want the smaller first
-    bool operator <(const NodeQueue &n) const {
-        return node() > n.node();
-    }
+    bool operator<(const NodeQueue& n) const { return node() > n.node(); }
+
 private:
     Node* _node;
 };

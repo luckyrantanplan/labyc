@@ -26,24 +26,18 @@ public:
         if (first < second) {
             _first = first;
             _second = second;
-        } else {
+        }
+        else {
             _second = first;
             _first = second;
         }
-
     }
 
-    bool operator==(const Intersection& other) const {
-        return (_first == other._first && _second == other._second);
-    }
+    bool operator==(const Intersection& other) const { return (_first == other._first && _second == other._second); }
 
-    std::size_t first() const {
-        return _first;
-    }
+    std::size_t first() const { return _first; }
 
-    std::size_t second() const {
-        return _second;
-    }
+    std::size_t second() const { return _second; }
 
     mutable CGAL::Union_find<std::size_t>::handle handle;
     mutable CGAL::Union_find<std::size_t>::handle family_handle;
@@ -51,14 +45,12 @@ public:
 private:
     std::size_t _first;
     std::size_t _second;
-
 };
 } /* namespace laby */
 
 namespace std {
 
-template<>
-struct hash<laby::Intersection> {
+template <> struct hash<laby::Intersection> {
     std::size_t operator()(const laby::Intersection& c) const {
         // Start with a hash value of 0    .
         std::size_t seed = 0;
@@ -71,15 +63,13 @@ struct hash<laby::Intersection> {
 
         // Return the result.
         return seed;
-
     }
 };
 
-}        // namespace std
+} // namespace std
 namespace laby {
 class Family {
 public:
-
     void createPatch(const std::vector<PolyConvex>& polyConvexList);
 
     std::vector<Intersection> _intersections;
@@ -87,7 +77,8 @@ public:
     std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
     mutable CGAL::Union_find<std::size_t>::handle handle;
 
-    static void createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList, CGAL::Union_find<std::size_t>& uf);
+    static void createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList,
+                                CGAL::Union_find<std::size_t>& uf);
     void printFind(const std::unordered_set<std::size_t>& coverSet, std::size_t i);
 
 private:

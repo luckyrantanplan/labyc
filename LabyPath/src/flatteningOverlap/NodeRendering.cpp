@@ -40,8 +40,6 @@ bool NodeOverlap::testSeg(int32_t index, const basic::HalfedgeNode& he) {
     return edgeHasPolygonId(he, index);
 }
 
-
-
 bool NodeOverlap::has_face(basic::Arrangement_2Node& res) {
     using namespace basic;
     for (FaceNode& face : RangeHelper::make(res.faces_begin(), res.faces_end())) {
@@ -70,7 +68,6 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
             Arrangement_2Node& last = arrResult.back();
             arrResult.emplace_back();
             CGAL::overlay(last, _nodes.at(i)->_setPolygons.arrangement(), arrResult.back(), overlay_traits);
-
         }
 
         Arrangement_2Node& res = arrResult.back();
@@ -83,21 +80,19 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
                 const auto& twinData = he.twin()->face()->data();
                 if (faceData.size() + twinData.size() > 1) {
                     oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
-
                 }
-
             }
-        } else {
+        }
+        else {
 
             for (FaceNode& face : RangeHelper::make(res.faces_begin(), res.faces_end())) {
 
                 std::unordered_set<int32_t>& polygonsId = face.data();
-                if (polygonsId.size() > 1) {
+                if (polygonsId.size() > 1 && !face.is_unbounded()) {
                     int32_t index = *std::min_element(polygonsId.begin(), polygonsId.end());
                     for (HalfedgeNode& he : RangeHelper::make(face.outer_ccb())) {
                         if (testSeg(index, he)) {
                             oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
-
                         }
                     }
 
@@ -108,17 +103,13 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
                             }
                         }
                     }
-
                 }
             }
         }
     }
-
 }
 void NodeOverlap::sortNode() {
-    std::sort(_nodes.begin(), _nodes.end(), [](const Node* a,const Node* b) {
-        return a->_state< b->_state;
-    });
+    std::sort(_nodes.begin(), _nodes.end(), [](const Node* a, const Node* b) { return a->_state < b->_state; });
 }
 
 void NodeRendering::render(OrientedRibbon& oribbon, std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList) {
@@ -137,10 +128,8 @@ void NodeRendering::render(OrientedRibbon& oribbon, std::vector<Node>& nodes, co
             }
 
             no.render(oribbon, polyConvexList);
-
         }
     }
-
 }
 
 } /* namespace laby */

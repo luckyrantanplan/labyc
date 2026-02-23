@@ -31,17 +31,17 @@ namespace laby {
 
 typedef CGAL::Box_intersection_d::Box_with_handle_d<double, 2, const PolyConvex*> BoxPolyConvex;
 
-void PathRendering::unify(std::size_t second, const std::vector<std::size_t>& aAdjs, std::unordered_set<Intersection>& intersections, CGAL::Union_find<size_t>& uf, const Intersection& i) {
+void PathRendering::unify(std::size_t second, const std::vector<std::size_t>& aAdjs, std::unordered_set<Intersection>& intersections,
+                          CGAL::Union_find<size_t>& uf, const Intersection& i) {
 
     EASY_FUNCTION();
     for (std::size_t a : aAdjs) {
 
-        std::unordered_set<Intersection>::const_iterator ite = intersections.find( { a, second });
+        std::unordered_set<Intersection>::const_iterator ite = intersections.find({a, second});
         if (ite != intersections.end()) {
             uf.unify_sets(i.handle, ite->handle);
         }
     }
-
 }
 
 void PathRendering::createUnion(OrientedRibbon& ribs, const std::vector<PolyConvex>& polyConvexList) {
@@ -55,7 +55,7 @@ void PathRendering::createUnion(OrientedRibbon& ribs, const std::vector<PolyConv
     }
     set.join(plv.begin(), plv.end());
 
-    std::vector<CGAL::Polygon_with_holes_2<Kernel> > polygons;
+    std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons;
 
     set.polygons_with_holes(std::back_inserter(polygons));
 
@@ -78,7 +78,7 @@ bool PathRendering::do_intersect(Intersection& ai, Intersection& bi, const std::
     const Linear_polygon& lpb2 = polyConvexList.at(bi.second())._geometry;
     const Linear_polygon& lpa1 = polyConvexList.at(ai.first())._geometry;
     const Linear_polygon& lpa2 = polyConvexList.at(ai.second())._geometry;
-    //works only on convex
+    // works only on convex
 
     if (PolyConvex::testConvexPolyIntersect(lpa1, lpb1)) {
         if (PolyConvex::testConvexPolyIntersect(lpa1, lpb2)) {
@@ -89,7 +89,7 @@ bool PathRendering::do_intersect(Intersection& ai, Intersection& bi, const std::
                     set.intersection(lpa1);
                     set.intersection(lpa2);
 
-                    std::vector<CGAL::Polygon_with_holes_2<Kernel> > bigPolygons_a;
+                    std::vector<CGAL::Polygon_with_holes_2<Kernel>> bigPolygons_a;
                     set.polygons_with_holes(std::back_inserter(bigPolygons_a));
 
                     for (const CGAL::Polygon_with_holes_2<Kernel>& polyHole : bigPolygons_a) {
@@ -98,7 +98,6 @@ bool PathRendering::do_intersect(Intersection& ai, Intersection& bi, const std::
                         if (PolyConvex::testConvexPolyIntersect(lpa, lpb1)) {
                             return true;
                         }
-
                     }
                 }
             }
@@ -107,8 +106,10 @@ bool PathRendering::do_intersect(Intersection& ai, Intersection& bi, const std::
     return false;
 }
 
-std::unordered_map<std::size_t, std::vector<const Family*> > PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::size_t>& families, std::vector<Family>& familyVector,
-        std::vector<Intersection>& intersections, std::vector<BoxIntersection>& box_intersection, const CGAL::Union_find<std::size_t>& uf, const std::vector<PolyConvex>& polyConvexList) {
+std::unordered_map<std::size_t, std::vector<const Family*>>
+PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::size_t>& families, std::vector<Family>& familyVector,
+                              std::vector<Intersection>& intersections, std::vector<BoxIntersection>& box_intersection, const CGAL::Union_find<std::size_t>& uf,
+                              const std::vector<PolyConvex>& polyConvexList) {
 
     EASY_FUNCTION();
     CGAL::Union_find<std::size_t> uf_family;
@@ -123,22 +124,21 @@ std::unordered_map<std::size_t, std::vector<const Family*> > PathRendering::loca
 
         // reference the family through the index of example Intersection
 
-            std::size_t head_ai = *uf.find(ai.handle);
+        std::size_t head_ai = *uf.find(ai.handle);
 
-            std::size_t head_bi = *uf.find(bi.handle);
-            if (head_ai != head_bi) {  // not the same family
-                Intersection hai = intersections.at(head_ai);
-                Intersection hbi = intersections.at(head_bi);
-                if (!uf_family.same_set(hai.family_handle, hbi.family_handle)) {  //not already in the same group of family
-                    bool result=do_intersect(ai, bi, polyConvexList);
-                    if ( result) {
-                        uf_family.unify_sets(hai.family_handle, hbi.family_handle);
-                    }
-
+        std::size_t head_bi = *uf.find(bi.handle);
+        if (head_ai != head_bi) { // not the same family
+            Intersection hai = intersections.at(head_ai);
+            Intersection hbi = intersections.at(head_bi);
+            if (!uf_family.same_set(hai.family_handle, hbi.family_handle)) { // not already in the same group of family
+                bool result = do_intersect(ai, bi, polyConvexList);
+                if (result) {
+                    uf_family.unify_sets(hai.family_handle, hbi.family_handle);
                 }
             }
-        });
-    std::unordered_map<std::size_t, std::vector<const Family*> > families2;
+        }
+    });
+    std::unordered_map<std::size_t, std::vector<const Family*>> families2;
 
     for (auto ite_head : families) {
         std::size_t i = ite_head.first;
@@ -168,28 +168,26 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon, const std::vector<P
     box_intersection.reserve(intersections.size());
 
     CGAL::box_self_intersection_d(boxes.begin(), boxes.end(), [&](const BoxPolyConvex& a, const BoxPolyConvex& b) {
+        const std::vector<std::size_t>& adjacents = a.handle()->_adjacents;
+        std::vector<std::size_t>::const_iterator ite = std::find(adjacents.begin(), adjacents.end(), b.handle()->_id);
+        if (ite != adjacents.end()) {
+            intersections.emplace_back(a.handle()->_id, b.handle()->_id);
+        }
+        else {
 
-        const std::vector<std::size_t >& adjacents = a.handle()->_adjacents;
-        std::vector<std::size_t >::const_iterator ite= std::find (adjacents.begin(),adjacents.end(), b.handle()->_id);
-        if (ite!=adjacents.end()) {
-            intersections.emplace_back(a.handle()->_id,b.handle()->_id);
-
-        } else {
-
-            if ( PolyConvex::testConvexPolyIntersect(a.handle()->_geometry , b.handle()->_geometry)) {
+            if (PolyConvex::testConvexPolyIntersect(a.handle()->_geometry, b.handle()->_geometry)) {
                 intersections.emplace_back(a.handle()->_id, b.handle()->_id);
-                CGAL::Bbox_2 ba=a.handle()->_geometry.bbox();
-                CGAL::Bbox_2 bb=b.handle()->_geometry.bbox();
+                CGAL::Bbox_2 ba = a.handle()->_geometry.bbox();
+                CGAL::Bbox_2 bb = b.handle()->_geometry.bbox();
 
-                double xmin=std::max(ba.xmin(),bb.xmin());
-                double xmax=std::min(ba.xmax(),bb.xmax());
-                double ymin=std::max(ba.ymin(),bb.ymin());
-                double ymax=std::min(ba.ymax(),bb.ymax());
-                CGAL::Bbox_2 ibox(xmin,ymin,xmax,ymax);
+                double xmin = std::max(ba.xmin(), bb.xmin());
+                double xmax = std::min(ba.xmax(), bb.xmax());
+                double ymin = std::max(ba.ymin(), bb.ymin());
+                double ymax = std::min(ba.ymax(), bb.ymax());
+                CGAL::Bbox_2 ibox(xmin, ymin, xmax, ymax);
 
-                box_intersection.emplace_back(ibox,intersections.size()-1);
+                box_intersection.emplace_back(ibox, intersections.size() - 1);
             }
-
         }
     });
     std::cout << "end boxes" << std::endl;
@@ -231,14 +229,14 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon, const std::vector<P
 }
 
 void PathRendering::nodeAdjacence(std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList) {
-//compute adjacence
+    // compute adjacence
     EASY_FUNCTION();
     for (Node& n : nodes) {
         for (std::size_t i : n._cover) {
             polyConvexList.at(i)._nodes.emplace_back(&n);
         }
     }
-// we simplify to have only 1 node per PolyConvex
+    // we simplify to have only 1 node per PolyConvex
     for (const PolyConvex& pc : polyConvexList) {
         std::vector<Node*>& pcNodes = pc._nodes;
         while (pcNodes.size() > 1) {
@@ -252,8 +250,8 @@ void PathRendering::nodeAdjacence(std::vector<Node>& nodes, const std::vector<Po
     }
     for (Node& n : nodes) {
 
-        std::vector<std::size_t> &cover = n._cover;
-        //first find a node
+        std::vector<std::size_t>& cover = n._cover;
+        // first find a node
         std::queue<QueueNodePolyConvex> queue;
         for (std::size_t i : cover) {
             const PolyConvex& pc = polyConvexList.at(i);
@@ -273,7 +271,8 @@ void PathRendering::nodeAdjacence(std::vector<Node>& nodes, const std::vector<Po
                         queue.emplace(pair._n, polyConvexList.at(i));
                     }
                 }
-            } else {
+            }
+            else {
                 Node& newNode = *pc._nodes.at(0);
                 newNode._adjacents.emplace(&pair._n);
                 pair._n._adjacents.emplace(&newNode);
@@ -318,7 +317,8 @@ void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
                 int32_t adjstate;
                 if (state == 0) {
                     adjstate = 1;
-                } else {
+                }
+                else {
                     adjstate = 0;
                 }
                 for (Node* adj : node._adjacents) {
@@ -334,10 +334,10 @@ void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
     }
 }
 
-std::vector<Node> PathRendering::createNode(const std::unordered_map<std::size_t, std::vector<const Family*> >& map, std::unordered_set<Intersection> intersectOnSinglePiece,
-        const std::vector<PolyConvex>& polyConvexList) {
+std::vector<Node> PathRendering::createNode(const std::unordered_map<std::size_t, std::vector<const Family*>>& map,
+                                            std::unordered_set<Intersection> intersectOnSinglePiece, const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
-// we avoid re allocation to preserve pointer
+    // we avoid re allocation to preserve pointer
     std::vector<Node> nodes;
     {
         std::size_t nbNodes = 0;
@@ -349,15 +349,15 @@ std::vector<Node> PathRendering::createNode(const std::unordered_map<std::size_t
     std::cout << "map number : " << map.size() << std::endl;
     for (auto& pair : map) {
         mergeFamilies(pair.second, intersectOnSinglePiece, polyConvexList, nodes);
-
     }
-//compute adjacence
+    // compute adjacence
     nodeAdjacence(nodes, polyConvexList);
     return nodes;
 }
 
-std::vector<Node> PathRendering::processFamilies(std::unordered_map<size_t, std::size_t> &families, const std::vector<PolyConvex> &polyConvexList, std::vector<Family> &familyVector,
-        std::vector<Intersection> &intersections, std::vector<BoxIntersection> &box_intersection, CGAL::Union_find<std::size_t> &uf) {
+std::vector<Node> PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& families, const std::vector<PolyConvex>& polyConvexList,
+                                                 std::vector<Family>& familyVector, std::vector<Intersection>& intersections,
+                                                 std::vector<BoxIntersection>& box_intersection, CGAL::Union_find<std::size_t>& uf) {
     EASY_FUNCTION();
 
     std::unordered_set<Intersection> intersectOnSinglePiece;
@@ -371,16 +371,17 @@ std::vector<Node> PathRendering::processFamilies(std::unordered_map<size_t, std:
         }
     }
 
-    std::unordered_map<std::size_t, std::vector<const Family*>> map = locateFamilies(families, familyVector, intersections, box_intersection, uf, polyConvexList);
+    std::unordered_map<std::size_t, std::vector<const Family*>> map =
+        locateFamilies(families, familyVector, intersections, box_intersection, uf, polyConvexList);
 
-// we avoid re allocation to preserve pointer
+    // we avoid re allocation to preserve pointer
 
     std::vector<Node> nodes = createNode(map, intersectOnSinglePiece, polyConvexList);
     return nodes;
-
 }
 
-void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyConvexList, const std::vector<std::size_t>& cover, basic::Polygon_set_2Node& setPolygons) {
+void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyConvexList, const std::vector<std::size_t>& cover,
+                                     basic::Polygon_set_2Node& setPolygons) {
 
     std::vector<basic::Polygon_2Node> pnVect;
     pnVect.reserve(cover.size());
@@ -388,23 +389,23 @@ void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyConvexLi
         const PolyConvex& pc = polyConvexList.at(i);
         pnVect.emplace_back(pc._geometry.vertices_begin(), pc._geometry.vertices_end());
     }
-// bug in CGAL, cannot use the aggregate version
+    // bug in CGAL, cannot use the aggregate version
     //   try {
-//    basic::Polygon_set_2Node bpolySet;
-//        bpolySet.join(pnVect.begin(), pnVect.end());
-//        setPolygons = bpolySet;
-//    } catch (CGAL::Failure_exception& e) {
-//        std::cout << e.message() << " " << std::string(e.what()) << std::endl;
+    //    basic::Polygon_set_2Node bpolySet;
+    //        bpolySet.join(pnVect.begin(), pnVect.end());
+    //        setPolygons = bpolySet;
+    //    } catch (CGAL::Failure_exception& e) {
+    //        std::cout << e.message() << " " << std::string(e.what()) << std::endl;
 
     for (basic::Polygon_2Node& polyBasi : pnVect) {
         setPolygons.join(polyBasi);
     }
 
-//    }
-
+    //    }
 }
 
-void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families, const std::vector<PolyConvex>& polyConvexList, const std::unordered_map<std::size_t, Node*>& map) {
+void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families, const std::vector<PolyConvex>& polyConvexList,
+                                     const std::unordered_map<std::size_t, Node*>& map) {
     EASY_FUNCTION();
     std::cout << "reCutAllGeometry" << std::endl;
 
@@ -432,8 +433,8 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
     }
 }
 
-void PathRendering::mergeFamilies(const std::vector<const Family*>& families, std::unordered_set<Intersection>& intersectOnSinglePiece, const std::vector<PolyConvex>& polyConvexList,
-        std::vector<Node>& nodes) {
+void PathRendering::mergeFamilies(const std::vector<const Family*>& families, std::unordered_set<Intersection>& intersectOnSinglePiece,
+                                  const std::vector<PolyConvex>& polyConvexList, std::vector<Node>& nodes) {
     EASY_FUNCTION();
 
     static int32_t nodeId = 0;
@@ -453,7 +454,8 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
             for (const Intersection& interval : f->_intersections) {
                 if (coverSet.count(interval.first()) > 0) {
                     coverSet.emplace(interval.second());
-                } else if (coverSet.count(interval.second()) > 0) {
+                }
+                else if (coverSet.count(interval.second()) > 0) {
                     coverSet.emplace(interval.first());
                 }
             }
@@ -471,7 +473,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
             const PolyConvex& p1 = polyConvexList.at(first);
             const PolyConvex& p2 = polyConvexList.at(second);
             if (!uf.same_set(p1.handle, p2.handle)) {
-                if (intersectOnSinglePiece.count( { first, second }) > 0) {
+                if (intersectOnSinglePiece.count({first, second}) > 0) {
                     uf.unify_sets(p1.handle, p2.handle);
                 }
             }
@@ -523,6 +525,5 @@ void PathRendering::pathRender(const std::vector<PolyConvex>& polyConvexList, Or
     pathRender.createUnion(oRibbon, polyConvexList);
 
     std::cout << "end union /intersection " << std::endl;
-
 }
 } /* namespace laby */

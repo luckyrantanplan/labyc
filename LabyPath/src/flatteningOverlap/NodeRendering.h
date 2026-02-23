@@ -22,7 +22,7 @@ namespace laby {
 
 struct NodeOverlap {
 
-    std::vector<Node *> _nodes;
+    std::vector<Node*> _nodes;
 
     void sortNode();
     void render(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList);
@@ -36,7 +36,6 @@ private:
 class NodeRendering {
 public:
     static void render(OrientedRibbon& oribbon, std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList);
-
 };
 
 } /* namespace laby */

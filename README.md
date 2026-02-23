@@ -198,7 +198,12 @@ docker build -t labypath .
 docker run --rm labypath <config.json>
 ```
 
-The Docker image installs all dependencies, builds the project, and runs the full test suite during the build step.
+The Docker image:
+1. Builds the C++ project and runs all C++ tests (190 tests)
+2. Installs Python dependencies and runs Python tests (protobuf + watcher tests)
+3. Produces a minimal runtime image with both the C++ binary and the Python GUI
+
+Note: The GUI tests that require a display (PyQt6) are skipped in the Docker build since there is no X server available.
 
 ## Python GUI
 
@@ -245,6 +250,7 @@ The configuration is defined by Protocol Buffer messages in `API/AllConfig.proto
 ```
 LabyPath/
 ├── CMakeLists.txt              # CMake build configuration
+├── .clang-format               # Code formatting configuration
 ├── .clang-tidy                 # Linter configuration
 ├── API/                        # Protobuf definitions
 │   └── AllConfig.proto
@@ -283,13 +289,13 @@ LabyPath/
 │   │   └── SimplifyLines.*     # Douglas-Peucker decimation
 │   ├── generator/              # Noise and point generators
 │   │   ├── HqNoise.*           # FFT spectral noise
+│   │   ├── FftwArray.h         # FFTW3-backed array wrappers
 │   │   ├── PoissonGenerator.h  # Poisson disk sampling
 │   │   └── StreamLine.*        # Stream-line field tracing
-│   ├── flatteningOverlap/      # Overlap resolution & path merging
+│   ├── flatteningOverlap/      # Overlap resolution & path merging (see README.md)
 │   ├── agg/                    # Anti-aliased graphics primitives
-│   ├── fft/                    # FFT wrappers (fftw++)
 │   └── protoc/                 # Generated Protobuf code
-├── tests/                      # Google Test unit tests (20 files)
+├── tests/                      # Google Test unit tests (21 files, 190 tests)
 ├── config.json                 # Example noise configuration
 └── config.txt                  # Example protobuf-text configuration
 
@@ -307,7 +313,7 @@ LabyPython/
 
 ## Test coverage
 
-### C++ tests (169 tests across 20 test files)
+### C++ tests (190 tests across 21 test files)
 
 | Test file | Module(s) tested | Tests |
 |-----------|-----------------|-------|
@@ -331,9 +337,11 @@ LabyPython/
 | `test_hqnoiseutils` | HqNoiseUtils, sgn functions | 18 |
 | `test_simplifylines` | SimplifyLines (decimation) | 5 |
 | `test_poissongenerator` | PoissonGenerator (sPoint, sGrid) | 14 |
+| `test_flatteningoverlap` | Intersection, Node, StateSelect, NodeQueue, Family | 21 |
 
-**Coverage summary:** 20 of 54 functional source modules have unit tests (~37%).
+**Coverage summary:** 21 of 54 functional source modules have unit tests (~39%).
 Untested modules are primarily the CGAL-heavy processing stages (VoronoiMedialSkeleton, SkeletonOffset, SkeletonRadial, SVGParser, Routing, GraphicRendering) which require complex geometric setup.
+The `flatteningOverlap` module has detailed documentation with mermaid diagrams in [`LabyPath/src/flatteningOverlap/README.md`](LabyPath/src/flatteningOverlap/README.md).
 
 ### Python tests (34 tests across 3 test files)
 
@@ -347,6 +355,7 @@ Untested modules are primarily the CGAL-heavy processing stages (VoronoiMedialSk
 
 - **C++17** standard
 - Strict compiler warnings (`-Wall -Wextra -Wpedantic` and more)
+- Code formatting enforced by [clang-format](https://clang.llvm.org/docs/ClangFormat.html) (see `.clang-format`)
 - Static analysis via [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) (see `.clang-tidy`)
 - All project code lives in the `laby` namespace
 

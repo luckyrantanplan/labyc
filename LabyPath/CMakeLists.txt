@@ -216,6 +216,7 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_hqnoiseutils.cpp
         tests/test_simplifylines.cpp
         tests/test_poissongenerator.cpp
+        tests/test_flatteningoverlap.cpp
     )
 
     target_link_libraries(labypath_tests

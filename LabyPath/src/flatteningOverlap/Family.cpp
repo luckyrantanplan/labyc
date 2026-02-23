@@ -17,7 +17,8 @@ namespace laby {
 
 typedef CGAL::Box_intersection_d::Box_with_handle_d<double, 2, const Family*> BoxFamily;
 
-void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList, CGAL::Union_find<std::size_t> &uf) {
+void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList,
+                             CGAL::Union_find<std::size_t>& uf) {
     EASY_FUNCTION();
     for (const std::size_t& i : coverSet) {
         polyConvexList.at(i).handle = uf.push_back(i);
@@ -36,7 +37,8 @@ void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet, co
 void Family::printFind(const std::unordered_set<std::size_t>& coverSet, std::size_t i) {
     if (coverSet.count(i) > 0) {
         std::cout << " find " << i;
-    } else {
+    }
+    else {
         std::cout << " not found " << i;
     }
 }
@@ -59,17 +61,16 @@ void Family::createPatch(const std::vector<PolyConvex>& polyConvexList) {
             auto ite = _patches.try_emplace(head, std::vector<std::size_t>());
             ite.first->second.emplace_back(i);
         }
-
-    } else if (uf.number_of_sets() == 1) {
+    }
+    else if (uf.number_of_sets() == 1) {
         auto ite = _patches.try_emplace(uf.begin().ptr()->value, std::vector<std::size_t>());
         for (const std::size_t& i : coverSet) {
             ite.first->second.emplace_back(i);
         }
-
-    } else if (uf.number_of_sets() > 2) {
+    }
+    else if (uf.number_of_sets() > 2) {
         std::cout << " too much patch " << std::endl;
         exit(-1);
     }
-
 }
 } /* namespace laby */
