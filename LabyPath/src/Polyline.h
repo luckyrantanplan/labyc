@@ -27,16 +27,16 @@ struct Polyline {
     Polyline() {
     }
 
-    Polyline(const int32_t number, const std::vector<Point_2>& points) :
-            number { number }, points { points } {
+    Polyline(const int32_t num, const std::vector<Point_2>& pts) :
+            number { num }, points { pts } {
     }
 
-    explicit Polyline(const int32_t number) :
-            number { number } {
+    explicit Polyline(const int32_t num) :
+            number { num } {
     }
 
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) :
-            number { number }, points { } {
+            number { 0 }, points { } {
 
         points = poly.container();
         closed = true;

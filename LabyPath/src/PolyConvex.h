@@ -113,7 +113,7 @@ public:
         return _pt;
     }
 
-    const bool has_points() const {
+    bool has_points() const {
         if (_supportHe != nullptr) {
             return true;
         }

@@ -21,8 +21,8 @@ class NumericRangeIterator {
 
 public:
 
-    NumericRangeIterator(int32_t i, const NumericRange<T>& range) :
-            i { i }, //
+    NumericRangeIterator(int32_t idx, const NumericRange<T>& range) :
+            i { idx }, //
             _range { &range } {
 
     }
@@ -66,14 +66,14 @@ public:
     NumericRange(T&& begin, T&& end, T&& step) {
         _begin = begin;
         T diff = (end - begin) / step;
-        _end = diff + static_cast<T>(1);
+        _end = static_cast<int32_t>(diff) + 1;
         _step = step;
     }
 
     NumericRange(const T& begin, const T& end, const T& step) {
         _begin = begin;
         T diff = (end - begin) / step;
-        _end = diff + static_cast<T>(1);
+        _end = static_cast<int32_t>(diff) + 1;
         _step = step;
     }
 

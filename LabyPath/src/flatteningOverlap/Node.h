@@ -93,7 +93,7 @@ public:
 
     void add(int32_t i) {
         if (-1 < i and i < static_cast<int32_t>(_stateSelect.size())) {
-            _stateSelect.at(i) = true;
+            _stateSelect.at(static_cast<std::size_t>(i)) = true;
         }
     }
 
@@ -103,10 +103,10 @@ public:
         for (; ite < _stateSelect.size(); ++ite) {
             if (!_stateSelect.at(ite)) {
                 _stateSelect.at(ite) = true;
-                return ite;
+                return static_cast<int32_t>(ite);
             }
         }
-        return ite;
+        return static_cast<int32_t>(ite);
     }
     std::size_t ite = 0;
     std::vector<bool> _stateSelect;

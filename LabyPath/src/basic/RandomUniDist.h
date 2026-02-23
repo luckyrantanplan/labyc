@@ -29,9 +29,9 @@ public:
     }
 
     std::size_t select(std::size_t start, std::size_t end) {
-        std::uniform_int_distribution<std::size_t> dis(start, end - 1);
+        std::uniform_int_distribution<std::size_t> udis(start, end - 1);
 
-        return dis(gen);
+        return udis(gen);
     }
 
     template<typename CONTAINER>

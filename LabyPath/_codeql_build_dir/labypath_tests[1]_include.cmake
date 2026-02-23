@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/labyc/labyc/LabyPath/_codeql_build_dir/labypath_tests[1]_tests.cmake")
+  include("/home/runner/work/labyc/labyc/LabyPath/_codeql_build_dir/labypath_tests[1]_tests.cmake")
+else()
+  add_test(labypath_tests_NOT_BUILT labypath_tests_NOT_BUILT)
+endif()

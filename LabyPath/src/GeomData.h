@@ -112,7 +112,7 @@ public:
     }
 
     int32_t congestion() const {
-        return path.size();
+        return static_cast<int32_t>(path.size());
     }
 
     bool hasNet(const int serialId) const {
@@ -134,8 +134,8 @@ public:
         return visit;
     }
 
-    void setVisit(int32_t visit = -1) const {
-        this->visit = visit;
+    void setVisit(int32_t v = -1) const {
+        this->visit = v;
     }
 
     bool operator ==(const EdgeInfo& it) const {
