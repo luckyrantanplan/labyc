@@ -165,7 +165,7 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon, const std::vector<P
     std::cout << "start boxes  boxes size " << boxes.size() << std::endl;
 
     std::vector<BoxIntersection> box_intersection;
-    box_intersection.reserve(intersections.size());
+    box_intersection.reserve(boxes.size()); // reserve based on boxes, not empty intersections
 
     CGAL::box_self_intersection_d(boxes.begin(), boxes.end(), [&](const BoxPolyConvex& a, const BoxPolyConvex& b) {
         const std::vector<std::size_t>& adjacents = a.handle()->_adjacents;
@@ -437,7 +437,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
                                   const std::vector<PolyConvex>& polyConvexList, std::vector<Node>& nodes) {
     EASY_FUNCTION();
 
-    static int32_t nodeId = 0;
+    int32_t nodeId = _nextNodeId;
 
     std::unordered_set<std::size_t> coverSet;
     for (const Family* f : families) {
@@ -515,6 +515,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families, st
             reCutAllGeometry(families, polyConvexList, map);
         }
     }
+    _nextNodeId = nodeId;
 }
 void PathRendering::pathRender(const std::vector<PolyConvex>& polyConvexList, OrientedRibbon& oRibbon) {
     PathRendering pathRender;

@@ -1,22 +1,31 @@
-/*
- * Family.cpp
+/**
+ * @file Family.cpp
+ * @brief Groups overlapping polygon pairs into connected families using Union-Find.
  *
- *  Created on: Mar 15, 2018
- *      Author: florian
+ * A Family represents a cluster of Intersection pairs whose polygons are
+ * transitively connected through adjacency.  createPatch() further splits each
+ * family into 1 or 2 *patches* (connected components of polygon indices).
+ *
+ * Two patches → clean two-sided overlap (each side rendered separately).
+ * One patch   → single-piece overlap (needs special handling in PathRendering).
  */
 
 #include "Family.h"
 
 #include <CGAL/Box_intersection_d/Box_with_handle_d.h>
 #include "basic/EasyProfilerCompat.h"
-#include <cstdlib>
 #include <iostream>
+#include <stdexcept>
 #include <utility>
 
 namespace laby {
 
 typedef CGAL::Box_intersection_d::Box_with_handle_d<double, 2, const Family*> BoxFamily;
 
+/**
+ * Build a Union-Find structure over the polygon indices in @p coverSet,
+ * merging any two indices that are adjacent in @p polyConvexList.
+ */
 void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList,
                              CGAL::Union_find<std::size_t>& uf) {
     EASY_FUNCTION();
@@ -43,6 +52,14 @@ void Family::printFind(const std::unordered_set<std::size_t>& coverSet, std::siz
     }
 }
 
+/**
+ * Split this family's polygon indices into connected components (patches).
+ *
+ * Expected results:
+ *  - 2 patches: the standard two-sided overlap (each patch → one node)
+ *  - 1 patch:   all polygons are connected (single-piece overlap)
+ *  - >2 patches: unexpected topology – throws std::runtime_error
+ */
 void Family::createPatch(const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
     std::unordered_set<std::size_t> coverSet;
@@ -69,8 +86,8 @@ void Family::createPatch(const std::vector<PolyConvex>& polyConvexList) {
         }
     }
     else if (uf.number_of_sets() > 2) {
-        std::cout << " too much patch " << std::endl;
-        exit(-1);
+        throw std::runtime_error("Family::createPatch: unexpected topology – more than 2 patches ("
+                                 + std::to_string(uf.number_of_sets()) + " found)");
     }
 }
 } /* namespace laby */

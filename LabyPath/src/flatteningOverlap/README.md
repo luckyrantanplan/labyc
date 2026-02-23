@@ -185,3 +185,78 @@ flowchart TD
 | Arrangement overlay | Node arrangements | Merged arrangement | `overlay()` |
 | Boundary extraction | Face/edge data | Oriented segments | Arrangement traversal |
 | Global union | All polygons | Outer boundary | `Polygon_set_2` |
+
+## Key Data Structures
+
+### PolyConvex (input)
+
+Each `PolyConvex` is a convex polygon tile from the routing decomposition:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_geometry` | `Linear_polygon` | The convex polygon boundary |
+| `_originalTrapeze` | `Linear_polygon` | Copy before edge extension |
+| `_adjacents` | `vector<size_t>` | Indices of adjacent tiles |
+| `_nodes` | `mutable vector<Node*>` | Overlap nodes covering this tile |
+| `_visited` | `mutable int32_t` | BFS flag: 0=unvisited, -1=marked |
+| `handle` | `Union_find::handle` | Connectivity grouping handle |
+| `_id` | `size_t` | Unique index in the polyConvexList |
+
+The `mutable` qualifier on `_nodes`, `_visited`, and `handle` is intentional:
+these fields are modified during const-qualified traversal callbacks from CGAL
+(e.g., `box_self_intersection_d` passes `const` references).
+
+### Intersection
+
+An ordered pair `(first, second)` of PolyConvex indices where `first < second`.
+Equality and hashing are canonical (order-independent).
+
+### Family
+
+A cluster of Intersection pairs whose polygons are transitively connected.
+Each Family splits into 1 or 2 **patches** (connected components):
+- **2 patches** → clean two-sided overlap: each patch becomes a separate Node
+- **1 patch** → single-piece overlap: handled specially in mergeFamilies
+
+### Node (conflict graph)
+
+```
+┌─────────────────────────────────────────┐
+│ Node                                    │
+│  _nodeId: unique ID                     │
+│  _state: rendering state (-1=unset)     │
+│  _cover: [polyConvex indices]           │
+│  _opposite: [Node*] ← MUST differ      │
+│  _adjacents: {Node*} ← PREFER differ   │
+│  _setPolygons: CGAL arrangement         │
+│  _visited: BFS traversal flag           │
+└─────────────────────────────────────────┘
+```
+
+### StateSelect
+
+Greedy allocator: given N opposite nodes, maintains a boolean vector of
+occupied states and returns the next free state index via `getNext()`.
+
+### NodeQueue
+
+Min-priority queue wrapper: processes nodes with fewest opposites first
+(simpler conflicts before complex ones).
+
+## Algorithm Soundness Notes
+
+1. **Graph coloring correctness**: The greedy coloring in `chooseNodeState()`
+   guarantees that opposite nodes always get different states (hard constraint).
+   Adjacent nodes get alternating states when possible (soft constraint).
+   The number of states needed equals the maximum clique size among opposite
+   groups, which is at most the number of patches (typically 2).
+
+2. **Union-Find invariant**: `createPatch()` throws `std::runtime_error` if
+   more than 2 patches are found (unexpected topology).
+
+3. **Pointer stability**: `createNode()` pre-reserves the nodes vector to
+   prevent reallocation that would invalidate Node pointers stored in
+   `_adjacents` and `_opposite`.
+
+4. **Mutable traversal flags**: `_visited` fields are reset via
+   `PolyConvex::resetMutable()` before each pipeline invocation.

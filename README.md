@@ -199,7 +199,7 @@ docker run --rm labypath <config.json>
 ```
 
 The Docker image:
-1. Builds the C++ project and runs all C++ tests (211 tests)
+1. Builds the C++ project and runs all C++ tests (233 tests)
 2. Installs Python dependencies and runs Python tests (protobuf + watcher tests)
 3. Produces a minimal runtime image with both the C++ binary and the Python GUI
 
@@ -295,7 +295,7 @@ LabyPath/
 │   ├── flatteningOverlap/      # Overlap resolution & path merging (see README.md)
 │   ├── agg/                    # Anti-aliased graphics primitives
 │   └── protoc/                 # Generated Protobuf code
-├── tests/                      # Google Test unit tests (22 files, 211 tests)
+├── tests/                      # Google Test unit tests (22 files, 233 tests)
 ├── config.json                 # Example noise configuration
 └── config.txt                  # Example protobuf-text configuration
 
@@ -313,7 +313,7 @@ LabyPython/
 
 ## Test coverage
 
-### C++ tests (211 tests across 22 test files)
+### C++ tests (233 tests across 24 test files)
 
 | Test file | Module(s) tested | Tests |
 |-----------|-----------------|-------|
@@ -339,6 +339,8 @@ LabyPython/
 | `test_poissongenerator` | PoissonGenerator (sPoint, sGrid) | 14 |
 | `test_flatteningoverlap` | Intersection, Node, StateSelect, NodeQueue, Family | 21 |
 | `test_smoke_svg` | SVG Loader, SkeletonGrid, GraphicRendering, AlternateRoute | 20 |
+| `test_polyconvex` | PolyConvex construction, adjacency, intersection, reset | 13 |
+| `test_graph_coloring` | Graph coloring, StateSelect, NodeOverlap sort, Family | 9 |
 
 **Coverage summary:** 22 of 54 functional source modules have unit tests (~41%).
 The `test_smoke_svg` qualification tests validate end-to-end geometric correctness:

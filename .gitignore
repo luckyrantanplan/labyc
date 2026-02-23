@@ -10,10 +10,14 @@ __pycache__/
 
 # CMake build artifacts
 build/
+_build/
+*/_build/
 cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
 compile_commands.json
+*.a
+*.o
 
 # IDE – Eclipse / CDT / PyDev
 .project

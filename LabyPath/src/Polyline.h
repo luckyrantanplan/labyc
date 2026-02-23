@@ -27,12 +27,12 @@ struct Polyline {
     Polyline() {
     }
 
-    Polyline(const int32_t id, const std::vector<Point_2>& pts) :
-            id { id }, points { pts } {
+    Polyline(const int32_t polyId, const std::vector<Point_2>& pts) :
+            id { polyId }, points { pts } {
     }
 
-    explicit Polyline(const int32_t id) :
-            id { id } {
+    explicit Polyline(const int32_t polyId) :
+            id { polyId } {
     }
 
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) :

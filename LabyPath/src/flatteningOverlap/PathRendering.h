@@ -65,6 +65,8 @@ private:
                                  std::unordered_set<Intersection> intersectOnSinglePiece, const std::vector<PolyConvex>& polyConvexList);
 
     bool do_intersect(Intersection& ai, Intersection& bi, const std::vector<PolyConvex>& polyConvexList);
+
+    int32_t _nextNodeId = 0; ///< Counter for assigning unique node IDs (replaces former static variable).
 };
 
 } /* namespace laby */
