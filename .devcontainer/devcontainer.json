@@ -13,7 +13,7 @@
                 "ms-python.python",
                 "ms-python.debugpy",
                 "xaver.clang-format",
-                "llvm-vs-code-extensions.vscode-clangd",
+
                 "bierner.markdown-mermaid",
                 "ms-azuretools.vscode-docker"
             ],

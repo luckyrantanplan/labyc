@@ -195,7 +195,7 @@ The project includes a complete **Dev Container** setup so all compilation, test
 
 ### Quick start
 
-1. Install [VS Code](https://code.visualstudio.com/) and the **Remote - Containers** extension.
+1. Install [VS Code](https://code.visualstudio.com/) and the **Dev Containers** extension.
 2. Open this repository in VS Code.
 3. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
 4. The container builds automatically with GCC 14, CMake, CGAL, FFTW3, GDB, clang-tidy, Python 3, PyQt6.
@@ -268,7 +268,7 @@ docker run --rm labypath <config.json>
 ```
 
 The production Docker image:
-1. Builds the C++ project and runs all 233 C++ tests
+1. Builds the C++ project and runs the full Google Test suite
 2. Installs Python dependencies and runs Python tests (protobuf + watcher tests)
 3. Produces a minimal runtime image with the C++ binary and the Python GUI
 
