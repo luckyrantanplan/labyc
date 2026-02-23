@@ -8,6 +8,7 @@
 #ifndef BASIC_NUMERICRANGE_H_
 #define BASIC_NUMERICRANGE_H_
 
+#include <cmath>
 #include <cstdint>
 #include <optional>
 
@@ -34,15 +35,15 @@ public:
         return *this;
     }
 
-    bool operator !=(const NumericRangeIterator& it) {
+    bool operator !=(const NumericRangeIterator& it) const {
         return i != it.i || _range != it._range;
     }
 
-    bool operator ==(const NumericRangeIterator& it) {
+    bool operator ==(const NumericRangeIterator& it) const {
         return i == it.i && _range == it._range;
     }
 
-    T operator *() {
+    T operator *() const {
         return _range->getValue(i);
 
     }
@@ -65,23 +66,21 @@ public:
 
     NumericRange(T&& begin, T&& end, T&& step) {
         _begin = begin;
-        T diff = (end - begin) / step;
-        _end = static_cast<int32_t>(diff) + 1;
+        _end = computeEnd(begin, end, step);
         _step = step;
     }
 
     NumericRange(const T& begin, const T& end, const T& step) {
         _begin = begin;
-        T diff = (end - begin) / step;
-        _end = static_cast<int32_t>(diff) + 1;
+        _end = computeEnd(begin, end, step);
         _step = step;
     }
 
-    NumericRangeIterator<T> begin() {
+    NumericRangeIterator<T> begin() const {
         return NumericRangeIterator<T> { 0, *this };
     }
 
-    NumericRangeIterator<T> end() {
+    NumericRangeIterator<T> end() const {
         return NumericRangeIterator<T> { _end, *this };
     }
 
@@ -90,6 +89,16 @@ public:
     }
 
 private:
+    /// Compute the number of steps, using std::lround for floating-point types
+    /// to avoid truncation issues (e.g., 4.0/0.5 = 7.9999... → 7 instead of 8).
+    static int32_t computeEnd(const T& begin, const T& end, const T& step) {
+        if constexpr (std::is_floating_point_v<T>) {
+            return static_cast<int32_t>(std::lround((end - begin) / step)) + 1;
+        } else {
+            return static_cast<int32_t>((end - begin) / step) + 1;
+        }
+    }
+
     T _begin;
     int32_t _end;
     T _step;

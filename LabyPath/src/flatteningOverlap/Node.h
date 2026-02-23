@@ -43,6 +43,7 @@
 #ifndef NODE_H_
 #define NODE_H_
 
+#include <algorithm>
 #include <cstdint>
 #include <cstddef>
 #include <iostream>
@@ -113,12 +114,8 @@ public:
 
     /// Returns true if any opposite node has been assigned a state (!= -1).
     bool haveOppositeState() const {
-        for (Node* n : _opposite) {
-            if (n->_state != -1) {
-                return true;
-            }
-        }
-        return false;
+        return std::any_of(_opposite.begin(), _opposite.end(),
+                           [](const Node* n) { return n->_state != -1; });
     }
 };
 

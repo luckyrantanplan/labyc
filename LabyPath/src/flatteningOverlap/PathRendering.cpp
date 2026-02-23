@@ -299,6 +299,9 @@ void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
             std::priority_queue<NodeQueue> queue;
             queue.emplace(beginNode);
             while (!queue.empty()) {
+                // Safe: NodeQueue stores a Node* pointer into the `nodes` vector,
+                // so queue.pop() destroys the NodeQueue wrapper but the referenced
+                // Node remains valid for the rest of the loop body.
                 Node& node = queue.top().node();
                 queue.pop();
                 int32_t state = node._state;

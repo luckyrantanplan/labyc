@@ -349,6 +349,9 @@ bool Routing::findRoute(Net & net) {
     int32_t priority_number = 0;
     bool solved = false;
     while (!queue.empty()) {
+        // Safe: the pairing heap stores QueueElement* pointers into edgesQList,
+        // so queue.pop() removes the pointer from the heap but the QueueElement
+        // object in edgesQList remains valid for the rest of the loop body.
         QueueElement & topEle = *queue.top();
 
         Vertex& vertex = topEle._vertex;

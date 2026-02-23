@@ -220,6 +220,7 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_polyconvex.cpp
         tests/test_graph_coloring.cpp
         tests/test_smoke_svg.cpp
+        tests/test_iterators.cpp
     )
 
     target_link_libraries(labypath_tests

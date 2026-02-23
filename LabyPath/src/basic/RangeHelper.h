@@ -36,7 +36,7 @@ public:
         return start == it.start && circulator == it.circulator;
     }
 
-    const typename T::reference operator *() {
+    const typename T::reference operator *() const {
         return *circulator;
 
     }
