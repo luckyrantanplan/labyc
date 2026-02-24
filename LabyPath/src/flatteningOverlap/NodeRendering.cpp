@@ -89,7 +89,9 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
 
                 std::unordered_set<int32_t>& polygonsId = face.data();
                 if (polygonsId.size() > 1 && !face.is_unbounded()) {
-                    int32_t index = *std::min_element(polygonsId.begin(), polygonsId.end());
+                    auto minIt = std::min_element(polygonsId.begin(), polygonsId.end());
+                    if (minIt == polygonsId.end()) { continue; }  // defensive: set is non-empty (size>1)
+                    int32_t index = *minIt;
                     for (HalfedgeNode& he : RangeHelper::make(face.outer_ccb())) {
                         if (testSeg(index, he)) {
                             oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));

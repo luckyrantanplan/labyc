@@ -46,6 +46,15 @@ find_package(CGAL REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Protobuf REQUIRED)
 
+# Mark CGAL and Boost as SYSTEM so their headers don't trigger our strict
+# warnings (e.g. -Wnull-dereference false positives in CGAL's In_place_list.h).
+# Requires CMake ≥ 3.25 for the SYSTEM property on imported targets.
+# CGAL::CGAL is an ALIAS of the underlying CGAL target; use the real name.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.25")
+    set_target_properties(CGAL       PROPERTIES SYSTEM TRUE)
+    set_target_properties(Boost::boost PROPERTIES SYSTEM TRUE)
+endif()
+
 # FFTW3 (optional – needed for noise generation)
 find_library(FFTW3_LIBRARY NAMES fftw3)
 find_path(FFTW3_INCLUDE_DIR NAMES fftw3.h)
@@ -156,9 +165,9 @@ target_compile_options(labypath_lib PRIVATE ${LABYPATH_WARNING_FLAGS})
 target_include_directories(labypath_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-    SYSTEM PUBLIC
-        ${Protobuf_INCLUDE_DIRS}
 )
+# Protobuf include dirs marked as SYSTEM to suppress third-party warnings
+target_include_directories(labypath_lib SYSTEM PUBLIC ${Protobuf_INCLUDE_DIRS})
 
 target_link_libraries(labypath_lib
     PUBLIC
