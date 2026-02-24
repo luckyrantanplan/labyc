@@ -12,7 +12,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ─── Strict Compiler Warnings ────────────────────────────────────────────────
-add_compile_options(
+# Defined as a variable and applied per-target (not globally via
+# add_compile_options) so that system/third-party headers are not
+# affected when they are included as SYSTEM directories.
+set(LABYPATH_WARNING_FLAGS
     -Wall
     -Wextra
     -Wpedantic
@@ -31,7 +34,7 @@ add_compile_options(
 # Treat warnings as errors in CI builds (opt-in)
 option(LABYPATH_WERROR "Treat compiler warnings as errors" OFF)
 if(LABYPATH_WERROR)
-    add_compile_options(-Werror)
+    list(APPEND LABYPATH_WARNING_FLAGS -Werror)
 endif()
 
 # ─── Options ─────────────────────────────────────────────────────────────────
@@ -148,9 +151,12 @@ set(LABYPATH_SOURCES
 
 add_library(labypath_lib STATIC ${LABYPATH_SOURCES})
 
+target_compile_options(labypath_lib PRIVATE ${LABYPATH_WARNING_FLAGS})
+
 target_include_directories(labypath_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+    SYSTEM PUBLIC
         ${Protobuf_INCLUDE_DIRS}
 )
 
@@ -163,7 +169,7 @@ target_link_libraries(labypath_lib
 )
 
 if(FFTW3_FOUND)
-    target_include_directories(labypath_lib PUBLIC ${FFTW3_INCLUDE_DIR})
+    target_include_directories(labypath_lib SYSTEM PUBLIC ${FFTW3_INCLUDE_DIR})
     target_link_libraries(labypath_lib PUBLIC ${FFTW3_LIBRARY})
     target_compile_definitions(labypath_lib PUBLIC LABYPATH_HAS_FFTW3)
 endif()
@@ -222,6 +228,8 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_smoke_svg.cpp
         tests/test_iterators.cpp
     )
+
+    target_compile_options(labypath_tests PRIVATE ${LABYPATH_WARNING_FLAGS})
 
     target_link_libraries(labypath_tests
         PRIVATE

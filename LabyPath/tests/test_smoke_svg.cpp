@@ -72,15 +72,6 @@ static bool allPointsFinite(const laby::Polyline& polyline) {
     return true;
 }
 
-/// Count the total number of points across all polylines in a ribbon.
-static std::size_t totalPointCount(const laby::Ribbon& ribbon) {
-    std::size_t count = 0;
-    for (const auto& line : ribbon.lines()) {
-        count += line.points.size();
-    }
-    return count;
-}
-
 /// Count the number of path or polyline elements in SVG content.
 static std::size_t countSvgPathElements(const std::string& content) {
     std::size_t count = 0;

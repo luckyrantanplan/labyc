@@ -116,7 +116,7 @@ void SkeletonOffset::create_offset(const basic::Arrangement_2Node& arr3, double 
     }
 }
 void SkeletonOffset::addToSegmentsList(const IntersectType& result, bool& winding, std::vector<Kernel::Segment_2>& result2, Kernel::Point_2& last_point) {
-    for (const Kernel::Point_2 s : result) {
+    for (const Kernel::Point_2& s : result) {
         if (winding) {
             result2.emplace_back(last_point, s);
         }
