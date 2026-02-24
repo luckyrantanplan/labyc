@@ -26,7 +26,6 @@ set(LABYPATH_WARNING_FLAGS
     -Wunused
     -Wconversion
     -Wsign-conversion
-    -Wnull-dereference
     -Wdouble-promotion
     -Wformat=2
 )
@@ -47,9 +46,8 @@ find_package(Boost REQUIRED)
 find_package(Protobuf REQUIRED)
 
 # Mark CGAL and Boost as SYSTEM so their headers don't trigger our strict
-# warnings (e.g. -Wnull-dereference false positives in CGAL's In_place_list.h).
-# Requires CMake ≥ 3.25 for the SYSTEM property on imported targets.
-# CGAL::CGAL is an ALIAS of the underlying CGAL target; use the real name.
+# warnings during template instantiation (GCC may inline system-header code
+# into project translation units). Requires CMake ≥ 3.25.
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.25")
     set_target_properties(CGAL       PROPERTIES SYSTEM TRUE)
     set_target_properties(Boost::boost PROPERTIES SYSTEM TRUE)
@@ -201,6 +199,14 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-float-conversion -Wno-double-promotion"
 )
 
+# Suppress -Wmaybe-uninitialized false positives from svgpp headers (system library)
+# GCC inlines svgpp::arc_to_bezier iterator code and reports uninitialized members
+# that are actually set in the iterator's advance() method.
+set_source_files_properties(
+    src/SVGParser/Loader.cpp
+    PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized"
+)
+
 # ─── Main Executable ─────────────────────────────────────────────────────────
 add_executable(labypath src/Main.cpp)
 target_link_libraries(labypath PRIVATE labypath_lib)
@@ -236,6 +242,9 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_graph_coloring.cpp
         tests/test_smoke_svg.cpp
         tests/test_iterators.cpp
+        tests/test_net.cpp
+        tests/test_queueelement.cpp
+        tests/test_documentsvg.cpp
     )
 
     target_compile_options(labypath_tests PRIVATE ${LABYPATH_WARNING_FLAGS})

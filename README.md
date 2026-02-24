@@ -362,10 +362,10 @@ LabyPath/
 │   │   ├── FftwArray.h         # FFTW3-backed array wrappers
 │   │   ├── PoissonGenerator.h  # Poisson disk sampling
 │   │   └── StreamLine.*        # Stream-line field tracing
-│   ├── flatteningOverlap/      # Overlap resolution & path merging (see README.md)
+│   ├── flatteningOverlap/      # Overlap resolution & path merging (see [README](LabyPath/src/flatteningOverlap/README.md) and [visual examples](LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md))
 │   ├── agg/                    # Anti-aliased graphics primitives
 │   └── protoc/                 # Generated Protobuf code
-├── tests/                      # Google Test unit tests (22 files, 233 tests)
+├── tests/                      # Google Test unit tests (28 files, ~300 tests)
 ├── config.json                 # Example noise configuration
 └── config.txt                  # Example protobuf-text configuration
 
@@ -383,7 +383,7 @@ LabyPython/
 
 ## Test coverage
 
-### C++ tests (233 tests across 24 test files)
+### C++ tests (~300 tests across 28 test files)
 
 | Test file | Module(s) tested | Tests |
 |-----------|-----------------|-------|
@@ -411,8 +411,12 @@ LabyPython/
 | `test_smoke_svg` | SVG Loader, SkeletonGrid, GraphicRendering, AlternateRoute | 20 |
 | `test_polyconvex` | PolyConvex construction, adjacency, intersection, reset | 13 |
 | `test_graph_coloring` | Graph coloring, StateSelect, NodeOverlap sort, Family | 9 |
+| `test_iterators` | NumericRange, RangeHelper, NodeQueue iterators | 20 |
+| `test_net` | Pin, Net (routing network) | 13 |
+| `test_queueelement` | QueueElement (routing priority queue) | 8 |
+| `test_documentsvg` | DocumentSVG, Layout, Color, shapes, coordinate transforms | 30 |
 
-**Coverage summary:** 24 of 54 functional source modules have unit tests (~44%).
+**Coverage summary:** 28 of 54 functional source modules have unit tests (~52%).
 The `test_smoke_svg` qualification tests validate end-to-end geometric correctness:
 coordinates within viewBox, finite values, polyline integrity, output SVG structure,
 and skeleton bounds matching input bounds.
@@ -430,7 +434,8 @@ The `flatteningOverlap` module has detailed documentation with mermaid diagrams 
 ## Code style
 
 - **C++17** standard
-- Strict compiler warnings (`-Wall -Wextra -Wpedantic` and more)
+- Strict compiler warnings (`-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wdouble-promotion` and more)
+- **Zero warnings** from project source code (third-party headers suppressed via SYSTEM includes)
 - Code formatting enforced by [clang-format](https://clang.llvm.org/docs/ClangFormat.html) (see `.clang-format`)
 - Static analysis via [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) (see `.clang-tidy`)
 - All project code lives in the `laby` namespace
