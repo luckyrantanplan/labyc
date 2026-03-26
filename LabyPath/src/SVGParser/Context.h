@@ -28,7 +28,7 @@ public:
     void on_exit_element() {
     }
 
-    void transform_matrix(const boost::array<double, 6> & matrix) {
+    void transform_matrix(const boost::array<double, 6> & /*matrix*/) {
     }
 
     // Viewport Events Policy

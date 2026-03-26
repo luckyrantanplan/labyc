@@ -15,9 +15,9 @@ class HalfedgeRangeIterator {
 
 public:
 
-    HalfedgeRangeIterator(bool start, T& circulator) :
-            start { start }, //
-            circulator { circulator } {
+    HalfedgeRangeIterator(bool isStart, T& circ) :
+            start { isStart }, //
+            circulator { circ } {
 
     }
     HalfedgeRangeIterator(const HalfedgeRangeIterator&) = default;
@@ -36,7 +36,7 @@ public:
         return start == it.start && circulator == it.circulator;
     }
 
-    const typename T::reference operator *() {
+    const typename T::reference operator *() const {
         return *circulator;
 
     }
@@ -58,12 +58,12 @@ class HalfedgeRange {
 
 public:
 
-    explicit HalfedgeRange(T&& circulator) :
-            circulator { circulator }, ending { circulator } {
+    explicit HalfedgeRange(T&& circ) :
+            circulator { circ }, ending { circ } {
     }
 
-    explicit HalfedgeRange(const T& circulator) :
-            circulator { circulator }, ending { circulator } {
+    explicit HalfedgeRange(const T& circ) :
+            circulator { circ }, ending { circ } {
     }
 
     HalfedgeRangeIterator<T> begin() {

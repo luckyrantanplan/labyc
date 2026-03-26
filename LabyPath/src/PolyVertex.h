@@ -8,7 +8,7 @@
 #ifndef POLYVERTEX_H_
 #define POLYVERTEX_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 

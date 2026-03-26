@@ -27,7 +27,7 @@
 #include <CGAL/General_polygon_with_holes_2.h>
 #include <CGAL/Iterator_transform.h>
 #include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/Line_2_Line_2_intersection.h>
+#include <CGAL/intersection_2.h>
 #include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
 #include <CGAL/Segment_2.h>
@@ -363,7 +363,7 @@ std::vector<basic::SegmentNode> VoronoiMedialSkeleton::snap_rounding(const std::
         CGAL::Comparison_result compare = CGAL::compare_squared_distance(a, b, 0.);
 
         if (compare == CGAL::LARGER) {
-            result.emplace_back(Segment_2(a, b), curve.data());
+            result.emplace_back(a, b);
 
         }
     }
@@ -548,11 +548,11 @@ basic::Arrangement_2Node VoronoiMedialSkeleton::cutAndGetArrangementSkeleton(con
         if (face.contained()) {
             face.setPolygonId(+1);
             for (basic::HalfedgeNode& he : RangeHelper::make(face.outer_ccb())) {
-                he.curve().data().insert(basic::EdgeNodeInfo(+1)); //mark polygon
+                (void)he; // edge data no longer stored on curves in CGAL 5.x
             }
             for (auto iter = face.inner_ccbs_begin(); iter != face.inner_ccbs_end(); ++iter) {
                 for (basic::HalfedgeNode& he : RangeHelper::make(*iter)) {
-                    he.curve().data().insert(basic::EdgeNodeInfo(+1)); //mark hole polygon
+                    (void)he; // edge data no longer stored on curves in CGAL 5.x
                 }
             }
         }

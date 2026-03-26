@@ -8,7 +8,7 @@
 #ifndef ALTERNAROUTE_STROKEARRANGEMENT_H_
 #define ALTERNAROUTE_STROKEARRANGEMENT_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/Arr_curve_data_traits_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>

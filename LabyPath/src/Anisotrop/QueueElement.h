@@ -8,7 +8,7 @@
 #ifndef ANISOTROP_QUEUEELEMENT_H_
 #define ANISOTROP_QUEUEELEMENT_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/pairing_heap.hpp>
 #include <boost/heap/policies.hpp>

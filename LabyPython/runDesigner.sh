@@ -1,2 +1,2 @@
-qtchooser -run-tool=designer -qt=5 MazeCreator.ui
-pyuic5  MazeCreator.ui >| src/LabyPython/mazeCreator.py
+qtchooser -run-tool=designer -qt=6 MazeCreator.ui
+pyuic6  MazeCreator.ui >| src/LabyPython/mazeCreator.py

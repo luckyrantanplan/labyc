@@ -7,7 +7,7 @@
 
 #include "Ribbon.h"
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <CGAL/Arr_dcel_base.h>
 #include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
@@ -21,7 +21,7 @@
 #include <CGAL/Point_2.h>
 #include <CGAL/Point_set_2.h>
 #include <CGAL/Triangulation_vertex_base_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <map>
 #include <queue>
 #include <utility>
@@ -49,10 +49,10 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
         if (!pl.points.empty()) {
 
             Point_2 c_previous = pl.points.at(0);
-            for (uint32_t i = 1; i < pl.points.size(); ++i) {
+            for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 Segment_2 s { c_previous, c };
-                std::size_t coordinate = pl.number;
+                std::size_t coordinate = static_cast<std::size_t>(pl.id);
                 listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
                 c_previous = c;
             }
@@ -82,7 +82,7 @@ std::vector<Kernel::Segment_2> Ribbon::get_segments() const {
         if (!pl.points.empty()) {
 
             Point_2 c_previous = pl.points.at(0);
-            for (uint32_t i = 1; i < pl.points.size(); ++i) {
+            for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 if (c_previous == c) {
                     std::cout << "segment is degenerate !!" << std::endl;
@@ -123,22 +123,22 @@ Arrangement_2 Ribbon::createArr() const {
 }
 
 std::vector<std::size_t> Ribbon::middleOrder(std::size_t min, std::size_t max) const {
-    std::queue<Ele> queue;
+    std::queue<IndexRange> queue;
     std::vector<std::size_t> result;
     result.reserve(max - min);
-    queue.push(Ele(min, max));
+    queue.push(IndexRange(min, max));
 
     while (!queue.empty()) {
 
-        Ele e = queue.front();
+        IndexRange range = queue.front();
         queue.pop();
-        std::size_t middle = (e.min + e.max) / 2;
+        std::size_t middle = (range.min + range.max) / 2;
         result.push_back(middle);
-        if (middle != e.min) {
-            queue.push( { e.min, middle - 1 });
+        if (middle != range.min) {
+            queue.push( { range.min, middle - 1 });
         }
-        if (middle != e.max) {
-            queue.push( { middle + 1, e.max });
+        if (middle != range.max) {
+            queue.push( { middle + 1, range.max });
         }
     }
     return result;
@@ -163,7 +163,7 @@ void Ribbon::order_lines() {
     });
 
     for (std::size_t i = 0; i < _lines.size(); ++i) {
-        _lines.at(i).number = i;
+        _lines.at(i).id = static_cast<int32_t>(i);
     }
 }
 
@@ -178,7 +178,7 @@ Ribbon Ribbon::give_space(const double& space, const double& subdivision_factor,
 Ribbon Ribbon::subdived(const double& thickness) const {
     Ribbon result(_fill_color);
     for (const Polyline& polyline : _lines) {
-        result._lines.emplace_back(polyline.number);
+        result._lines.emplace_back(polyline.id);
         std::vector<Kernel::Point_2>& pt_list = result._lines.back().points;
         pt_list.emplace_back(polyline.points.front());
         for (std::size_t i = 1; i < polyline.points.size(); ++i) {
@@ -188,8 +188,8 @@ Ribbon Ribbon::subdived(const double& thickness) const {
             if (l > thickness) {
                 double weight = l / thickness;
 
-                for (double i = 1; i < weight; ++i) {
-                    const Kernel::Point_2 test = CGAL::barycenter(b, i / weight, a);
+                for (double j = 1; j < weight; ++j) {
+                    const Kernel::Point_2 test = CGAL::barycenter(b, j / weight, a);
                     pt_list.emplace_back(test);
                 }
             }
@@ -211,7 +211,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
     std::map<int32_t, std::vector<Polyline>> flattenRibbonMap;
 
     for (const Polyline& polyline : _lines) {
-        std::vector<Polyline>& p = flattenRibbonMap[polyline.number];
+        std::vector<Polyline>& p = flattenRibbonMap[polyline.id];
         p.push_back(polyline);
     }
 
@@ -236,7 +236,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
                         CGAL::compare_squared_distance(vh->point(), p, space * space) != CGAL::LARGER) {
 
                     if (isLongEnough(coarse, minimal_length)) {
-                        coarseq.lines().push_back(Polyline { polyline.number, coarse });
+                        coarseq.lines().push_back(Polyline { polyline.id, coarse });
                         pointSet.insert(coarse.begin(), coarse.end());
                     }
                     coarse.clear();
@@ -246,7 +246,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
             }
             if (isLongEnough(coarse, minimal_length)) {
 
-                coarseq.lines().push_back(Polyline { polyline.number, coarse });
+                coarseq.lines().push_back(Polyline { polyline.id, coarse });
                 pointSet.insert(coarse.begin(), coarse.end());
             }
         }

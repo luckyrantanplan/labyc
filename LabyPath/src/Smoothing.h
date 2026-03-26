@@ -8,7 +8,7 @@
 #ifndef SMOOTHING_H_
 #define SMOOTHING_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 
 #include "Polyline.h"
 
@@ -21,7 +21,7 @@ public:
     static Polyline getSmootherChaikin(const Polyline& line, double cuttingDist);
 
 private:
-    static void chaitKinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl);
+    static void chaikinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl);
 };
 
 } /* namespace laby */

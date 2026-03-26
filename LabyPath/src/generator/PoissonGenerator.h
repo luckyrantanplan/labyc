@@ -33,7 +33,7 @@
  *		1.0		May  6, 2014
  */
 
-#include <bits/move.h>
+#include <utility>
 #include <CGAL/Bbox_2.h>
 #include <algorithm>
 #include <cmath>
@@ -64,9 +64,9 @@ struct sPoint {
     }
     //
     bool IsInCircle() const {
-        double fx = x - 0.5f;
-        double fy = y - 0.5f;
-        return (fx * fx + fy * fy) <= 0.25f;
+        double fx = x - 0.5;
+        double fy = y - 0.5;
+        return (fx * fx + fy * fy) <= 0.25;
     }
 };
 
@@ -88,15 +88,15 @@ struct sGrid {
     }
     sGrid(int W, int H, double CellSize) :
             m_W(W), m_H(H), m_CellSize(CellSize) {
-        m_Grid.resize(m_W);
+        m_Grid.resize(static_cast<std::size_t>(m_W));
 
         for (auto i = m_Grid.begin(); i != m_Grid.end(); i++) {
-            i->resize(m_H);
+            i->resize(static_cast<std::size_t>(m_H));
         }
     }
     void Insert(const sPoint& P) {
         sGridPoint G = ImageToGrid(P, m_CellSize);
-        m_Grid[G.x][G.y] = P;
+        m_Grid[static_cast<std::size_t>(G.x)][static_cast<std::size_t>(G.y)] = P;
     }
     bool IsInNeighbourhood(const sPoint& Point, double sqMinDist, double CellSize) {
         sGridPoint G = ImageToGrid(Point, CellSize);
@@ -109,7 +109,7 @@ struct sGrid {
             if (i >= 0 && i < m_W) {
                 for (int j = G.y - D; j < G.y + D; ++j) {
                     if (j >= 0 && j < m_H) {
-                        const sPoint& P = m_Grid[i][j];
+                        const sPoint& P = m_Grid[static_cast<std::size_t>(i)][static_cast<std::size_t>(j)];
 
                         if (P.m_Valid && GetSqDistance(P, Point) < sqMinDist) {
                             return true;
@@ -159,14 +159,14 @@ public:
      MinDist - minimal distance estimator, use negative value for default
      **/
 
-    static std::vector<sPoint> generate(size_t NumPoints, int NewPointsCount = 30, bool Circle = true, double MinDist = -1.0f) {
+    static std::vector<sPoint> generate(size_t NumPoints, int NewPointsCount = 30, bool Circle = true, double MinDist = -1.0) {
 
         laby::basic::RandomUniDist randomDouble(0.0, 1.0, 2);
 
         std::cout << " NumPoints " << NumPoints << std::endl;
-        if (MinDist < 0.0f) {
+        if (MinDist < 0.0) {
             //optimal density in circle packing is about π⁄√12 or 90.69
-            MinDist = sqrt(6.3 / (10. * NumPoints));
+            MinDist = sqrt(6.3 / (10. * static_cast<double>(NumPoints)));
         }
 
         double sqMinDist = MinDist * MinDist;
@@ -177,8 +177,8 @@ public:
         // create the grid
         double CellSize = MinDist / M_SQRT2;
 
-        int GridW = (int) ceil(1.0f / CellSize);
-        int GridH = (int) ceil(1.0f / CellSize);
+        int GridW = static_cast<int>(ceil(1.0 / CellSize));
+        int GridH = static_cast<int>(ceil(1.0 / CellSize));
 
         sGrid Grid(GridW, GridH, CellSize);
 
@@ -237,7 +237,7 @@ public:
         double maxLength = std::max(w, h);
         double ratio = maxLength * maxLength / (w * h);
 
-        std::vector<sPoint> Points = generate(ratio * number_of_point + 1, 30, false);
+        std::vector<sPoint> Points = generate(static_cast<std::size_t>(ratio * static_cast<double>(number_of_point) + 1), 30, false);
 
         std::vector<std::complex<double>> result;
         for (const sPoint & pt : Points) {

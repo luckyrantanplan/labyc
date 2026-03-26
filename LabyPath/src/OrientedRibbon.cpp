@@ -33,9 +33,13 @@ void OrientedRibbon::addCW(const Kernel::Segment_2& segment) {
 }
 
 void OrientedRibbon::addCCW(const Kernel::Segment_2& segment) {
+    // CCW segments have inverted left/right classification compared to CW
+    if (isRight(segment.source(), segment.target())) {
+        _left.emplace_back(segment);
+        return;
+    }
 
-    addCW(segment);
-
+    _right.emplace_back(segment);
 }
 
 Ribbon OrientedRibbon::createOrientedRibbon() const {
@@ -53,9 +57,9 @@ Ribbon OrientedRibbon::createOrientedRibbon() const {
 
     for (Polyline& pl : result.lines()) {
 
-        if (pl.number == 1) {
+        if (pl.id == 1) {
             std::reverse(pl.points.begin(), pl.points.end());
-            pl.number = -1;
+            pl.id = -1;
         }
     }
 
@@ -72,16 +76,16 @@ void OrientedRibbon::setPolylineOrientation(const Halfedge& he, Polyline& poly) 
     if (he.curve().data().direction() == 1) {
 
         if (isRight(he.source()->point(), he.target()->point())) {
-            poly.number = +1;
+            poly.id = +1;
         } else {
-            poly.number = -1;
+            poly.id = -1;
         }
     } else {
 
         if (isRight(he.source()->point(), he.target()->point())) {
-            poly.number = -1;
+            poly.id = -1;
         } else {
-            poly.number = +1;
+            poly.id = +1;
         }
     }
 }

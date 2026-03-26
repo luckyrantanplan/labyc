@@ -41,10 +41,10 @@ inline std::string emptyElemEnd() {
 template<typename T>
 class optional {
 public:
-    optional<T>(T const & type) :
-            valid(true), type(type) {
+    optional(T const & val) :
+            valid(true), type(val) {
     }
-    optional<T>() :
+    optional() :
             valid(false), type(T()) {
     }
     T * operator->() {
@@ -64,8 +64,8 @@ private:
 };
 
 struct Dimensions {
-    Dimensions(double width, double height) :
-            width(width), height(height) {
+    Dimensions(double w, double h) :
+            width(w), height(h) {
     }
     Dimensions(double combined = 0) :
             width(combined), height(combined) {
@@ -90,8 +90,8 @@ struct Layout {
         TopLeft, BottomLeft, TopRight, BottomRight
     };
 
-    Layout(Dimensions const & dimensions = Dimensions(400, 300), Origin origin = BottomLeft, double scale = 1, Point const & origin_offset = Point(0, 0)) :
-            dimensions(dimensions), scale(scale), origin(origin), origin_offset(origin_offset) {
+    Layout(Dimensions const & dims = Dimensions(400, 300), Origin orig = BottomLeft, double sc = 1, Point const & orig_offset = Point(0, 0)) :
+            dimensions(dims), scale(sc), origin(orig), origin_offset(orig_offset) {
     }
     Dimensions dimensions;
     double scale;
@@ -218,11 +218,11 @@ private:
 
 class Fill: public Serializeable {
 public:
-    Fill(Color::Defaults color) :
-            color(color) {
+    Fill(Color::Defaults col) :
+            color(col) {
     }
-    Fill(Color color = Color::Transparent) :
-            color(color) {
+    Fill(Color col = Color::Transparent) :
+            color(col) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -235,8 +235,8 @@ private:
 
 class Stroke: public Serializeable {
 public:
-    Stroke(double width = -1, Color color = Color::Transparent, bool nonScalingStroke = false) :
-            width(width), color(color), nonScaling(nonScalingStroke) {
+    Stroke(double w = -1, Color col = Color::Transparent, bool nonScalingStroke = false) :
+            width(w), color(col), nonScaling(nonScalingStroke) {
     }
     std::string toString(Layout const & layout) const {
         // If stroke width is invalid.
@@ -259,8 +259,8 @@ private:
 
 class Font: public Serializeable {
 public:
-    Font(double size = 12, std::string const & family = "Verdana") :
-            size(size), family(family) {
+    Font(double sz = 12, std::string const & fam = "Verdana") :
+            size(sz), family(fam) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -274,8 +274,8 @@ private:
 
 class Shape: public Serializeable {
 public:
-    Shape(Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            fill(fill), stroke(stroke) {
+    Shape(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            fill(f), stroke(s) {
     }
     virtual ~Shape() {
     }
@@ -296,8 +296,8 @@ inline std::string vectorToString(std::vector<T> collection, Layout const & layo
 
 class Circle: public Shape {
 public:
-    Circle(Point const & center, double diameter, Fill const & fill, Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke), center(center), radius(diameter / 2) {
+    Circle(Point const & c, double diameter, Fill const & f, Stroke const & s = Stroke()) :
+            Shape(f, s), center(c), radius(diameter / 2) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -305,8 +305,8 @@ public:
                 << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
-        center += offset;
+    void offset(const laby::Kernel::Vector_2 & off) {
+        center += off;
 
     }
 private:
@@ -316,8 +316,8 @@ private:
 
 class Elipse: public Shape {
 public:
-    Elipse(Point const & center, double width, double height, Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke), center(center), radius_width(width / 2), radius_height(height / 2) {
+    Elipse(Point const & c, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s), center(c), radius_width(w / 2), radius_height(h / 2) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -325,9 +325,9 @@ public:
                 << attribute("ry", translateScale(radius_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
+    void offset(const laby::Kernel::Vector_2 & off) {
 
-        center += offset;
+        center += off;
     }
 private:
     Point center;
@@ -337,8 +337,8 @@ private:
 
 class Rectangle: public Shape {
 public:
-    Rectangle(Point const & edge, double width, double height, Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke), edge(edge), width(width), height(height) {
+    Rectangle(Point const & e, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s), edge(e), width(w), height(h) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -346,9 +346,9 @@ public:
                 << attribute("height", translateScale(height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
+    void offset(const laby::Kernel::Vector_2 & off) {
 
-        edge += offset;
+        edge += off;
     }
 private:
     Point edge;
@@ -358,8 +358,8 @@ private:
 
 class Line: public Shape {
 public:
-    Line(Point const & start_point, Point const & end_point, Stroke const & stroke = Stroke()) :
-            Shape(Fill(), stroke), start_point(start_point), end_point(end_point) {
+    Line(Point const & sp, Point const & ep, Stroke const & s = Stroke()) :
+            Shape(Fill(), s), start_point(sp), end_point(ep) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -367,9 +367,9 @@ public:
                 << attribute("y2", translateY(end_point, layout)) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
-        start_point += offset;
-        end_point += offset;
+    void offset(const laby::Kernel::Vector_2 & off) {
+        start_point += off;
+        end_point += off;
     }
 private:
     Point start_point;
@@ -378,11 +378,11 @@ private:
 
 class Polygon: public Shape {
 public:
-    Polygon(Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke) {
+    Polygon(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s) {
     }
-    Polygon(Stroke const & stroke = Stroke()) :
-            Shape(Color::Transparent, stroke) {
+    Polygon(Stroke const & s = Stroke()) :
+            Shape(Color::Transparent, s) {
     }
     Polygon & operator<<(Point const & point) {
         points.push_back(point);
@@ -400,10 +400,10 @@ public:
         ss << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
+    void offset(const laby::Kernel::Vector_2 & off) {
         for (unsigned i = 0; i < points.size(); ++i) {
 
-            points[i] += offset;
+            points[i] += off;
         }
     }
 private:
@@ -412,12 +412,12 @@ private:
 
 class Path: public Shape {
 public:
-    Path(Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke) {
+    Path(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s) {
         startNewSubPath();
     }
-    Path(Stroke const & stroke = Stroke()) :
-            Shape(Color::Transparent, stroke) {
+    Path(Stroke const & s = Stroke()) :
+            Shape(Color::Transparent, s) {
         startNewSubPath();
     }
     Path & operator<<(Point const & point) {
@@ -458,10 +458,10 @@ public:
         return ss.str();
     }
 
-    void offset(const laby::Kernel::Vector_2 & offset) {
+    void offset(const laby::Kernel::Vector_2 & off) {
         for (auto& subpath : paths)
             for (auto& point : subpath.points) {
-                point = point + offset;
+                point = point + off;
 
             }
     }
@@ -471,14 +471,14 @@ private:
 
 class Polyline: public Shape {
 public:
-    Polyline(Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke) {
+    Polyline(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s) {
     }
-    Polyline(Stroke const & stroke = Stroke()) :
-            Shape(Color::Transparent, stroke) {
+    Polyline(Stroke const & s = Stroke()) :
+            Shape(Color::Transparent, s) {
     }
-    Polyline(std::vector<Point> const & points, Fill const & fill = Fill(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke), points(points) {
+    Polyline(std::vector<Point> const & pts, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s), points(pts) {
     }
     Polyline & operator<<(Point const & point) {
         points.push_back(point);
@@ -496,10 +496,10 @@ public:
         ss << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & offset) {
+    void offset(const laby::Kernel::Vector_2 & off) {
         for (unsigned i = 0; i < points.size(); ++i) {
 
-            points[i] = points[i] + offset;
+            points[i] = points[i] + off;
 
         }
     }
@@ -508,8 +508,8 @@ public:
 
 class Text: public Shape {
 public:
-    Text(Point const & origin, std::string const & content, Fill const & fill = Fill(), Font const & font = Font(), Stroke const & stroke = Stroke()) :
-            Shape(fill, stroke), origin(origin), content(content), font(font) {
+    Text(Point const & orig, std::string const & text, Fill const & f = Fill(), Font const & fnt = Font(), Stroke const & s = Stroke()) :
+            Shape(f, s), origin(orig), content(text), font(fnt) {
     }
     std::string toString(Layout const & layout) const {
         std::stringstream ss;
@@ -517,8 +517,8 @@ public:
                 << ">" << content << elemEnd("text");
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 &offset) {
-        origin = origin + offset;
+    void offset(const laby::Kernel::Vector_2 & off) {
+        origin = origin + off;
 
     }
 private:
@@ -529,8 +529,8 @@ private:
 
 class DocumentSVG {
 public:
-    DocumentSVG(std::string const & file_name, Layout layout = Layout()) :
-            file_name(file_name), layout(layout) {
+    DocumentSVG(std::string const & fname, Layout lay = Layout()) :
+            file_name(fname), layout(lay) {
         std::cout << "Document SVG constructed" << std::endl;
     }
 

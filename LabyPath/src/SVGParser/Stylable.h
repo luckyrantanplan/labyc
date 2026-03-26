@@ -147,12 +147,12 @@ public:
     }
 
     template<class IRI>
-    void set(AttributeTag tag, IRI const & iri) {
+    void set(AttributeTag /*tag*/, IRI const & /*iri*/) {
         throw std::runtime_error("Non-local references aren't supported");
     }
 
     template<class IRI>
-    void set(AttributeTag tag, svgpp::tag::iri_fragment, IRI const & fragment) {
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment, IRI const & fragment) {
         paint_ = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
@@ -162,7 +162,7 @@ public:
     }
 
     template<class IRI>
-    void set(AttributeTag tag, svgpp::tag::iri_fragment, IRI const & fragment, svgpp::tag::value::none val) {
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment, IRI const & fragment, svgpp::tag::value::none val) {
         paint_ = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
     }
 
@@ -172,7 +172,7 @@ public:
     }
 
     template<class IRI>
-    void set(AttributeTag tag, svgpp::tag::iri_fragment, IRI const & fragment, svgpp::tag::value::currentColor val) {
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment, IRI const & fragment, svgpp::tag::value::currentColor val) {
         paint_ = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
     }
 
@@ -182,7 +182,7 @@ public:
     }
 
     template<class IRI>
-    void set(AttributeTag tag, svgpp::tag::iri_fragment, IRI const & fragment, color_t val, svgpp::tag::skip_icc_color = svgpp::tag::skip_icc_color()) {
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment, IRI const & fragment, color_t val, svgpp::tag::skip_icc_color = svgpp::tag::skip_icc_color()) {
         paint_ = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
     }
 
@@ -304,11 +304,11 @@ public:
         style().mask_fragment_ = std::string(boost::begin(fragment), boost::end(fragment));
     }
 
-    void set(svgpp::tag::attribute::mask, svgpp::tag::value::none val) {
+    void set(svgpp::tag::attribute::mask, svgpp::tag::value::none /*val*/) {
         style().mask_fragment_.reset();
     }
 
-    void set(svgpp::tag::attribute::mask, svgpp::tag::value::inherit val) {
+    void set(svgpp::tag::attribute::mask, svgpp::tag::value::inherit /*val*/) {
         style().mask_fragment_ = parentStyle_.mask_fragment_;
     }
 
@@ -322,11 +322,11 @@ public:
         style().clip_path_fragment_ = std::string(boost::begin(fragment), boost::end(fragment));
     }
 
-    void set(svgpp::tag::attribute::clip_path, svgpp::tag::value::none val) {
+    void set(svgpp::tag::attribute::clip_path, svgpp::tag::value::none /*val*/) {
         style().clip_path_fragment_.reset();
     }
 
-    void set(svgpp::tag::attribute::clip_path, svgpp::tag::value::inherit val) {
+    void set(svgpp::tag::attribute::clip_path, svgpp::tag::value::inherit /*val*/) {
         style().clip_path_fragment_ = parentStyle_.clip_path_fragment_;
     }
 
@@ -414,7 +414,7 @@ public:
         style().filter_ = std::string(boost::begin(fragment), boost::end(fragment));
     }
 
-    void set(svgpp::tag::attribute::filter, svgpp::tag::value::none val) {
+    void set(svgpp::tag::attribute::filter, svgpp::tag::value::none /*val*/) {
         style().filter_.reset();
     }
 

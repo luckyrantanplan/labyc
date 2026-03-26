@@ -145,11 +145,15 @@ std::vector<Segment_2> SVGShapeToGrid::createOffset(std::vector<CGAL::Polygon_wi
     std::vector<Segment_2> segResult;
     for (double ll = 0.01; ll < 10.; ll += l) {
 
-        std::vector<boost::shared_ptr<CGAL::Polygon_2<Kernel> > > offset_polygons = CGAL::create_offset_polygons_2<CGAL::Polygon_2<Kernel> >(ll, *iss);
+        auto offset_polygons = CGAL::create_offset_polygons_2<CGAL::Polygon_2<InexactK> >(ll, *iss);
         for (const auto& poly_sp : offset_polygons) {
-            const CGAL::Polygon_2<Kernel>& poly = *poly_sp;
-            for (Segment_2 edge : RangeHelper::make(poly.edges_begin(), poly.edges_end())) {
-                segResult.emplace_back(Segment_2(edge.source(), edge.target()));
+            const auto& poly = *poly_sp;
+            for (auto eit = poly.edges_begin(); eit != poly.edges_end(); ++eit) {
+                auto src = *eit;
+                segResult.emplace_back(
+                    Point_2(CGAL::to_double(src.source().x()), CGAL::to_double(src.source().y())),
+                    Point_2(CGAL::to_double(src.target().x()), CGAL::to_double(src.target().y()))
+                );
             }
         }
     }

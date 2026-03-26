@@ -9,7 +9,7 @@
 #include "PoissonGeneratorTest.h"
 
 #include <CGAL/Bbox_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <complex>
 #include <iostream>
 #include <vector>

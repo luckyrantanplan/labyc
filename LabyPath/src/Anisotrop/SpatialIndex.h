@@ -8,7 +8,7 @@
 #ifndef ANISOTROP_SPATIALINDEX_H_
 #define ANISOTROP_SPATIALINDEX_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <boost/geometry.hpp>
 #include <CGAL/Segment_2.h>
 #include <CGAL/Simple_cartesian.h>

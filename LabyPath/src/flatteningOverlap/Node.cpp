@@ -7,6 +7,4 @@
 
 #include "Node.h"
 
-namespace laby {
-
-} /* namespace laby */
+namespace laby {} /* namespace laby */

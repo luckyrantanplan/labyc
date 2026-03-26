@@ -17,9 +17,9 @@
 #include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/squared_distance_2_1.h>
+#include <CGAL/squared_distance_2.h>
 #include <CGAL/Vector_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <cmath>
 
 #include "Net.h"
@@ -110,7 +110,7 @@ bool SpatialIndex::test_is_same_pin(const Halfedge& he, const Net& net) const {
     return false;
 }
 
-bool SpatialIndex::test_pin_proximity(const CGAL::Segment_2<KApprox> seg, const Vertex& vertex, const Net& net, const double& thickness) const {
+bool SpatialIndex::test_pin_proximity(const CGAL::Segment_2<KApprox> seg, const Vertex& vertex, const Net& /*net*/, const double& thickness) const {
     if (vertex.data().getType() == VertexInfo::PIN) {
 
         CGAL::Point_2<KApprox> p1(CGAL::to_double(vertex.point().x()), CGAL::to_double(vertex.point().y()));
@@ -132,7 +132,7 @@ bool SpatialIndex::test_intersection_test(const PolyConvex & pc, const PolyConve
 
 }
 
-bool SpatialIndex::intersection_test(QueueCost& cost, const PolyConvex & pc, const Net& net, const std::unordered_set<int32_t>& nets_target, const CGAL::Segment_2<KApprox>& seg, double thick1,
+bool SpatialIndex::intersection_test(QueueCost& cost, const PolyConvex & /*pc*/, const Net& net, const std::unordered_set<int32_t>& nets_target, const CGAL::Segment_2<KApprox>& seg, double thick1,
         Value const& v) const {
     EASY_FUNCTION();
     const PolyConvex & pc2 = _polyConvexList.at(v.second);

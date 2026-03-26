@@ -24,7 +24,7 @@ typedef rapidxml_ns::xml_node<> const * xml_element_t;
 
 class UseContext: public BaseContext {
 public:
-    UseContext(BaseContext const & parent) {
+    UseContext(BaseContext const & /*parent*/) {
     }
 
     boost::optional<double> const & width() const {
@@ -42,7 +42,7 @@ public:
     }
 
     template<class IRI>
-    void set(svgpp::tag::attribute::xlink::href, IRI const & fragment) {
+    void set(svgpp::tag::attribute::xlink::href, IRI const & /*fragment*/) {
         std::cerr << "External references aren't supported\n";
     }
 

@@ -66,7 +66,7 @@ void ShapeContext::path_quadratic_bezier_to(double x1, double y1, double x, doub
 
 }
 
-void ShapeContext::path_elliptical_arc_to(double rx, double ry, double x_axis_rotation, bool large_arc_flag, bool sweep_flag, double x, double y, svgpp::tag::coordinate::absolute) {
+void ShapeContext::path_elliptical_arc_to(double /*rx*/, double /*ry*/, double /*x_axis_rotation*/, bool /*large_arc_flag*/, bool /*sweep_flag*/, double x, double y, svgpp::tag::coordinate::absolute) {
     std::cout << "path_elliptical_arc_to " << x << " " << y << std::endl;
 }
 

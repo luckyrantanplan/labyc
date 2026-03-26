@@ -7,7 +7,7 @@
 
 #include "ProfileActivate.h"
 
-#include <easy/profiler.h>
+#include "EasyProfilerCompat.h"
 //#include <iostream>
 
 namespace laby {

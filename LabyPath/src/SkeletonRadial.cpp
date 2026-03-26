@@ -33,11 +33,11 @@ void SkeletonRadial::registerFace(const basic::HalfedgeNode& he, std::unordered_
     }
     basic::Arrangement_2Node::Halfedge_around_vertex_const_circulator circ = o.incident_halfedges();
 
-    while (circ->curve().data().find(basic::EdgeNodeInfo(+1)) == circ->curve().data().end()) {
+    while (!basic::edgeHasPolygonId(*circ, +1)) {
         ++circ;
     }
 
-    while (circ->curve().data().find(basic::EdgeNodeInfo(+1)) != circ->curve().data().end()) {
+    while (basic::edgeHasPolygonId(*circ, +1)) {
         ++circ;
     }
 
@@ -350,9 +350,9 @@ void SkeletonRadial::polygon_contour(const basic::Arrangement_2Node& arr3, const
 
     for (const basic::HalfedgeNode* he : heList) {
         // we meet polygon edge
-        if (he->curve().data().find(basic::EdgeNodeInfo(+1)) != he->curve().data().end()) {
+        if (basic::edgeHasPolygonId(*he, +1)) {
             // we must test if this is a hole
-            if (he->next()->curve().data().find(basic::EdgeNodeInfo(+1)) != he->next()->curve().data().end()) {
+            if (basic::edgeHasPolygonId(*he->next(), +1)) {
                 iterate_edge(*he->twin(), _config.sep, pt_set, faceCache);
             } else {
                 iterate_edge(*he, _config.sep, pt_set, faceCache);
@@ -420,9 +420,9 @@ void SkeletonRadial::create_radial(const basic::Arrangement_2Node& arr3, const C
 
     for (const basic::HalfedgeNode& he : RangeHelper::make(arr3.edges_begin(), arr3.edges_end())) {
         // we meet polygon edge
-        if (he.curve().data().find(basic::EdgeNodeInfo(+1)) != he.curve().data().end()) {
+        if (basic::edgeHasPolygonId(he, +1)) {
             // we must test if this is a hole
-            if (he.next()->curve().data().find(basic::EdgeNodeInfo(+1)) != he.next()->curve().data().end()) {
+            if (basic::edgeHasPolygonId(*he.next(), +1)) {
                 registerFace(*he.twin(), faceCache);
 
             } else {

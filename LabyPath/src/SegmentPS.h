@@ -14,27 +14,29 @@
 
 namespace laby {
 
+/// Segment between two Point_set_2 vertices, ordered by squared distance.
 class SegmentPS {
 
 public:
     typedef CGAL::Point_set_2<Kernel> PS;
 
-    SegmentPS(PS::Vertex* v1, PS::Vertex* v2) :
-            _v1(v1), _v2(v2) {
-        _length = CGAL::squared_distance(_v1->point(), _v2->point());
-
+    SegmentPS(PS::Vertex* source, PS::Vertex* target) :
+            _source(source), _target(target) {
+        _squared_distance = CGAL::squared_distance(_source->point(), _target->point());
     }
 
     bool operator <(const SegmentPS &rhs) const {
-
-        return _length < rhs._length;
-
+        return _squared_distance < rhs._squared_distance;
     }
 
-    Kernel::FT _length;
+    Kernel::FT squared_distance() const { return _squared_distance; }
+    PS::Vertex* source() const { return _source; }
+    PS::Vertex* target() const { return _target; }
 
-    PS::Vertex* _v1;
-    PS::Vertex* _v2;
+private:
+    Kernel::FT _squared_distance;
+    PS::Vertex* _source;
+    PS::Vertex* _target;
 
 };
 

@@ -43,9 +43,9 @@ void SkeletonGrid::create(const svgp::Loader & load) {
     for (const Ribbon& rib : load.ribList()) {
         std::vector<CGAL::Polygon_with_holes_2<Kernel> > polygons = SVGShapeToGrid::get_polygons(rib);
 
-        const double blue = laby::basic::Color::get_bluep(rib.fill_color());
+        const double blue = laby::basic::Color::get_blue_normalized(static_cast<uint32_t>(rib.fill_color()));
 
-        const int32_t fillColor = laby::basic::Color::set_blue(rib.fill_color(), ribNumber);
+        const uint32_t fillColor = laby::basic::Color::set_blue(static_cast<uint32_t>(rib.fill_color()), static_cast<uint32_t>(ribNumber));
         ++ribNumber;
 
         const double distance = (_config.max_sep() - _config.min_sep()) * blue + _config.min_sep();
@@ -55,28 +55,28 @@ void SkeletonGrid::create(const svgp::Loader & load) {
         {
             std::vector<Segment_info_2> segResult;
             for (const Kernel::Segment_2& seg : _circularList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo { fillColor, 0 }));
+                segResult.push_back(Segment_info_2(seg, EdgeInfo { static_cast<int32_t>(fillColor), 0 }));
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
 
             result.emplace_back(Ribbon::createRibbonOfEdge(arr, 0.1));
 
-            result.back().set_fill_color(laby::basic::Color::set_green(fillColor, 50));
+            result.back().set_fill_color(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 50)));
         }
         {
             std::vector<Segment_info_2> segResult;
             for (const Kernel::Segment_2& seg : _radialList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo { fillColor + 1, 0 }));
+                segResult.push_back(Segment_info_2(seg, EdgeInfo { static_cast<int32_t>(fillColor + 1), 0 }));
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
 
             result.emplace_back(Ribbon::createRibbonOfEdge(arr, 0.1));
-            result.back().set_fill_color(laby::basic::Color::set_green(fillColor, 100));
+            result.back().set_fill_color(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 100)));
         }
         result.emplace_back(rib);
-        result.back().set_fill_color(laby::basic::Color::set_green(fillColor, 150));
+        result.back().set_fill_color(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 150)));
 
     }
 

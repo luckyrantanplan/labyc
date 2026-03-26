@@ -4,11 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-watchdog = "*"
-"pyqt5" = "*"
-protobuf = "*"
+watchdog = ">=4.0"
+pyqt6 = ">=6.6"
+protobuf = ">=4.25"
 
 [dev-packages]
+pytest = ">=8.0"
 
 [requires]
-python_version = "3.6"
+python_version = "3.12"

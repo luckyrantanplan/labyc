@@ -8,7 +8,7 @@
 #ifndef RIBBON_H_
 #define RIBBON_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 
 #include <cstddef>
 #include <vector>
@@ -22,11 +22,10 @@ class CoverSpatialIndex;
 
 namespace laby {
 
-struct Ele {
+struct IndexRange {
 
-    Ele(std::size_t imin, std::size_t imax) {
-        min = imin;
-        max = imax;
+    IndexRange(std::size_t range_min, std::size_t range_max)
+        : min{range_min}, max{range_max} {
     }
 
     std::size_t min;
@@ -57,8 +56,8 @@ public:
     int32_t fill_color() const {
         return _fill_color;
     }
-    void set_fill_color(const int32_t direction) {
-        _fill_color = direction;
+    void set_fill_color(const int32_t color) {
+        _fill_color = color;
     }
 
     std::vector<Polyline>& lines() {
@@ -94,18 +93,18 @@ public:
     }
 
     double strokeWidth() const {
-        return stroke_width;
+        return _stroke_width;
     }
 
-    void setStrokeWidth(double strokeWidth) {
-        stroke_width = strokeWidth;
+    void setStrokeWidth(double width) {
+        _stroke_width = width;
     }
 
 private:
     std::vector<Polyline> _lines;
     int32_t _fill_color = 0;
     int32_t _stroke_color = 0;
-    double stroke_width = 1.;
+    double _stroke_width = 1.;
 
     std::vector<std::size_t> middleOrder(std::size_t min, std::size_t max) const;
     bool isLongEnough(const std::vector<Point_2>& coarse, double thickness) const;

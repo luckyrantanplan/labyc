@@ -8,7 +8,7 @@
 #ifndef GRIDINDEX_H_
 #define GRIDINDEX_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -16,6 +16,13 @@
 #include "Ribbon.h"
 
 namespace laby {
+
+/// Grid channel type, encoded in the green channel of the ribbon fill color.
+enum class GridChannel : uint32_t {
+    Circular = 50,   ///< Circular (concentric) skeleton path
+    Radial   = 100,  ///< Radial (spoke) skeleton path
+    Limit    = 150   ///< Boundary limit path
+};
 
 class GridIndex {
 public:

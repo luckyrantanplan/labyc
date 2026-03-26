@@ -8,7 +8,7 @@
 #ifndef BASIC_COLOR_H_
 #define BASIC_COLOR_H_
 
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <svgpp/factory/integer_color.hpp>
 
 namespace laby {
@@ -16,35 +16,35 @@ namespace basic {
 
 class Color {
 public:
-    static constexpr double q = 0x000000FF;
+    static constexpr double COLOR_COMPONENT_MAX = 0x000000FF;
     static constexpr uint32_t mask = 0x000000FF;
 
-    static uint32_t get_colorp(const uint32_t color, const int offset) {
-        return color >> offset & 0x000000FF;
-
+    static uint32_t get_channel(const uint32_t color, const int offset) {
+        return (color >> offset) & 0x000000FF;
     }
 
-    static double get_redp(const uint32_t color) {
-        return get_red(color) / q;
+    static double get_red_normalized(const uint32_t color) {
+        return get_red(color) / COLOR_COMPONENT_MAX;
     }
 
-    static double get_greenp(const uint32_t color) {
-        return get_green(color) / q;
+    static double get_green_normalized(const uint32_t color) {
+        return get_green(color) / COLOR_COMPONENT_MAX;
     }
-    static double get_bluep(const uint32_t color) {
-        return get_blue(color) / q;
+
+    static double get_blue_normalized(const uint32_t color) {
+        return get_blue(color) / COLOR_COMPONENT_MAX;
     }
 
     static uint32_t get_red(const uint32_t color) {
-        return get_colorp(color, svgpp::factory::color::rgb8_policy::r_offset);
+        return get_channel(color, svgpp::factory::color::rgb8_policy::r_offset);
     }
 
     static uint32_t get_green(const uint32_t color) {
-        return get_colorp(color, svgpp::factory::color::rgb8_policy::g_offset);
+        return get_channel(color, svgpp::factory::color::rgb8_policy::g_offset);
     }
 
     static uint32_t get_blue(const uint32_t color) {
-        return get_colorp(color, svgpp::factory::color::rgb8_policy::b_offset);
+        return get_channel(color, svgpp::factory::color::rgb8_policy::b_offset);
     }
 
     static uint32_t create(const uint32_t r, const uint32_t g, const uint32_t b) {

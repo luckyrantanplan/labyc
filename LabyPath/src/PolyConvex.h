@@ -8,8 +8,8 @@
 #ifndef POLYCONVEX_H_
 #define POLYCONVEX_H_
 
-#include <bits/move.h>
-#include <bits/stdint-intn.h>
+#include <utility>
+#include <cstdint>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Union_find.h>
 #include <algorithm>
@@ -30,6 +30,23 @@ class LinearGradient;
 
 namespace laby {
 
+/**
+ * @brief A convex polygon tile in the routing decomposition.
+ *
+ * Each PolyConvex represents a trapezoid (or triangle) tile created by
+ * the routing stage.  Key fields:
+ *
+ * - **_geometry**: The actual convex polygon boundary (Linear_polygon).
+ * - **_originalTrapeze**: Copy of the original trapeze before any extension.
+ * - **_adjacents**: Indices of adjacent PolyConvex objects in the same vector.
+ * - **_nodes**: Pointers to Node objects (from flatteningOverlap) that cover
+ *   this polygon. Declared `mutable` because the overlap resolution traversal
+ *   writes to it on const objects passed through CGAL callbacks.
+ * - **_visited**: Mutable BFS traversal flag (0=unvisited, -1=marked).
+ * - **handle**: CGAL Union_find handle for connectivity grouping.
+ * - **_supportHe**: Optional pointer to the arrangement halfedge that
+ *   generated this polygon (nullptr for maze-connected polygons).
+ */
 class PolyConvex {
 public:
     Linear_polygon _geometry;
@@ -73,7 +90,7 @@ public:
         _average_thickness = 0;
     }
 
-    bool empty() {
+    bool empty() const {
         return _geometry.is_empty();
     }
 
@@ -113,7 +130,7 @@ public:
         return _pt;
     }
 
-    const bool has_points() const {
+    bool has_points() const {
         if (_supportHe != nullptr) {
             return true;
         }
@@ -123,7 +140,7 @@ public:
 private:
     void init(const Point_2& ps, const Point_2& pt, basic::LinearGradient& lgrad);
 
-    // needed for connect_maze (since we do not have the original arrangement for support : perharps we should split PolyConvex Class ?
+    // Needed for connect_maze (since we do not have the original arrangement for support; perhaps we should split PolyConvex class)
 
     CGAL::Point_2<Kernel> _ps;
     CGAL::Point_2<Kernel> _pt;

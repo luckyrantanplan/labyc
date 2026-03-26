@@ -41,7 +41,6 @@ std::vector<CircleIntersection::Kernel::Point_2> CircleIntersection::prob_2(cons
     if (collect.size() == 2) {
         if (CGAL::has_larger_distance_to_point(a, collect.at(0), collect.at(1))) {
             std::swap(collect.at(0), collect.at(1));
-            std::cout << "swapping value" << std::endl;
         }
     }
 

@@ -7,8 +7,7 @@
 
 #include "StreamLine.h"
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
+#include <cstdint>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
@@ -25,7 +24,7 @@
 #include <CGAL/Triangulation_ds_face_base_2.h>
 #include <CGAL/Triangulation_utils_2.h>
 #include <CGAL/Vector_2.h>
-#include <easy/profiler.h>
+#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cmath>
 #include <future>
@@ -67,8 +66,8 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, 
 StreamLine::StreamLine(const Config& config) :
         _config(config), _radialList(0), _circularList(1) {
     if (_config.old_RegularGrid) {
-        uint32_t x_samples = config.size * _config.resolution;
-        uint32_t y_samples = config.size * _config.resolution;
+        uint32_t x_samples = static_cast<uint32_t>(config.size * _config.resolution);
+        uint32_t y_samples = static_cast<uint32_t>(config.size * _config.resolution);
         _field.resize(boost::extents[x_samples][y_samples]);
     }
 }
@@ -114,22 +113,22 @@ Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
     Ribbon result(ribbon.fill_color());
     for (SegmentPS& seg : vectSeg) {
 
-        if (set.count(seg._v1) == 0 and set.count(seg._v2) == 0) {
+        if (set.count(seg.source()) == 0 and set.count(seg.target()) == 0) {
 
-            if (CGAL::to_double(CGAL::squared_distance(seg._v1->point(), seg._v2->point())) < 1) {
+            if (CGAL::to_double(CGAL::squared_distance(seg.source()->point(), seg.target()->point())) < 1) {
 
-                Point_2 mid = CGAL::midpoint(seg._v1->point(), seg._v2->point());
-                changeLine(mid, map, seg._v1);
-                changeLine(mid, map, seg._v2);
+                Point_2 mid = CGAL::midpoint(seg.source()->point(), seg.target()->point());
+                changeLine(mid, map, seg.source());
+                changeLine(mid, map, seg.target());
             } else {
 
                 result.lines().emplace_back();
                 Polyline& poly = result.lines().back();
-                poly.points.emplace_back(seg._v1->point());
-                poly.points.emplace_back(seg._v2->point());
+                poly.points.emplace_back(seg.source()->point());
+                poly.points.emplace_back(seg.target()->point());
             }
-            set.emplace(seg._v1);
-            set.emplace(seg._v2);
+            set.emplace(seg.source());
+            set.emplace(seg.target());
         }
     }
 
@@ -143,13 +142,13 @@ void StreamLine::connectExtremInPlace(laby::Ribbon& ribbon) {
 
 void StreamLine::render() {
     EASY_FUNCTION();
-    uint32_t x_samples = _field.size();
-    uint32_t y_samples = _field.shape()[1];
+    auto x_samples = static_cast<int>(_field.size());
+    auto y_samples = static_cast<int>(_field.shape()[1]);
     Field radial(x_samples, y_samples, x_samples, y_samples);
     Field circular(x_samples, y_samples, x_samples, y_samples);
 
-    for (uint32_t i = 0; i < x_samples; ++i)
-        for (uint32_t j = 0; j < y_samples; ++j) {
+    for (int i = 0; i < x_samples; ++i)
+        for (int j = 0; j < y_samples; ++j) {
 
             std::complex<double> &vect = _field[i][j];
 
@@ -177,9 +176,9 @@ void StreamLine::drawSpiral(const std::complex<double>& o, const double& r, cons
     std::complex<double> center = o * (1. * _config.resolution);
     double rSqr = r * r * _config.resolution * _config.resolution;
 
-    for (uint32_t i = 0; i < _field.size(); ++i) {
-        for (uint32_t j = 0; j < _field.shape()[1]; ++j) {
-            std::complex<double> pixel(i, j);
+    for (std::size_t i = 0; i < _field.size(); ++i) {
+        for (std::size_t j = 0; j < _field.shape()[1]; ++j) {
+            std::complex<double> pixel(static_cast<double>(i), static_cast<double>(j));
             pixel -= center;
             std::complex<double> vect = pixel;
 
@@ -188,15 +187,15 @@ void StreamLine::drawSpiral(const std::complex<double>& o, const double& r, cons
 
             if (std::norm(pixel) > rSqr) {
 
-                double angle = std::arg(vect);
-                angle += M_PI / 4 + 2 * M_PI;
-                angle *= 2 / M_PI;
-                int angleInt = angle;
+                double localAngle = std::arg(vect);
+                localAngle += M_PI / 4 + 2 * M_PI;
+                localAngle *= 2 / M_PI;
+                int angleInt = static_cast<int>(localAngle);
 
                 vect = std::polar<double>(_config.epsilon * 0.5, angleInt * M_PI * 0.5);
                 // vect=0;
             }
-            _field[i][j] += vect;
+            _field[static_cast<long>(i)][static_cast<long>(j)] += vect;
         }
     }
 

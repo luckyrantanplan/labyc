@@ -96,7 +96,7 @@ Routing Placement::create_route(Cell& cell) {
             if (&vertex2 != &queue.front().vertex()) {
 
                 Pin pin_target { vertex2, std::max(queue.front().thickness() / _config.decrement_factor(), _config.minimal_thickness()) };
-                Net n(queue.front(), pin_target, nets.size());
+                Net n(queue.front(), pin_target, static_cast<int32_t>(nets.size()));
 
                 if (routing.findRoute(n)) {
 
@@ -123,7 +123,7 @@ void Placement::statistics(const Arrangement_2& arr) {
 
     std::size_t total_congestion = 0;
     for (const Halfedge& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-        total_congestion += he.curve().data().congestion();
+        total_congestion += static_cast<std::size_t>(he.curve().data().congestion());
     }
     std::cout << "seed  " << _config.routing().seed() << " total_congestion " << total_congestion << " number of edge " << arr.number_of_edges() << std::endl;
 
@@ -182,8 +182,8 @@ std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<Pol
         pl = Smoothing::getCurveSmoothingChaikin(pl, _config.smoothing_tension(), _config.smoothing_iteration());
 
         pl.simplify(0.1);
-        if (pl.number != net_id) {
-            net_id = pl.number;
+        if (pl.id != net_id) {
+            net_id = pl.id;
             ribbon.lines().emplace_back(net_id);
             ribbon.lines().back().points.emplace_back(pl.points.front());
         }
@@ -195,7 +195,7 @@ std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<Pol
 
     SpatialIndex si(polyConvexList);
     for (Polyline& poly : ribbon.lines()) {
-        Net& net = *netMap.at(poly.number);
+        Net& net = *netMap.at(poly.id);
         basic::LinearGradient lgrad = net.gradient();
         std::size_t begin = polyConvexList.size();
         for (std::size_t i = 1; i < poly.points.size(); ++i) {

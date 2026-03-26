@@ -8,7 +8,7 @@
 #ifndef POLYLINE_H_
 #define POLYLINE_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cmath>
@@ -27,16 +27,16 @@ struct Polyline {
     Polyline() {
     }
 
-    Polyline(const int32_t number, const std::vector<Point_2>& points) :
-            number { number }, points { points } {
+    Polyline(const int32_t polyId, const std::vector<Point_2>& pts) :
+            id { polyId }, points { pts } {
     }
 
-    explicit Polyline(const int32_t number) :
-            number { number } {
+    explicit Polyline(const int32_t polyId) :
+            id { polyId } {
     }
 
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) :
-            number { number }, points { } {
+            id { 0 }, points { } {
 
         points = poly.container();
         closed = true;
@@ -50,7 +50,7 @@ struct Polyline {
 
     void print(std::ostream& os) const {
 
-        os << " number " << number << " points " << points;
+        os << " id " << id << " points " << points;
 
     }
 
@@ -70,7 +70,7 @@ struct Polyline {
 
     void simplify(double distance);
 
-    int32_t number = 0;
+    int32_t id = 0;
     std::vector<Point_2> points;
     bool closed = false;
     Point_2 min_point;

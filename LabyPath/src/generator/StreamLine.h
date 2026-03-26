@@ -18,7 +18,7 @@
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Regular_grid_2.h>
 #include <CGAL/Runge_kutta_integrator_2.h>
-#include <CGAL/squared_distance_2_1.h>
+#include <CGAL/squared_distance_2.h>
 #include <CGAL/Stream_lines_2.h>
 #include <CGAL/Triangular_field_2.h>
 #include <CGAL/Triangulation_vertex_base_2.h>

@@ -8,7 +8,7 @@
 #ifndef GEOMDATA_H_
 #define GEOMDATA_H_
 
-#include <bits/stdint-intn.h>
+#include <cstdint>
 #include <CGAL/Arr_curve_data_traits_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>
@@ -77,8 +77,7 @@ typedef Arrangement_2::Halfedge_handle Halfedge_handle;
 
 typedef Halfedge_handle::value_type Halfedge;
 
-typedef Arrangement_2::Halfedge_handle Halfedge_handle;
-typedef Arrangement_2::Halfedge_handle Halfedge_const_handle;
+typedef Arrangement_2::Halfedge_const_handle Halfedge_const_handle;
 typedef Arrangement_2::Face_handle Face_handle;
 typedef Arrangement_2::Face_const_handle Face_const_handle;
 typedef Face_handle::value_type Face;
@@ -112,30 +111,30 @@ public:
     }
 
     int32_t congestion() const {
-        return path.size();
+        return static_cast<int32_t>(_path.size());
     }
 
-    bool hasNet(const int serialId) const {
-        return path.count(serialId) != 0;
+    bool hasNet(const int32_t serialId) const {
+        return _path.count(serialId) != 0;
     }
 
-    void addPath(const int serialId) {
-        std::pair<std::unordered_map<int, int>::iterator, bool> it = path.emplace(serialId, 1);
+    void addPath(const int32_t serialId) {
+        auto it = _path.emplace(serialId, 1);
         if (!it.second) {
             ++it.first->second;
         }
     }
 
     void clearAllPath() {
-        path.clear();
+        _path.clear();
     }
 
     int32_t getVisit() const {
         return visit;
     }
 
-    void setVisit(int32_t visit = -1) const {
-        this->visit = visit;
+    void setVisit(int32_t v = -1) const {
+        this->visit = v;
     }
 
     bool operator ==(const EdgeInfo& it) const {
@@ -154,13 +153,13 @@ public:
 
     void print(std::ostream& os) const {
         os << " path ";
-        for (auto& pair : path) {
-            os << " " << pair.first << "->" << pair.second;
+        for (auto& [net_id, count] : _path) {
+            os << " " << net_id << "->" << count;
         }
     }
 
     int32_t get_net() const {
-        return path.begin()->first;
+        return _path.begin()->first;
     }
 
     std::size_t coordinate() const {
@@ -170,7 +169,7 @@ public:
 private:
 
     //TODO : replace unordered_map by just an int
-    std::unordered_map<int, int> path;
+    std::unordered_map<int32_t, int32_t> _path;
     double _thickness = 1;
     mutable int32_t visit = -1;
     int32_t _direction = -1;
@@ -186,7 +185,7 @@ public:
     };
 
     VertexInfo() :
-            _heh { nullptr }, visit(-1), type { UNDEFINED }, _global { }, _detail { } {
+            _heh { nullptr }, _visit(-1), type { UNDEFINED }, _global { }, _detail { } {
     }
 
     Type getType() const {
@@ -197,12 +196,12 @@ public:
         type = iType;
     }
 
-    int getVisit() const {
-        return visit;
+    int32_t getVisit() const {
+        return _visit;
     }
 
-    void setVisit(int ivisit, Halfedge* he) {
-        visit = ivisit;
+    void setVisit(int32_t ivisit, Halfedge* he) {
+        _visit = ivisit;
         _heh = he;
     }
 
@@ -225,8 +224,8 @@ public:
     }
 
     void print (std::ostream& os ) const {
-        std::complex<double> nunu {-1.,-1.};
-        os << " global " << getGlobalCoordinate().value_or(nunu) << " detail " << getDetail().value_or(nunu );
+        std::complex<double> default_coord {-1.,-1.};
+        os << " global " << getGlobalCoordinate().value_or(default_coord) << " detail " << getDetail().value_or(default_coord );
 
     }
 
@@ -239,7 +238,7 @@ public:
     }
 
 private:
-    mutable int visit;
+    mutable int32_t _visit;
 
     Type type;
     std::optional<std::complex<int32_t>> _global;
