@@ -10,13 +10,18 @@ import shutil
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from PyQt6.QtCore import *
-from PyQt6.QtGui import *
-from PyQt6.QtWidgets import *
-import LabyPython.AllConfig_pb2
-import LabyPython.watchAndLaunch
+from typing import Any
+from PyQt6.QtCore import QDir, QThread, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QFileSystemModel
+from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
+import LabyPython.AllConfig_pb2 as AllConfig_pb2
+import LabyPython.watchAndLaunch as watchAndLaunch
 from LabyPython.mazeCreator import Ui_MainWindow
-from google.protobuf import   json_format  
+from google.protobuf import json_format
+
+
+def createAllConfig() -> Any:
+    return getattr(AllConfig_pb2, "AllConfig")()
 
 
 class AppWindow(QMainWindow):
@@ -105,7 +110,7 @@ class AppWindow(QMainWindow):
 
     def parseProtoConfig(self, name):
         with open(name, "r") as text_file:
-            message = LabyPython.AllConfig_pb2.AllConfig()
+            message = createAllConfig()
             json_format.Parse(text_file.read(), message)
             return message
 
@@ -206,7 +211,7 @@ class AppWindow(QMainWindow):
             newGridConf = os.path.join(self.project_dir, self.getNewRenderConfigName(fileOriginalPrefix, i))
              
             oldGridConf = self.getSelectedRenderConfigFile()
-            allConf = LabyPython.AllConfig_pb2.AllConfig()
+            allConf = createAllConfig()
             if (oldGridConf):
                 try:
                     allConf = self.parseProtoConfig(oldGridConf) 
@@ -351,7 +356,7 @@ class AppWindow(QMainWindow):
             newGridConf = os.path.join(self.project_dir, self.getNewRouteConfigName(fileOriginalPrefix, i))
              
             oldGridConf = self.getSelectedRouteConfigFile()
-            allConf = LabyPython.AllConfig_pb2.AllConfig()
+            allConf = createAllConfig()
             if (oldGridConf):
                 try:
                     allConf = self.parseProtoConfig(oldGridConf) 
@@ -509,7 +514,7 @@ class AppWindow(QMainWindow):
             newGridConf = os.path.join(self.project_dir, self.getNewGridName(fileOriginalPrefix, i))
              
             oldGridConf = self.getSelectedGridFile()
-            allConf = LabyPython.AllConfig_pb2.AllConfig()
+            allConf = createAllConfig()
             if (oldGridConf):
                 try:
                     allConf = self.parseProtoConfig(oldGridConf) 
@@ -665,7 +670,7 @@ class AppWindow(QMainWindow):
         self.routingGenerationSetup()
         self.renderConfigSetup()
         self.renderingGenerationSetup()
-        self.watch = LabyPython.watchAndLaunch.Watcher()
+        self.watch = watchAndLaunch.Watcher()
      
 
 if __name__ == '__main__':
