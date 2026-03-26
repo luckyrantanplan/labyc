@@ -199,6 +199,20 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-float-conversion -Wno-double-promotion"
 )
 
+# svgpp still pulls Boost's deprecated Spirit Phoenix compatibility header on
+# modern Boost releases. Limit the compatibility define to the SVG parsing
+# translation units so project code continues to surface its own deprecations.
+set_source_files_properties(
+    src/SVGShapeToGrid.cpp
+    src/SVGParser/Common.cpp
+    src/SVGParser/Context.cpp
+    src/SVGParser/Loader.cpp
+    src/SVGParser/ShapeContext.cpp
+    src/SVGParser/Stylable.cpp
+    src/SVGParser/UseContext.cpp
+    PROPERTIES COMPILE_DEFINITIONS "BOOST_ALLOW_DEPRECATED_HEADERS"
+)
+
 # Suppress -Wmaybe-uninitialized false positives from svgpp headers (system library)
 # GCC inlines svgpp::arc_to_bezier iterator code and reports uninitialized members
 # that are actually set in the iterator's advance() method.

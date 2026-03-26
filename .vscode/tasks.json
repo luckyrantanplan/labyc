@@ -6,14 +6,20 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "-B", "build",
-                "-G", "Ninja",
+                "-S",
+                ".",
+                "-B",
+                ".cmake/build",
+                "-G",
+                "Ninja",
                 "-DCMAKE_BUILD_TYPE=Debug",
                 "-DCMAKE_CXX_COMPILER=g++-14",
                 "-DLABYPATH_BUILD_TESTS=ON",
                 "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             ],
-            "options": { "cwd": "${workspaceFolder}/LabyPath" },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
             "problemMatcher": []
         },
@@ -22,13 +28,20 @@
             "type": "shell",
             "command": "cmake",
             "args": [
-                "-B", "build",
-                "-G", "Ninja",
+                "-S",
+                ".",
+                "-B",
+                ".cmake/build",
+                "-G",
+                "Ninja",
                 "-DCMAKE_BUILD_TYPE=Release",
                 "-DCMAKE_CXX_COMPILER=g++-14",
-                "-DLABYPATH_BUILD_TESTS=ON"
+                "-DLABYPATH_BUILD_TESTS=ON",
+                "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             ],
-            "options": { "cwd": "${workspaceFolder}/LabyPath" },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "build",
             "problemMatcher": []
         },
@@ -36,19 +49,39 @@
             "label": "Build C++",
             "type": "shell",
             "command": "cmake",
-            "args": ["--build", "build", "--parallel"],
-            "options": { "cwd": "${workspaceFolder}/LabyPath" },
-            "group": { "kind": "build", "isDefault": true },
-            "problemMatcher": ["$gcc"],
+            "args": [
+                "--build",
+                ".cmake/build",
+                "--parallel"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
             "dependsOn": "CMake Configure (Debug)"
         },
         {
             "label": "Run C++ Tests",
             "type": "shell",
             "command": "ctest",
-            "args": ["--output-on-failure", "--test-dir", "build"],
-            "options": { "cwd": "${workspaceFolder}/LabyPath" },
-            "group": { "kind": "test", "isDefault": true },
+            "args": [
+                "--output-on-failure",
+                "--test-dir",
+                ".cmake/build"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
             "dependsOn": "Build C++",
             "problemMatcher": []
         },
@@ -56,14 +89,24 @@
             "label": "Run Python Tests",
             "type": "shell",
             "command": "python",
-            "args": ["-m", "pytest", "LabyPython/tests/", "-v"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "-m",
+                "pytest",
+                "LabyPython/tests/",
+                "-v"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": "test",
             "problemMatcher": []
         },
         {
             "label": "Run All Tests",
-            "dependsOn": ["Run C++ Tests", "Run Python Tests"],
+            "dependsOn": [
+                "Run C++ Tests",
+                "Run Python Tests"
+            ],
             "dependsOrder": "sequence",
             "group": "test",
             "problemMatcher": []
@@ -72,10 +115,15 @@
             "label": "Launch Python GUI",
             "type": "shell",
             "command": "python",
-            "args": ["-m", "LabyPython.App"],
+            "args": [
+                "-m",
+                "LabyPython.App"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}/LabyPython/src",
-                "env": { "QT_QPA_PLATFORM": "xcb" }
+                "env": {
+                    "QT_QPA_PLATFORM": "xcb"
+                }
             },
             "problemMatcher": [],
             "isBackground": true
@@ -85,26 +133,43 @@
             "type": "shell",
             "command": "clang-tidy",
             "args": [
-                "-p", "build",
+                "-p",
+                ".cmake/build",
                 "${file}"
             ],
-            "options": { "cwd": "${workspaceFolder}/LabyPath" },
-            "problemMatcher": ["$gcc"],
-            "presentation": { "reveal": "always" }
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            }
         },
         {
             "label": "clang-format (current file)",
             "type": "shell",
             "command": "clang-format",
-            "args": ["-i", "${file}"],
+            "args": [
+                "-i",
+                "${file}"
+            ],
             "problemMatcher": []
         },
         {
             "label": "Docker: Build Production Image",
             "type": "shell",
             "command": "docker",
-            "args": ["build", "-t", "labypath:latest", "."],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "build",
+                "-t",
+                "labypath:latest",
+                "."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "problemMatcher": []
         }
     ]

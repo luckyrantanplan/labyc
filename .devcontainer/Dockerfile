@@ -29,6 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-tidy clang-format \
     # Python (for GUI and tests)
     python3 python3-pip python3-venv \
+    # Qt6 Designer tools
+    qt6-tools-dev-tools \
     # X11 libraries for PyQt6 GUI
     libxcb-xinerama0 libxcb-cursor0 libxkbcommon0 \
     libegl1 libgl1 libx11-xcb1 \
@@ -48,14 +50,28 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} -s /bin/bash \
-    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
+RUN set -eux; \
+    existing_user="$(getent passwd ${USER_UID} | cut -d: -f1 || true)"; \
+    existing_group="$(getent group ${USER_GID} | cut -d: -f1 || true)"; \
+    if [ -n "${existing_group}" ] && [ "${existing_group}" != "${USERNAME}" ]; then \
+    groupmod -n ${USERNAME} "${existing_group}"; \
+    elif [ -z "${existing_group}" ]; then \
+    groupadd --gid ${USER_GID} ${USERNAME}; \
+    fi; \
+    if id -u ${USERNAME} >/dev/null 2>&1; then \
+    usermod --uid ${USER_UID} --gid ${USER_GID} --home /home/${USERNAME} --move-home --shell /bin/bash ${USERNAME}; \
+    elif [ -n "${existing_user}" ]; then \
+    usermod --login ${USERNAME} --home /home/${USERNAME} --move-home --shell /bin/bash "${existing_user}"; \
+    usermod --gid ${USER_GID} ${USERNAME}; \
+    else \
+    useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME}; \
+    fi; \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME}
 
 # ─── Python virtual environment ──────────────────────────────────────────────
 RUN python3 -m venv /home/${USERNAME}/venv \
     && /home/${USERNAME}/venv/bin/pip install --no-cache-dir \
-       protobuf watchdog pytest PyQt6 \
+    protobuf watchdog pytest PyQt6 \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/venv
 
 ENV PATH="/home/${USERNAME}/venv/bin:${PATH}"

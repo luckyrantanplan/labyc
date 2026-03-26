@@ -167,18 +167,18 @@ sudo apt-get install -y \
 ### Build with CMake
 
 ```bash
-cd LabyPath
-cmake -B build -G Ninja \
+cmake -S . -B .cmake/build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_COMPILER=g++-14
-cmake --build build --parallel $(nproc)
+    -DCMAKE_CXX_COMPILER=g++-14 \
+    -DLABYPATH_BUILD_TESTS=ON \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build .cmake/build --parallel $(nproc)
 ```
 
 ### Run tests
 
 ```bash
-cd LabyPath/build
-ctest --output-on-failure
+ctest --test-dir .cmake/build --output-on-failure
 ```
 
 ### Build options
@@ -199,17 +199,19 @@ The project includes a complete **Dev Container** setup so all compilation, test
 2. Open this repository in VS Code.
 3. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
 4. The container builds automatically with GCC 14, CMake, CGAL, FFTW3, GDB, clang-tidy, Python 3, PyQt6.
-5. CMake configures automatically via `postCreateCommand`.
+5. VS Code and CMake Tools use the repository root as the CMake source directory and write all generated files to `.cmake/build`.
 
 ### Build and test (inside the container)
 
 | Task | Keyboard shortcut | Description |
 |------|-------------------|-------------|
-| **Build C++** | `Ctrl+Shift+B` | Default build task (CMake + Ninja) |
-| **Run C++ Tests** | `Ctrl+Shift+T` → select "Run C++ Tests" | Runs all 233 Google Test tests via ctest |
+| **Build C++** | `Ctrl+Shift+B` | Configures the root CMake workspace and builds `.cmake/build` with Ninja |
+| **Run C++ Tests** | `Ctrl+Shift+T` → select "Run C++ Tests" | Runs the Google Test suite from `.cmake/build` via ctest |
 | **Run Python Tests** | `Ctrl+Shift+T` → select "Run Python Tests" | Runs pytest on LabyPython/tests/ |
 | **Run All Tests** | `Ctrl+Shift+T` → select "Run All Tests" | Runs C++ then Python tests sequentially |
 | **Launch Python GUI** | `Ctrl+Shift+T` → select "Launch Python GUI" | Starts the PyQt6 GUI (requires X11 forwarding) |
+
+The `.cmake/` directory is generated build output for the workspace-level wrapper `CMakeLists.txt`. The actual C++ binaries live under `.cmake/build/LabyPath/`.
 
 ### Debugging (inside the container)
 
@@ -310,7 +312,7 @@ python -m pytest tests/ -v
 LabyPath reads a JSON configuration file (see `config.json` for an example):
 
 ```bash
-./build/labypath config.json
+./.cmake/build/LabyPath/labypath LabyPath/config.json
 ```
 
 The configuration is defined by Protocol Buffer messages in `API/AllConfig.proto`.
@@ -318,67 +320,73 @@ The configuration is defined by Protocol Buffer messages in `API/AllConfig.proto
 ## Project structure
 
 ```
-LabyPath/
-├── CMakeLists.txt              # CMake build configuration
-├── .clang-format               # Code formatting configuration
-├── .clang-tidy                 # Linter configuration
-├── API/                        # Protobuf definitions
-│   └── AllConfig.proto
-├── src/
-│   ├── Main.cpp                # Entry point
-│   ├── MessageIO.*             # JSON config parsing via Protobuf
-│   ├── GeomData.*              # CGAL type definitions (Epeck kernel)
-│   ├── SkeletonGrid.*          # Skeleton grid generation orchestrator
-│   ├── VoronoiMedialSkeleton.* # Voronoi / medial axis computation
-│   ├── SkeletonOffset.*        # Concentric offset curve generation
-│   ├── SkeletonRadial.*        # Radial spine path generation
-│   ├── SVGShapeToGrid.*        # SVG → CGAL polygon conversion
-│   ├── Anisotrop/              # Anisotropic routing
-│   │   ├── Cell.*              # Routing graph construction
-│   │   ├── Routing.*           # A*-style pathfinding
-│   │   ├── Placement.*         # Routing orchestrator
-│   │   ├── QueueCost.*         # Priority-queue cost model
-│   │   ├── QueueElement.*      # Priority-queue element
-│   │   ├── Net.*               # Source–target pin pairs
-│   │   └── SpatialIndex.*      # Spatial lookup structures
-│   ├── AlternaRoute/           # Alternate routing with thickness
-│   ├── Rendering/              # Pen-stroke rendering
-│   │   ├── GraphicRendering.*  # SVG output orchestrator
-│   │   └── PenStroke.*         # Noise-modulated pen dynamics
-│   ├── SVGParser/              # SVG input parsing (svgpp-based)
-│   ├── SVGWriter/              # SVG output generation
-│   ├── basic/                  # Utility classes
-│   │   ├── Color.*             # RGB color packing
-│   │   ├── CircleIntersection.* # Circle–line intersection
-│   │   ├── LinearGradient.*    # Thickness interpolation
-│   │   ├── NumericRange.*      # Numeric range iteration
-│   │   ├── PairInteger.*       # Ordered int-pair with hashing
-│   │   ├── PolygonTools.*      # Trapeze creation, polygon ops
-│   │   ├── RandomInteger.*     # Seeded integer RNG
-│   │   ├── RandomUniDist.*     # Seeded uniform-real RNG
-│   │   └── SimplifyLines.*     # Douglas-Peucker decimation
-│   ├── generator/              # Noise and point generators
-│   │   ├── HqNoise.*           # FFT spectral noise
-│   │   ├── FftwArray.h         # FFTW3-backed array wrappers
-│   │   ├── PoissonGenerator.h  # Poisson disk sampling
-│   │   └── StreamLine.*        # Stream-line field tracing
-│   ├── flatteningOverlap/      # Overlap resolution & path merging (see [README](LabyPath/src/flatteningOverlap/README.md) and [visual examples](LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md))
-│   ├── agg/                    # Anti-aliased graphics primitives
-│   └── protoc/                 # Generated Protobuf code
-├── tests/                      # Google Test unit tests (28 files, ~300 tests)
-├── config.json                 # Example noise configuration
-└── config.txt                  # Example protobuf-text configuration
-
-LabyPython/
-├── Pipfile                     # Python dependency spec
-├── requirements.txt            # pip requirements
-├── MazeCreator.ui              # Qt Designer UI file
-├── src/LabyPython/
-│   ├── App.py                  # Main GUI application (PyQt6)
-│   ├── mazeCreator.py          # Generated UI code (pyuic6)
-│   ├── AllConfig_pb2.py        # Generated Protobuf bindings
-│   └── watchAndLaunch.py       # Background worker queue
-└── tests/                      # Python unit tests (pytest)
+.
+├── CMakeLists.txt            # Workspace wrapper CMake entrypoint for VS Code / CMake Tools
+├── .cmake/                   # Generated build output (created after configure)
+├── .devcontainer/
+├── .vscode/
+├── Dockerfile
+├── README.md
+├── LabyPath/
+│   ├── CMakeLists.txt              # CMake build configuration
+│   ├── .clang-format               # Code formatting configuration
+│   ├── .clang-tidy                 # Linter configuration
+│   ├── API/                        # Protobuf definitions
+│   │   └── AllConfig.proto
+│   ├── src/
+│   │   ├── Main.cpp                # Entry point
+│   │   ├── MessageIO.*             # JSON config parsing via Protobuf
+│   │   ├── GeomData.*              # CGAL type definitions (Epeck kernel)
+│   │   ├── SkeletonGrid.*          # Skeleton grid generation orchestrator
+│   │   ├── VoronoiMedialSkeleton.* # Voronoi / medial axis computation
+│   │   ├── SkeletonOffset.*        # Concentric offset curve generation
+│   │   ├── SkeletonRadial.*        # Radial spine path generation
+│   │   ├── SVGShapeToGrid.*        # SVG → CGAL polygon conversion
+│   │   ├── Anisotrop/              # Anisotropic routing
+│   │   │   ├── Cell.*              # Routing graph construction
+│   │   │   ├── Routing.*           # A*-style pathfinding
+│   │   │   ├── Placement.*         # Routing orchestrator
+│   │   │   ├── QueueCost.*         # Priority-queue cost model
+│   │   │   ├── QueueElement.*      # Priority-queue element
+│   │   │   ├── Net.*               # Source–target pin pairs
+│   │   │   └── SpatialIndex.*      # Spatial lookup structures
+│   │   ├── AlternaRoute/           # Alternate routing with thickness
+│   │   ├── Rendering/              # Pen-stroke rendering
+│   │   │   ├── GraphicRendering.*  # SVG output orchestrator
+│   │   │   └── PenStroke.*         # Noise-modulated pen dynamics
+│   │   ├── SVGParser/              # SVG input parsing (svgpp-based)
+│   │   ├── SVGWriter/              # SVG output generation
+│   │   ├── basic/                  # Utility classes
+│   │   │   ├── Color.*             # RGB color packing
+│   │   │   ├── CircleIntersection.* # Circle–line intersection
+│   │   │   ├── LinearGradient.*    # Thickness interpolation
+│   │   │   ├── NumericRange.*      # Numeric range iteration
+│   │   │   ├── PairInteger.*       # Ordered int-pair with hashing
+│   │   │   ├── PolygonTools.*      # Trapeze creation, polygon ops
+│   │   │   ├── RandomInteger.*     # Seeded integer RNG
+│   │   │   ├── RandomUniDist.*     # Seeded uniform-real RNG
+│   │   │   └── SimplifyLines.*     # Douglas-Peucker decimation
+│   │   ├── generator/              # Noise and point generators
+│   │   │   ├── HqNoise.*           # FFT spectral noise
+│   │   │   ├── FftwArray.h         # FFTW3-backed array wrappers
+│   │   │   ├── PoissonGenerator.h  # Poisson disk sampling
+│   │   │   └── StreamLine.*        # Stream-line field tracing
+│   │   ├── flatteningOverlap/      # Overlap resolution & path merging (see [README](LabyPath/src/flatteningOverlap/README.md) and [visual examples](LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md))
+│   │   ├── agg/                    # Anti-aliased graphics primitives
+│   │   └── protoc/                 # Generated Protobuf code
+│   ├── tests/                      # Google Test unit tests (28 files, ~300 tests)
+│   ├── config.json                 # Example noise configuration
+│   └── config.txt                  # Example protobuf-text configuration
+└── LabyPython/
+    ├── Pipfile                     # Python dependency spec
+    ├── requirements.txt            # pip requirements
+    ├── MazeCreator.ui              # Qt Designer UI file
+    ├── src/LabyPython/
+    │   ├── App.py                  # Main GUI application (PyQt6)
+    │   ├── mazeCreator.py          # Generated UI code (pyuic6)
+    │   ├── AllConfig_pb2.py        # Generated Protobuf bindings
+    │   └── watchAndLaunch.py       # Background worker queue
+    └── tests/                      # Python unit tests (pytest)
 ```
 
 ## Test coverage

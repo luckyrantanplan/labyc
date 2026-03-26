@@ -5,7 +5,7 @@
             "name": "Debug C++ Tests",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/LabyPath/build/labypath_tests",
+            "program": "${workspaceFolder}/.cmake/build/LabyPath/labypath_tests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/LabyPath",
@@ -26,8 +26,10 @@
             "name": "Debug C++ (labypath)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/LabyPath/build/labypath",
-            "args": ["${input:configFile}"],
+            "program": "${workspaceFolder}/.cmake/build/LabyPath/labypath",
+            "args": [
+                "${input:configFile}"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/LabyPath",
             "environment": [],
@@ -47,8 +49,10 @@
             "name": "Debug Single C++ Test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/LabyPath/build/labypath_tests",
-            "args": ["--gtest_filter=${input:testFilter}"],
+            "program": "${workspaceFolder}/.cmake/build/LabyPath/labypath_tests",
+            "args": [
+                "--gtest_filter=${input:testFilter}"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/LabyPath",
             "environment": [],
@@ -70,7 +74,9 @@
             "request": "launch",
             "module": "LabyPython.App",
             "cwd": "${workspaceFolder}/LabyPython/src",
-            "env": { "QT_QPA_PLATFORM": "xcb" },
+            "env": {
+                "QT_QPA_PLATFORM": "xcb"
+            },
             "justMyCode": true
         },
         {
@@ -78,7 +84,10 @@
             "type": "debugpy",
             "request": "launch",
             "module": "pytest",
-            "args": ["LabyPython/tests/", "-v"],
+            "args": [
+                "LabyPython/tests/",
+                "-v"
+            ],
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }
