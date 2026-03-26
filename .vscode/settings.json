@@ -4,6 +4,7 @@
     "cmake.sourceDirectory": "${workspaceFolder}",
     "cmake.generator": "Ninja",
     "cmake.configureArgs": [
+        "-DBUILD_TESTING=ON",
         "-DCMAKE_CXX_COMPILER=g++-14",
         "-DLABYPATH_BUILD_TESTS=ON",
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"

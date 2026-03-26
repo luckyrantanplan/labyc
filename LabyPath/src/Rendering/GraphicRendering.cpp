@@ -21,6 +21,10 @@
 
 namespace laby {
 
+namespace {
+constexpr double kSvgCollapseEpsilon = 1e-12;
+}
+
 GraphicRendering::GraphicRendering(const proto::GraphicRendering& config) :
         _config(config) {
 
@@ -33,6 +37,9 @@ GraphicRendering::GraphicRendering(const proto::GraphicRendering& config) :
     PenStroke gpt = PenStroke::createPenStroke(_config.penconfig(), _box);
 
     Ribbon& ribbon = load.ribList().at(0);
+    for (Polyline& line : ribbon.lines()) {
+        line.removeConsecutiveDuplicatePoints(kSvgCollapseEpsilon);
+    }
 
     for (const Polyline& line : ribbon.lines()) {
         Polyline pl = Smoothing::getCurveSmoothingChaikin(line, _config.smoothing_tension(), static_cast<uint32_t>(_config.smoothing_iterations()));
@@ -89,14 +96,18 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
     svg::DocumentSVG docSvg(filename, svg::Layout(dimensions, svg::Layout::TopLeft));
 
     for (const Ribbon& ribbon : ribbonList) {
+        Ribbon cleanRibbon = ribbon;
+        for (Polyline& polyline : cleanRibbon.lines()) {
+            polyline.removeConsecutiveDuplicatePoints(kSvgCollapseEpsilon);
+        }
 
         using laby::basic::Color;
-        const uint32_t c = static_cast<uint32_t>(ribbon.fill_color());
+        const uint32_t c = static_cast<uint32_t>(cleanRibbon.fill_color());
         svg::Stroke stroke(thickness, svg::Color(static_cast<int32_t>(Color::get_red(c)), static_cast<int32_t>(Color::get_green(c)), static_cast<int32_t>(Color::get_blue(c))));
 
         svg::Path path(svg::Color::Transparent, stroke);
 
-        PenStroke::drawRibbonStroke(path, ribbon);
+        PenStroke::drawRibbonStroke(path, cleanRibbon);
 
         docSvg << path;
     }

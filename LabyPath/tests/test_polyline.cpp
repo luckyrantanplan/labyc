@@ -73,5 +73,36 @@ TEST(PolylineTest, ComputeMinLexi) {
     EXPECT_EQ(pl.min_point, Point_2(1, 2));
 }
 
+TEST(PolylineTest, RemoveConsecutiveDuplicatePoints) {
+    Polyline pl;
+    pl.points.emplace_back(0, 0);
+    pl.points.emplace_back(1, 0);
+    pl.points.emplace_back(1, 0);
+    pl.points.emplace_back(1, 0);
+    pl.points.emplace_back(2, 0);
+
+    pl.removeConsecutiveDuplicatePoints();
+
+    ASSERT_EQ(pl.points.size(), 3U);
+    EXPECT_EQ(pl.points.at(0), Point_2(0, 0));
+    EXPECT_EQ(pl.points.at(1), Point_2(1, 0));
+    EXPECT_EQ(pl.points.at(2), Point_2(2, 0));
+}
+
+TEST(PolylineTest, RemoveNearlyConsecutiveDuplicatePoints) {
+    Polyline pl;
+    pl.points.emplace_back(0, 0);
+    pl.points.emplace_back(1, 0);
+    pl.points.emplace_back(1.0 + 1e-13, 1e-13);
+    pl.points.emplace_back(2, 0);
+
+    pl.removeConsecutiveDuplicatePoints(1e-9);
+
+    ASSERT_EQ(pl.points.size(), 3U);
+    EXPECT_EQ(pl.points.at(0), Point_2(0, 0));
+    EXPECT_EQ(pl.points.at(1), Point_2(1, 0));
+    EXPECT_EQ(pl.points.at(2), Point_2(2, 0));
+}
+
 } // namespace
 } // namespace laby

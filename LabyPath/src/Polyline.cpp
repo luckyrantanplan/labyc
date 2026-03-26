@@ -21,6 +21,23 @@ void Polyline::reverse() {
     std::reverse(points.begin(), points.end());
 }
 
+void Polyline::removeConsecutiveDuplicatePoints(double epsilon) {
+    if (points.size() < 2) {
+        return;
+    }
+
+    std::vector<Point_2> result;
+    result.reserve(points.size());
+    result.emplace_back(points.front());
+    const double sqEpsilon = epsilon * epsilon;
+    for (std::size_t i = 1; i < points.size(); ++i) {
+        if (CGAL::compare_squared_distance(points.at(i), result.back(), sqEpsilon) == CGAL::LARGER) {
+            result.emplace_back(points.at(i));
+        }
+    }
+    points = std::move(result);
+}
+
 void Polyline::simplify(double distance) {
 
     if (points.size() > 2) {

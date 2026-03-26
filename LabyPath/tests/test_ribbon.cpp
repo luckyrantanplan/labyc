@@ -76,6 +76,21 @@ TEST(RibbonTest, GetSegments) {
     EXPECT_EQ(segs.size(), 2U);
 }
 
+TEST(RibbonTest, CreateArrSkipsDegenerateSegments) {
+    Polyline pl;
+    pl.id = 7;
+    pl.points.emplace_back(0, 0);
+    pl.points.emplace_back(0, 0);
+    pl.points.emplace_back(10, 0);
+
+    Ribbon r(0, {pl});
+
+    EXPECT_NO_THROW({
+        auto arr = r.createArr();
+        EXPECT_EQ(arr.number_of_edges(), 1U);
+    });
+}
+
 TEST(RibbonTest, GetPoints) {
     Polyline pl;
     pl.points.emplace_back(0, 0);

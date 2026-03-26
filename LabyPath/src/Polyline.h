@@ -68,6 +68,8 @@ struct Polyline {
         return sqdist;
     }
 
+    void removeConsecutiveDuplicatePoints(double epsilon = 0.0);
+
     void simplify(double distance);
 
     int32_t id = 0;

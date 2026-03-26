@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from datetime import datetime
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
@@ -19,6 +20,7 @@ from google.protobuf import   json_format
 
 
 class AppWindow(QMainWindow):
+    backgroundWarningSignal = pyqtSignal(str, str)
 
     @staticmethod
     def findWorkspaceRoot():
@@ -59,18 +61,47 @@ class AppWindow(QMainWindow):
                 subprocess.Popen([executable, fileToOpen], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 return True
         return False
+
+    def logDirectory(self):
+        log_dir = Path(self.project_dir) / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir
+
+    def logPathForConfig(self, config_path):
+        config_name = Path(config_path).stem
+        return self.logDirectory() / f"{config_name}.log"
     
     def callBinary(self, name):
         if (not self.binary_path.is_file()):
-            QMessageBox.warning(self, 'Binary absent', "Cannot find labypath binary at " + str(self.binary_path), QMessageBox.StandardButton.Ok)
+            self.showWarning('Binary absent', "Cannot find labypath binary at " + str(self.binary_path))
             return False
 
-        code = subprocess.run([str(self.binary_path), str(name)], env=os.environ.copy(), shell=False, cwd=str(self.workspace_root))
+        log_path = self.logPathForConfig(name)
+        self.last_log_path = log_path
+        command = [str(self.binary_path), str(name)]
+        print("logging to " + str(log_path))
+        with open(log_path, "w", encoding="utf-8") as log_file:
+            print("started at " + datetime.now().isoformat(), file=log_file)
+            print("command: " + " ".join(command), file=log_file)
+            log_file.flush()
+            code = subprocess.run(command, env=os.environ.copy(), shell=False, cwd=str(self.workspace_root), stdout=log_file, stderr=subprocess.STDOUT)
+
         if (code.returncode != 0):
             print("the process returns " + str(code.returncode))
-            QMessageBox.warning(self, 'Generation failed', "labypath returned " + str(code.returncode), QMessageBox.StandardButton.Ok)
+            self.showWarning('Generation failed', "labypath returned " + str(code.returncode) + "\nlog: " + str(log_path))
             return False
         return True
+
+    def showWarning(self, title, message):
+        app = QApplication.instance()
+        if app is not None and QThread.currentThread() != app.thread():
+            self.backgroundWarningSignal.emit(title, message)
+            return
+        QMessageBox.warning(self, title, message, QMessageBox.StandardButton.Ok)
+
+    @pyqtSlot(str, str)
+    def handleBackgroundWarning(self, title, message):
+        QMessageBox.warning(self, title, message, QMessageBox.StandardButton.Ok)
 
     def parseProtoConfig(self, name):
         with open(name, "r") as text_file:
@@ -331,6 +362,7 @@ class AppWindow(QMainWindow):
                 allConf.routing.placement.cell.seed = 1;
                 allConf.routing.placement.cell.maxPin = 400;
                 allConf.routing.placement.cell.startNet = 30;
+                allConf.routing.placement.cell.resolution = 1.0;
                 allConf.routing.placement.initial_thickness = 1.8;
                 allConf.routing.placement.decrement_factor = 1.5;
                 allConf.routing.placement.minimal_thickness = 0.5;
@@ -623,7 +655,9 @@ class AppWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.backgroundWarningSignal.connect(self.handleBackgroundWarning)
         self.projectSetup()
+        self.last_log_path = None
         self.originalImageSetup()
         self.gridConfigSetup()
         self.gridGenerationSetup()

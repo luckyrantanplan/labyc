@@ -57,6 +57,8 @@ Ribbon OrientedRibbon::createOrientedRibbon() const {
 
     for (Polyline& pl : result.lines()) {
 
+        pl.removeConsecutiveDuplicatePoints();
+
         if (pl.id == 1) {
             std::reverse(pl.points.begin(), pl.points.end());
             pl.id = -1;

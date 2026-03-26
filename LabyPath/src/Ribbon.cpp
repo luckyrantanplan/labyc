@@ -51,9 +51,11 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
             Point_2 c_previous = pl.points.at(0);
             for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
-                Segment_2 s { c_previous, c };
-                std::size_t coordinate = static_cast<std::size_t>(pl.id);
-                listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
+                if (c_previous != c) {
+                    Segment_2 s { c_previous, c };
+                    std::size_t coordinate = static_cast<std::size_t>(pl.id);
+                    listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
+                }
                 c_previous = c;
             }
         }
@@ -338,6 +340,9 @@ Ribbon Ribbon::createRibbonOfEdge(const Arrangement_2& arr, const double simplif
         }
     }
 // to do : add this parameter in the configuration
+    for (Polyline& poly : ribbon.lines()) {
+        poly.removeConsecutiveDuplicatePoints();
+    }
     if (simplification > 0) {
         ribbon.simplify(simplification);
     }
