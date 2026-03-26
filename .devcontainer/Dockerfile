@@ -31,6 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv \
     # Qt6 Designer tools
     qt6-tools-dev-tools \
+    # Desktop apps used by the Python GUI
+    gedit inkscape \
     # X11 libraries for PyQt6 GUI
     libxcb-xinerama0 libxcb-cursor0 libxkbcommon0 \
     libegl1 libgl1 libx11-xcb1 \
@@ -74,7 +76,7 @@ RUN python3 -m venv /home/${USERNAME}/venv \
     protobuf watchdog pytest PyQt6 \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/venv
 
-ENV PATH="/home/${USERNAME}/venv/bin:${PATH}"
+ENV PATH="/home/${USERNAME}/venv/bin:/usr/lib/qt6/bin:${PATH}"
 
 USER ${USERNAME}
 WORKDIR /workspace

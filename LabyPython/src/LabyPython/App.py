@@ -8,6 +8,7 @@ import sys
 import os
 import shutil
 import subprocess
+from pathlib import Path
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
@@ -18,16 +19,58 @@ from google.protobuf import   json_format
 
 
 class AppWindow(QMainWindow):
+
+    @staticmethod
+    def findWorkspaceRoot():
+        app_path = Path(__file__).resolve()
+        for parent in app_path.parents:
+            if (parent / "LabyPath").is_dir() and (parent / "LabyPython").is_dir():
+                return parent
+        return app_path.parent
+
+    def resolveBinaryPath(self):
+        candidates = [
+            self.workspace_root / ".cmake" / "build" / "LabyPath" / "labypath",
+            self.workspace_root / "LabyPath" / "build" / "labypath",
+            self.workspace_root / "LabyPath" / "Debug" / "LabyPath",
+        ]
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+        return candidates[0]
+
+    def defaultProjectDir(self):
+        candidates = [
+            self.workspace_root / "LabyPath" / "input",
+            self.workspace_root / "LabyPath",
+            self.workspace_root,
+        ]
+        for candidate in candidates:
+            if candidate.is_dir():
+                return candidate
+        return Path.cwd()
+
+    def launchExternal(self, fileToOpen, commands):
+        if not fileToOpen:
+            return False
+        for command in commands:
+            executable = shutil.which(command)
+            if executable:
+                subprocess.Popen([executable, fileToOpen], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return True
+        return False
     
     def callBinary(self, name):
-        project_path = "/home/florian/eclipse-workspace/LabyPath"
-        my_env = os.environ.copy()
-        my_env["LD_LIBRARY_PATH"] = "/opt/lib:" + my_env.get("LD_LIBRARY_PATH", '')
-           
-        code = subprocess.run([project_path + "/Debug/LabyPath", str(name)], env=my_env, shell=False)
-        if not code: 
+        if (not self.binary_path.is_file()):
+            QMessageBox.warning(self, 'Binary absent', "Cannot find labypath binary at " + str(self.binary_path), QMessageBox.StandardButton.Ok)
+            return False
+
+        code = subprocess.run([str(self.binary_path), str(name)], env=os.environ.copy(), shell=False, cwd=str(self.workspace_root))
+        if (code.returncode != 0):
             print("the process returns " + str(code.returncode))
-        return code
+            QMessageBox.warning(self, 'Generation failed', "labypath returned " + str(code.returncode), QMessageBox.StandardButton.Ok)
+            return False
+        return True
 
     def parseProtoConfig(self, name):
         with open(name, "r") as text_file:
@@ -53,8 +96,8 @@ class AppWindow(QMainWindow):
         view.setRootIndex(model.index(self.project_dir))    
         
     def editGedit(self, fileToOpen):
-        if (fileToOpen):
-            subprocess.run(['gedit "' + fileToOpen + '"&'], shell=True)
+        if (fileToOpen and not self.launchExternal(fileToOpen, ["gedit", "xdg-open"])):
+            QMessageBox.warning(self, 'Editor absent', "Cannot find a desktop editor in this container", QMessageBox.StandardButton.Ok)
       
 # # Rendering Generation ###########################################""
 
@@ -171,8 +214,7 @@ class AppWindow(QMainWindow):
     
     def editGeditRenderConfig(self):
         fileToOpen = self.getSelectedRenderConfigFile()
-        if (fileToOpen):
-            subprocess.run(['gedit "' + fileToOpen + '"&'], shell=True)
+        self.editGedit(fileToOpen)
         pass
     
     def renderConfigResetPath(self):
@@ -319,8 +361,7 @@ class AppWindow(QMainWindow):
     
     def editGeditRouteConfig(self):
         fileToOpen = self.getSelectedRouteConfigFile()
-        if (fileToOpen):
-            subprocess.run(['gedit "' + fileToOpen + '"&'], shell=True)
+        self.editGedit(fileToOpen)
         pass
     
     def routeConfigResetPath(self):
@@ -373,8 +414,8 @@ class AppWindow(QMainWindow):
         pass
 
     def callInkscape(self, fileToOpen):
-        if (fileToOpen):
-            subprocess.run(['inkscape "' + fileToOpen + '" 2>/dev/null&'], shell=True)
+        if (fileToOpen and not self.launchExternal(fileToOpen, ["inkscape", "xdg-open"])):
+            print("Cannot find a viewer for " + str(fileToOpen))
 
     def editInkscapeGridGeneration(self):
         fileToOpen = self.getSelectedGridGenerationFile()
@@ -468,8 +509,7 @@ class AppWindow(QMainWindow):
     
     def editGeditGridConfig(self):
         fileToOpen = self.getSelectedGridFile()
-        if (fileToOpen):
-            subprocess.run(['gedit "' + fileToOpen + '"&'], shell=True)
+        self.editGedit(fileToOpen)
         pass
     
     def gridConfigResetPath(self):
@@ -543,7 +583,7 @@ class AppWindow(QMainWindow):
         
         self.modelOriginal.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
-        self.modelOriginal.setNameFilters(["*orig.svg"])
+        self.modelOriginal.setNameFilters(["*.svg"])
         self.modelOriginal.setNameFilterDisables(False)
         self.viewOriginal.setModel(self.modelOriginal)
         self.originalResetPath()
@@ -575,7 +615,9 @@ class AppWindow(QMainWindow):
     def projectSetup(self):
         self.viewproject = self.ui.actionNew_Project;
         self.viewproject.triggered.connect(self.createNewProject)
-        self.project_dir = os.path.abspath("/mnt/3C32BE5232BE10BE/creation/creation image/natureFraicheLaby/python")
+        self.workspace_root = self.findWorkspaceRoot()
+        self.binary_path = self.resolveBinaryPath()
+        self.project_dir = os.path.abspath(str(self.defaultProjectDir()))
         
     def __init__(self):
         super().__init__()
