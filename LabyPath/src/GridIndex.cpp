@@ -13,27 +13,31 @@
 
 namespace laby {
 
-std::unordered_map<uint32_t, GridIndex> GridIndex::getIndexMap(const std::vector<Ribbon>& ribList) {
+auto GridIndex::getIndexMap(const std::vector<Ribbon>& ribList)
+    -> std::unordered_map<uint32_t, GridIndex> {
     std::unordered_map<uint32_t, GridIndex> mapOfGrids;
-    for (std::size_t i = 0; i < ribList.size(); ++i) {
+    for (std::size_t ribbonIndex = 0; ribbonIndex < ribList.size(); ++ribbonIndex) {
         // the skeleton grid info is on stroke color
-        // put it on fill color, in order to make the arrangement with different circular, radial info
-        const Ribbon& rib = ribList.at(i);
+        // put it on fill color, in order to make the arrangement with different circular, radial
+        // info
+        const Ribbon& ribbon = ribList.at(ribbonIndex);
 
-        const uint32_t blue = laby::basic::Color::get_blue(static_cast<uint32_t>(rib.fill_color()));
-        const uint32_t green = laby::basic::Color::get_green(static_cast<uint32_t>(rib.fill_color()));
+        const uint32_t blue =
+            laby::basic::Color::get_blue(static_cast<uint32_t>(ribbon.fillColor()));
+        const uint32_t green =
+            laby::basic::Color::get_green(static_cast<uint32_t>(ribbon.fillColor()));
         GridIndex& gridIndex = mapOfGrids.try_emplace(blue).first->second;
         switch (green) {
         case static_cast<uint32_t>(GridChannel::Circular): {
-            gridIndex._circular = i;
+            gridIndex.setCircularIndex(ribbonIndex);
             break;
         }
         case static_cast<uint32_t>(GridChannel::Radial): {
-            gridIndex._radial = i;
+            gridIndex.setRadialIndex(ribbonIndex);
             break;
         }
         case static_cast<uint32_t>(GridChannel::Limit): {
-            gridIndex._limit = i;
+            gridIndex.setLimitIndex(ribbonIndex);
             break;
         }
         default:
@@ -43,19 +47,19 @@ std::unordered_map<uint32_t, GridIndex> GridIndex::getIndexMap(const std::vector
     return mapOfGrids;
 }
 
-Arrangement_2 GridIndex::getArr(const std::vector<Ribbon>& ribList) const {
+auto GridIndex::getArr(const std::vector<Ribbon>& ribList) const -> Arrangement_2 {
 
     if (!isValid()) {
-        std::cout << "bad GridIndex" << std::endl;
-        return Arrangement_2();
+        std::cout << "bad GridIndex\n";
+        return {};
     }
-    else {
-        const Ribbon& ribCircular = ribList.at(_circular);
-        const Ribbon& ribRadial = ribList.at(_radial);
-        return Ribbon::createArr(ribCircular, ribRadial);
-    }
+
+    const Ribbon& ribCircular = ribList.at(circularIndex());
+    const Ribbon& ribRadial = ribList.at(radialIndex());
+    return Ribbon::createArr(ribCircular, ribRadial);
 }
-const Ribbon& GridIndex::limit(const std::vector<Ribbon>& ribList) const {
+
+auto GridIndex::limit(const std::vector<Ribbon>& ribList) const -> const Ribbon& {
     return ribList.at(_limit);
 }
 } /* namespace laby */

@@ -28,7 +28,7 @@ namespace basic {
 
 class EdgeNodeInfo {
 public:
-    int32_t _polygonId = -1; // NOLINT(misc-non-private-member-variables-in-classes)
+    int32_t _polygonId = -1; 
 
     explicit EdgeNodeInfo(int32_t polygonId) : _polygonId{polygonId} {}
 
@@ -51,11 +51,11 @@ public:
             _polygonIds.emplace(polygonId);
         }
     }
-    std::unordered_set<int32_t> _polygonIds; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::unordered_set<int32_t> _polygonIds; 
 
     void setData(const std::unordered_set<int32_t>& data) { _polygonIds = data; }
 
-    void set_data(const std::unordered_set<int32_t>& data) { setData(data); } // NOLINT(readability-identifier-naming)
+    void set_data(const std::unordered_set<int32_t>& data) { setData(data); } 
 
     std::unordered_set<int32_t>& data() { return _polygonIds; }
 
@@ -65,7 +65,7 @@ public:
         Gps_face_base::assign(f);
 
         // CGAL passes back the exact derived face type here.
-        const auto& exFace = static_cast<const FaceNodeInfo&>(f); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        const auto& exFace = static_cast<const FaceNodeInfo&>(f); 
         _polygonIds = exFace._polygonIds;
     }
 };

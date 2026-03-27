@@ -21,117 +21,159 @@
 
 namespace laby {
 
-void NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& /*polyConvexList*/) {
-    EASY_FUNCTION();
-    using namespace basic;
-    int32_t polygonIndex = 0;
+namespace {
 
-    for (Node* n : _nodes) {
-        Arrangement_2Node& arr = n->_setPolygons.arrangement();
-        for (FaceNode& face : RangeHelper::make(arr.faces_begin(), arr.faces_end())) {
-            face.setPolygonId(polygonIndex);
-        }
-        polygonIndex++;
-    }
+auto edgeMatchesPolygonId(const int32_t polygonIndex, const basic::HalfedgeNode& halfedge) -> bool {
+    return basic::edgeHasPolygonId(halfedge, polygonIndex);
 }
 
-bool NodeOverlap::testSeg(int32_t index, const basic::HalfedgeNode& he) {
+auto arrangementHasSharedFace(basic::Arrangement_2Node& arrangement) -> bool {
     using namespace basic;
-    return edgeHasPolygonId(he, index);
-}
 
-bool NodeOverlap::has_face(basic::Arrangement_2Node& res) {
-    using namespace basic;
-    for (FaceNode& face : RangeHelper::make(res.faces_begin(), res.faces_end())) {
-        const std::unordered_set<int32_t>& polygonsId = face.data();
-        if (polygonsId.size() > 1) {
+    for (FaceNode& face : RangeHelper::make(arrangement.faces_begin(), arrangement.faces_end())) {
+        if (face.data().size() > 1) {
             return true;
         }
     }
     return false;
 }
 
-void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList) {
-    EASY_FUNCTION();
+auto buildOverlayArrangement(const std::vector<Node*>& nodes) -> basic::Arrangement_2Node {
+    basic::Arrangement_2Node overlayArrangement = nodes.front()->_setPolygons.arrangement();
+    basic::Overlay_traitsNode overlayTraits;
+
+    for (std::size_t nodeIndex = 1; nodeIndex < nodes.size(); ++nodeIndex) {
+        const basic::Arrangement_2Node previousArrangement = overlayArrangement;
+        CGAL::overlay(previousArrangement, nodes.at(nodeIndex)->_setPolygons.arrangement(),
+                      overlayArrangement, overlayTraits);
+    }
+
+    return overlayArrangement;
+}
+
+auto renderSharedEdges(OrientedRibbon& orientedRibbon,
+                       basic::Arrangement_2Node& arrangement) -> void {
     using namespace basic;
-    sortNode();
 
-    addIdToPolygon(polyConvexList);
-
-    Overlay_traitsNode overlay_traits;
-
-    if (!_nodes.empty()) {
-        std::vector<Arrangement_2Node> arrResult;
-        arrResult.reserve(_nodes.size());
-        arrResult.emplace_back(_nodes.at(0)->_setPolygons.arrangement());
-
-        for (std::size_t i = 1; i < _nodes.size(); ++i) {
-            const Arrangement_2Node& last = arrResult.back();
-            arrResult.emplace_back();
-            CGAL::overlay(last, _nodes.at(i)->_setPolygons.arrangement(), arrResult.back(), overlay_traits);
+    for (HalfedgeNode& halfedge :
+         RangeHelper::make(arrangement.edges_begin(), arrangement.edges_end())) {
+        const auto& faceData = halfedge.face()->data();
+        const auto& twinFaceData = halfedge.twin()->face()->data();
+        if (faceData.size() + twinFaceData.size() > 1) {
+            orientedRibbon.addCCW(
+                Kernel::Segment_2(halfedge.source()->point(), halfedge.target()->point()));
         }
+    }
+}
 
-        Arrangement_2Node& res = arrResult.back();
+auto addOuterBoundarySegments(OrientedRibbon& orientedRibbon, const int32_t polygonIndex,
+                              basic::FaceNode& face) -> void {
+    using namespace basic;
 
-        if (!has_face(res)) {
-
-            for (HalfedgeNode& he : RangeHelper::make(res.edges_begin(), res.edges_end())) {
-                // Check if edge is shared between multiple polygons
-                const auto& faceData = he.face()->data();
-                const auto& twinData = he.twin()->face()->data();
-                if (faceData.size() + twinData.size() > 1) {
-                    oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
-                }
-            }
+    for (HalfedgeNode& halfedge : RangeHelper::make(face.outer_ccb())) {
+        if (edgeMatchesPolygonId(polygonIndex, halfedge)) {
+            orientedRibbon.addCCW(
+                Kernel::Segment_2(halfedge.source()->point(), halfedge.target()->point()));
         }
-        else {
+    }
+}
 
-            for (FaceNode& face : RangeHelper::make(res.faces_begin(), res.faces_end())) {
+auto addHoleBoundarySegments(OrientedRibbon& orientedRibbon, const int32_t polygonIndex,
+                             basic::FaceNode& face) -> void {
+    using namespace basic;
 
-                std::unordered_set<int32_t>& polygonsId = face.data();
-                if (polygonsId.size() > 1 && !face.is_unbounded()) {
-                    auto minIt = std::min_element(polygonsId.begin(), polygonsId.end());
-                    if (minIt == polygonsId.end()) {
-                        continue;
-                    } // defensive: set is non-empty (size>1)
-                    const int32_t index = *minIt;
-                    for (HalfedgeNode& he : RangeHelper::make(face.outer_ccb())) {
-                        if (testSeg(index, he)) {
-                            oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
-                        }
-                    }
-
-                    for (Arrangement_2Node::Inner_ccb_iterator ite = face.holes_begin(); ite != face.holes_end(); ++ite) {
-                        for (const HalfedgeNode& he : RangeHelper::make(*ite)) {
-                            if (testSeg(index, he)) {
-                                oribbon.addCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
-                            }
-                        }
-                    }
-                }
+    for (Arrangement_2Node::Inner_ccb_iterator innerBoundary = face.holes_begin();
+         innerBoundary != face.holes_end(); ++innerBoundary) {
+        for (const HalfedgeNode& halfedge : RangeHelper::make(*innerBoundary)) {
+            if (edgeMatchesPolygonId(polygonIndex, halfedge)) {
+                orientedRibbon.addCW(
+                    Kernel::Segment_2(halfedge.source()->point(), halfedge.target()->point()));
             }
         }
     }
 }
-void NodeOverlap::sortNode() {
-    std::sort(_nodes.begin(), _nodes.end(), [](const Node* a, const Node* b) { return a->_state < b->_state; });
+
+auto renderOverlappingFaces(OrientedRibbon& orientedRibbon,
+                            basic::Arrangement_2Node& arrangement) -> void {
+    using namespace basic;
+
+    for (FaceNode& face : RangeHelper::make(arrangement.faces_begin(), arrangement.faces_end())) {
+        std::unordered_set<int32_t>& polygonIds = face.data();
+        if (polygonIds.size() <= 1 || face.is_unbounded()) {
+            continue;
+        }
+
+        const auto minPolygonIt = std::min_element(polygonIds.begin(), polygonIds.end());
+        if (minPolygonIt == polygonIds.end()) {
+            continue;
+        }
+
+        const int32_t polygonIndex = *minPolygonIt;
+        addOuterBoundarySegments(orientedRibbon, polygonIndex, face);
+        addHoleBoundarySegments(orientedRibbon, polygonIndex, face);
+    }
 }
 
-void NodeRendering::render(OrientedRibbon& oribbon, std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList) {
+} // namespace
+
+auto NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& /*polyConvexList*/) -> void {
+    EASY_FUNCTION();
+    using namespace basic;
+    int32_t polygonIndex = 0;
+
+    for (Node* node : _nodes) {
+        Arrangement_2Node& arrangement = node->_setPolygons.arrangement();
+        for (FaceNode& face :
+             RangeHelper::make(arrangement.faces_begin(), arrangement.faces_end())) {
+            face.setPolygonId(polygonIndex);
+        }
+        polygonIndex++;
+    }
+}
+
+auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
+                         const std::vector<PolyConvex>& polyConvexList) -> void {
     EASY_FUNCTION();
 
-    for (Node& n : nodes) {
-        if (n._visited != 1) {
+    sortNode();
 
-            n._visited = 1;
-            NodeOverlap no;
-            no._nodes.push_back(&n);
-            for (Node* opp : n._opposite) {
-                opp->_visited = 1;
-                no._nodes.push_back(opp);
+    addIdToPolygon(polyConvexList);
+
+    if (_nodes.empty()) {
+        return;
+    }
+
+    basic::Arrangement_2Node overlayArrangement = buildOverlayArrangement(_nodes);
+    if (!arrangementHasSharedFace(overlayArrangement)) {
+        renderSharedEdges(orientedRibbon, overlayArrangement);
+        return;
+    }
+
+    renderOverlappingFaces(orientedRibbon, overlayArrangement);
+}
+
+auto NodeOverlap::sortNode() -> void {
+    std::sort(_nodes.begin(), _nodes.end(), [](const Node* leftNode, const Node* rightNode) {
+        return leftNode->_state < rightNode->_state;
+    });
+}
+
+auto NodeRendering::render(OrientedRibbon& orientedRibbon, std::vector<Node>& nodes,
+                           const std::vector<PolyConvex>& polyConvexList) -> void {
+    EASY_FUNCTION();
+
+    for (Node& node : nodes) {
+        if (node._visited != 1) {
+
+            node._visited = 1;
+            NodeOverlap nodeOverlap;
+            nodeOverlap._nodes.push_back(&node);
+            for (Node* oppositeNode : node._opposite) {
+                oppositeNode->_visited = 1;
+                nodeOverlap._nodes.push_back(oppositeNode);
             }
 
-            no.render(oribbon, polyConvexList);
+            nodeOverlap.render(orientedRibbon, polyConvexList);
         }
     }
 }

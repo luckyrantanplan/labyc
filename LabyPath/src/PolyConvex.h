@@ -47,24 +47,24 @@ namespace laby {
  */
 class PolyConvex {
 public:
-    Linear_polygon _geometry;                             // NOLINT(misc-non-private-member-variables-in-classes)
-    Linear_polygon _originalTrapeze;                      // NOLINT(misc-non-private-member-variables-in-classes)
-    std::vector<std::size_t> _adjacents;                  // NOLINT(misc-non-private-member-variables-in-classes)
-    mutable std::vector<Node*> _nodes;                    // NOLINT(misc-non-private-member-variables-in-classes)
-    Halfedge* _supportHe = nullptr;                       // NOLINT(misc-non-private-member-variables-in-classes)
-    std::size_t _id = 0;                                  // NOLINT(misc-non-private-member-variables-in-classes)
-    mutable int32_t _visited = 0;                         // NOLINT(misc-non-private-member-variables-in-classes)
-    mutable CGAL::Union_find<std::size_t>::handle handle; // NOLINT(misc-non-private-member-variables-in-classes)
-    double _average_thickness = 0;                        // NOLINT(misc-non-private-member-variables-in-classes)
+    Linear_polygon _geometry;                             
+    Linear_polygon _originalTrapeze;                      
+    std::vector<std::size_t> _adjacents;                  
+    mutable std::vector<Node*> _nodes;                    
+    Halfedge* _supportHe = nullptr;                       
+    std::size_t _id = 0;                                  
+    mutable int32_t _visited = 0;                         
+    mutable CGAL::Union_find<std::size_t>::handle handle; 
+    double _average_thickness = 0;                        
 
-    void set_average_thickness(double thickness) { // NOLINT(readability-identifier-naming)
+    void set_average_thickness(double thickness) { 
         _average_thickness = thickness;
     }
 
     double thickness() const { return _average_thickness; }
     PolyConvex() = default;
 
-    void remove_adjacence(std::size_t i) { // NOLINT(readability-identifier-naming)
+    void remove_adjacence(std::size_t i) { 
         auto ite = std::find(_adjacents.begin(), _adjacents.end(), i);
         std::swap(*ite, _adjacents.back());
         _adjacents.resize(_adjacents.size() - 1U);
@@ -120,7 +120,7 @@ public:
         return _pt;
     }
 
-    bool has_points() const { // NOLINT(readability-identifier-naming)
+    bool has_points() const { 
         if (_supportHe != nullptr) {
             return true;
         }

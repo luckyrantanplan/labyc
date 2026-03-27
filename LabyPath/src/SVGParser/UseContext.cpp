@@ -9,7 +9,7 @@
 
 namespace laby::svgp {
 
-void UseContext::on_exit_element() { // NOLINT(misc-no-recursion)
+void UseContext::on_exit_element() { 
     if (xml_element_t element = FindCurrentDocumentElementById(_fragmentId)) {
         // TODO: Check for cyclic references
         // TODO: Apply translate transform (_x, _y)

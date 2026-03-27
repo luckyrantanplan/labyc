@@ -11,7 +11,7 @@ namespace {
 
 TEST(RibbonTest, DefaultConstruction) {
     Ribbon r;
-    EXPECT_EQ(r.fill_color(), 0);
+    EXPECT_EQ(r.fillColor(), 0);
     EXPECT_TRUE(r.lines().empty());
     EXPECT_EQ(r.strokeColor(), 0);
     EXPECT_DOUBLE_EQ(r.strokeWidth(), 1.0);
@@ -19,7 +19,7 @@ TEST(RibbonTest, DefaultConstruction) {
 
 TEST(RibbonTest, ConstructWithFillColor) {
     Ribbon r(5);
-    EXPECT_EQ(r.fill_color(), 5);
+    EXPECT_EQ(r.fillColor(), 5);
 }
 
 TEST(RibbonTest, ConstructWithLines) {
@@ -33,13 +33,13 @@ TEST(RibbonTest, ConstructWithLines) {
 
     Ribbon r(1, {pl1, pl2});
     EXPECT_EQ(r.lines().size(), 2U);
-    EXPECT_EQ(r.fill_color(), 1);
+    EXPECT_EQ(r.fillColor(), 1);
 }
 
 TEST(RibbonTest, FillColorGetSet) {
     Ribbon r;
-    r.set_fill_color(42);
-    EXPECT_EQ(r.fill_color(), 42);
+    r.setFillColor(42);
+    EXPECT_EQ(r.fillColor(), 42);
 }
 
 TEST(RibbonTest, StrokeColorGetSet) {
@@ -72,7 +72,7 @@ TEST(RibbonTest, GetSegments) {
     pl.points.emplace_back(10, 10);
 
     Ribbon r(0, {pl});
-    auto segs = r.get_segments();
+    auto segs = r.getSegments();
     EXPECT_EQ(segs.size(), 2U);
 }
 
@@ -97,12 +97,12 @@ TEST(RibbonTest, GetPoints) {
     pl.points.emplace_back(5, 5);
 
     Ribbon r(0, {pl});
-    auto pts = r.get_Points();
+    auto pts = r.getPoints();
     EXPECT_EQ(pts.size(), 2U);
 }
 
 TEST(IndexRangeTest, Construction) {
-    IndexRange range(3, 10);
+    IndexRange range{3, 10};
     EXPECT_EQ(range.min, 3U);
     EXPECT_EQ(range.max, 10U);
 }

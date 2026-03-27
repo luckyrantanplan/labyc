@@ -73,7 +73,7 @@ class UseContext : public BaseContext {
     void on_exit_element();
 
     // SVG++ discovers this hook by exact name.
-    // NOLINTNEXTLINE(readability-identifier-naming)
+    
     static auto FindCurrentDocumentElementById(const std::string& fragmentId) -> xml_element_t {
         static_cast<void>(fragmentId);
         return nullptr;
@@ -93,7 +93,7 @@ class ReferencedSymbolOrSvgContext : public BaseContext {
         : BaseContext(static_cast<const BaseContext&>(referencing)), _referencing(&referencing) {}
 
     // SVG++ discovers this hook by exact name.
-    // NOLINTBEGIN(readability-identifier-naming,bugprone-easily-swappable-parameters)
+    
     void get_reference_viewport_size(double& width, double& height) {
         if (_referencing->width()) {
             width = *_referencing->width();
@@ -102,14 +102,14 @@ class ReferencedSymbolOrSvgContext : public BaseContext {
             height = *_referencing->height();
         }
     }
-    // NOLINTEND(readability-identifier-naming,bugprone-easily-swappable-parameters)
+    
 
   private:
     UseContext* _referencing;
 };
 
 // SVG++ policy customization uses fixed trait names such as 'apply' and 'arc_as_cubic_bezier'.
-// NOLINTBEGIN(readability-identifier-naming)
+
 struct ChildContextFactories {
     template <class ParentContext, class ElementTag, class Enable = void> struct apply {
         // Default definition handles "svg" and "g" elements
@@ -182,7 +182,7 @@ using document_traversal_t =
                               svgpp::viewport_policy<svgpp::policy::viewport::as_transform>, //
                               svgpp::context_factories<ChildContextFactories>,               //
                               svgpp::markers_policy<svgpp::policy::markers::calculate_always>>;
-// NOLINTEND(readability-identifier-naming)
+
 
 } /* namespace laby::svgp */
 

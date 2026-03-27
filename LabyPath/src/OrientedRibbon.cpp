@@ -10,18 +10,123 @@
 
 namespace laby {
 
-bool OrientedRibbon::isRight(const Kernel::Point_2& p1, const Kernel::Point_2& p2) {
-    if (p1.y() < p2.y()) {
+namespace {
+
+auto isRight(const Kernel::Point_2& firstPoint, const Kernel::Point_2& secondPoint) -> bool {
+    if (firstPoint.y() < secondPoint.y()) {
         return true;
     }
-    if (p1.y() > p2.y()) {
+    if (firstPoint.y() > secondPoint.y()) {
         return false;
     }
-    if (p1.x() < p2.x()) {
+    if (firstPoint.x() < secondPoint.x()) {
         return true;
     }
     return false;
 }
+
+auto setPolylineOrientation(const Halfedge& halfedge, Polyline& polyline) -> void {
+    if (halfedge.curve().data().direction() == 1) {
+        polyline.id = isRight(halfedge.source()->point(), halfedge.target()->point()) ? +1 : -1;
+        return;
+    }
+
+    polyline.id = isRight(halfedge.source()->point(), halfedge.target()->point()) ? -1 : +1;
+}
+
+void resetEdgeVisits(const Arrangement_2& arrangement) {
+    for (const Halfedge& edgeIterator :
+         RangeHelper::make(arrangement.edges_begin(), arrangement.edges_end())) {
+        const Segment_info_2& curve = edgeIterator.curve();
+        curve.data().setVisit(-1);
+    }
+}
+
+void appendBranchPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
+    ribbon.lines().emplace_back();
+    Polyline& polyline = ribbon.lines().back();
+
+    for (const Halfedge& halfedge : RangeHelper::make(startHalfedge.twin()->ccb())) {
+        polyline.points.emplace_back(halfedge.source()->point());
+        setPolylineOrientation(halfedge, polyline);
+
+        if (halfedge.curve().data().getVisit() == 1) {
+            break;
+        }
+
+        if (halfedge.target()->degree() != 2) {
+            halfedge.curve().data().setVisit(1);
+            polyline.points.emplace_back(halfedge.target()->point());
+            break;
+        }
+        halfedge.curve().data().setVisit(1);
+    }
+}
+
+void collectBranchPolylines(const Arrangement_2& arrangement, Ribbon& ribbon) {
+    for (const Vertex& vertex :
+         RangeHelper::make(arrangement.vertices_begin(), arrangement.vertices_end())) {
+        if (!vertex.is_isolated() && vertex.degree() != 2) {
+            for (const Halfedge& edgeIterator : RangeHelper::make(vertex.incident_halfedges())) {
+                if (edgeIterator.curve().data().getVisit() == -1) {
+                    appendBranchPolyline(edgeIterator, ribbon);
+                }
+            }
+        }
+    }
+}
+
+void appendLoopPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
+    ribbon.lines().emplace_back();
+    Polyline& polyline = ribbon.lines().back();
+    bool isClosed = true;
+
+    for (const Halfedge& halfedge : RangeHelper::make(startHalfedge.twin()->ccb())) {
+        setPolylineOrientation(halfedge, polyline);
+        polyline.points.emplace_back(halfedge.source()->point());
+        if (halfedge.curve().data().getVisit() == 1) {
+            isClosed = false;
+            break;
+        }
+        halfedge.curve().data().setVisit(1);
+    }
+
+    if (isClosed) {
+        polyline.points.emplace_back(startHalfedge.target()->point());
+        polyline.closed = true;
+    }
+}
+
+void collectLoopPolylines(const Arrangement_2& arrangement, Ribbon& ribbon) {
+    for (const Halfedge& edgeIterator :
+         RangeHelper::make(arrangement.edges_begin(), arrangement.edges_end())) {
+        if (edgeIterator.curve().data().getVisit() != 1) {
+            appendLoopPolyline(edgeIterator, ribbon);
+        }
+    }
+}
+
+void normalizeRibbonOrientation(Ribbon& ribbon) {
+    for (Polyline& polyline : ribbon.lines()) {
+        polyline.removeConsecutiveDuplicatePoints();
+
+        if (polyline.id == 1) {
+            std::reverse(polyline.points.begin(), polyline.points.end());
+            polyline.id = -1;
+        }
+    }
+}
+
+auto createRibbonOfEdge(const Arrangement_2& arrangement) -> Ribbon {
+    resetEdgeVisits(arrangement);
+
+    Ribbon ribbon;
+    collectBranchPolylines(arrangement, ribbon);
+    collectLoopPolylines(arrangement, ribbon);
+    return ribbon;
+}
+
+} // namespace
 
 void OrientedRibbon::addCW(const Kernel::Segment_2& segment) {
     if (isRight(segment.source(), segment.target())) {
@@ -42,123 +147,28 @@ void OrientedRibbon::addCCW(const Kernel::Segment_2& segment) {
     _right.emplace_back(segment);
 }
 
-Ribbon OrientedRibbon::createOrientedRibbon() const {
+auto OrientedRibbon::createOrientedRibbon() const -> Ribbon {
 
-    Arrangement_2 arr;
-    std::vector<Segment_info_2> listSeg;
-    for (const Kernel::Segment_2& seg : _left) {
-        listSeg.push_back(Segment_info_2(seg, EdgeInfo{1, EdgeInfo::Coordinate{0}}));
+    Arrangement_2 arrangement;
+    std::vector<Segment_info_2> segmentList;
+    segmentList.reserve(_left.size() + _right.size());
+    for (const Kernel::Segment_2& segment : _left) {
+        segmentList.emplace_back(segment, EdgeInfo{1, EdgeInfo::Coordinate{0}});
     }
-    for (const Kernel::Segment_2& seg : _right) {
-        listSeg.push_back(Segment_info_2(seg, EdgeInfo{3, EdgeInfo::Coordinate{0}}));
+    for (const Kernel::Segment_2& segment : _right) {
+        segmentList.emplace_back(segment, EdgeInfo{3, EdgeInfo::Coordinate{0}});
     }
-    CGAL::insert(arr, listSeg.begin(), listSeg.end());
-    Ribbon result = createRibbonOfEdge(arr);
-
-    for (Polyline& pl : result.lines()) {
-
-        pl.removeConsecutiveDuplicatePoints();
-
-        if (pl.id == 1) {
-            std::reverse(pl.points.begin(), pl.points.end());
-            pl.id = -1;
-        }
-    }
+    CGAL::insert(arrangement, segmentList.begin(), segmentList.end());
+    Ribbon result = createRibbonOfEdge(arrangement);
+    normalizeRibbonOrientation(result);
 
     return result;
 }
-std::vector<Ribbon> OrientedRibbon::getResult() const {
+
+auto OrientedRibbon::getResult() const -> std::vector<Ribbon> {
     std::vector<Ribbon> result;
     result.emplace_back(createOrientedRibbon());
     return result;
-}
-void OrientedRibbon::setPolylineOrientation(const Halfedge& he, Polyline& poly) {
-
-    if (he.curve().data().direction() == 1) {
-
-        if (isRight(he.source()->point(), he.target()->point())) {
-            poly.id = +1;
-        }
-        else {
-            poly.id = -1;
-        }
-    }
-    else {
-
-        if (isRight(he.source()->point(), he.target()->point())) {
-            poly.id = -1;
-        }
-        else {
-            poly.id = +1;
-        }
-    }
-}
-
-// copy from Ribbon perhaps we can merge it with the other function
-Ribbon OrientedRibbon::createRibbonOfEdge(const Arrangement_2& arr) {
-
-    // init
-    for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-        const Segment_info_2& curve = eit.curve();
-        curve.data().setVisit(-1);
-    }
-
-    Ribbon ribbon;
-
-    for (const Vertex& v : RangeHelper::make(arr.vertices_begin(), arr.vertices_end())) {
-        if (!v.is_isolated() and v.degree() != 2) {
-            for (const Halfedge& eit : RangeHelper::make(v.incident_halfedges())) {
-                if (eit.curve().data().getVisit() == -1) {
-                    ribbon.lines().emplace_back();
-
-                    Polyline& poly = ribbon.lines().back();
-
-                    for (const Halfedge& he : RangeHelper::make(eit.twin()->ccb())) {
-                        poly.points.emplace_back(he.source()->point());
-                        setPolylineOrientation(he, poly);
-
-                        if (he.curve().data().getVisit() == 1) {
-                            break;
-                        }
-
-                        if (he.target()->degree() != 2) {
-                            he.curve().data().setVisit(1);
-                            poly.points.emplace_back(he.target()->point());
-                            break;
-                        }
-                        he.curve().data().setVisit(1);
-                    }
-                }
-            }
-        }
-    }
-    // loop (only degree 2 )
-    for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-
-        if (eit.curve().data().getVisit() != 1) {
-
-            ribbon.lines().emplace_back();
-            Polyline& poly = ribbon.lines().back();
-            bool closed = true;
-
-            for (const Halfedge& he : RangeHelper::make(eit.twin()->ccb())) {
-                setPolylineOrientation(he, poly);
-
-                poly.points.emplace_back(he.source()->point());
-                if (he.curve().data().getVisit() == 1) {
-                    closed = false;
-                    break;
-                }
-                he.curve().data().setVisit(1);
-            }
-
-            if (closed) {
-                poly.points.emplace_back(eit.target()->point());
-                poly.closed = true;
-            }
-        }
-    }
-    return ribbon;
 }
 
 } /* namespace laby */

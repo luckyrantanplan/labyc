@@ -10,6 +10,7 @@ Checks: >
   concurrency-*,
   cppcoreguidelines-*,
   hicpp-*,
+  misc-*,
   modernize-*,
   performance-*,
   readability-*

@@ -44,8 +44,8 @@
 #define NODE_H_
 
 #include <algorithm>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
@@ -56,65 +56,68 @@
 namespace laby {
 
 class Node {
-public:
+  public:
     /// Nodes from nearby non-overlapping families (soft alternating-state constraint).
-    std::unordered_set<Node*> _adjacents; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::unordered_set<Node*> _adjacents;
 
     /// Nodes sharing the same overlap region but from a different patch
     /// (hard different-state constraint for graph coloring).
-    std::vector<Node*> _opposite; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<Node*> _opposite;
 
     /// Indices into the PolyConvex vector that this node is responsible for.
-    std::vector<std::size_t> _cover; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::size_t> _cover;
 
     /// Rendering state assigned by graph coloring.  -1 = unassigned.
-    int32_t _state = -1; // NOLINT(misc-non-private-member-variables-in-classes)
+    int32_t _state = -1;
 
     /// Unique identifier for debugging/logging.
-    int32_t _nodeId = 0; // NOLINT(misc-non-private-member-variables-in-classes)
+    int32_t _nodeId = 0;
 
     /// Traversal flag: 0 = unvisited, 1 = visited, -1 = BFS-marked.
     /// Declared mutable because BFS/DFS traversals modify it on const objects.
-    mutable int32_t _visited = 0; // NOLINT(misc-non-private-member-variables-in-classes)
+    mutable int32_t _visited = 0;
 
     /// Geometric union of covered polygons (used for arrangement overlay).
-    basic::Polygon_set_2Node _setPolygons; // NOLINT(misc-non-private-member-variables-in-classes)
+    basic::Polygon_set_2Node _setPolygons;
 
     explicit Node(const int32_t nodeId) : _nodeId{nodeId} {}
 
-    void setState(int32_t s) { _state = s; }
-
-    bool operator<(const Node& n) const {
-        if (_opposite.size() == n._opposite.size()) {
-            return _adjacents.size() < n._adjacents.size();
-        }
-        return (_opposite.size() < n._opposite.size());
+    void setState(int32_t state) {
+        _state = state;
     }
 
-    bool operator>(const Node& n) const {
-        if (_opposite.size() == n._opposite.size()) {
-            return _adjacents.size() > n._adjacents.size();
+    auto operator<(const Node& node) const -> bool {
+        if (_opposite.size() == node._opposite.size()) {
+            return _adjacents.size() < node._adjacents.size();
         }
-        return (_opposite.size() > n._opposite.size());
+        return (_opposite.size() < node._opposite.size());
     }
 
-    void print(std::ostream& os) const {
-        os << "id" << _nodeId << " s" << _state;
-        os << " opp [";
+    auto operator>(const Node& node) const -> bool {
+        if (_opposite.size() == node._opposite.size()) {
+            return _adjacents.size() > node._adjacents.size();
+        }
+        return (_opposite.size() > node._opposite.size());
+    }
+
+    void print(std::ostream& outputStream) const {
+        outputStream << "id" << _nodeId << " s" << _state;
+        outputStream << " opp [";
         for (Node* oppositeNode : _opposite) {
-            os << oppositeNode->_nodeId << " s" << oppositeNode->_state << " ";
+            outputStream << oppositeNode->_nodeId << " s" << oppositeNode->_state << " ";
         }
-        os << " ] ";
-        os << " adj [";
+        outputStream << " ] ";
+        outputStream << " adj [";
         for (Node* adjacentNode : _adjacents) {
-            os << adjacentNode->_nodeId << " s" << adjacentNode->_state << " ";
+            outputStream << adjacentNode->_nodeId << " s" << adjacentNode->_state << " ";
         }
-        os << " ] ";
+        outputStream << " ] ";
     }
 
     /// Returns true if any opposite node has been assigned a state (!= -1).
-    bool haveOppositeState() const {
-        return std::any_of(_opposite.begin(), _opposite.end(), [](const Node* n) { return n->_state != -1; });
+    auto haveOppositeState() const -> bool {
+        return std::any_of(_opposite.begin(), _opposite.end(),
+                           [](const Node* n) { return n->_state != -1; });
     }
 };
 
@@ -125,8 +128,9 @@ public:
  * occupied and returns the next available one via getNext().
  */
 class StateSelect {
-public:
-    explicit StateSelect(const std::vector<Node*>& opposite) : _occupied_states(opposite.size(), false) {
+  public:
+    explicit StateSelect(const std::vector<Node*>& opposite)
+        : _occupied_states(opposite.size(), false) {
         for (Node* opp : opposite) {
             markOccupied(opp->_state);
         }
@@ -138,7 +142,7 @@ public:
         }
     }
 
-    int32_t getNext() {
+    auto getNext() -> int32_t {
         for (; _current_index < _occupied_states.size(); ++_current_index) {
             if (!_occupied_states.at(_current_index)) {
                 _occupied_states.at(_current_index) = true;
@@ -148,10 +152,14 @@ public:
         return static_cast<int32_t>(_current_index);
     }
 
-    [[nodiscard]] std::size_t currentIndex() const { return _current_index; }
-    [[nodiscard]] const std::vector<bool>& occupiedStates() const { return _occupied_states; }
+    [[nodiscard]] auto currentIndex() const -> std::size_t {
+        return _current_index;
+    }
+    [[nodiscard]] auto occupiedStates() const -> const std::vector<bool>& {
+        return _occupied_states;
+    }
 
-private:
+  private:
     std::size_t _current_index = 0;
     std::vector<bool> _occupied_states;
 };
@@ -161,16 +169,19 @@ private:
  * first) so the greedy coloring handles simpler conflicts before complex ones.
  */
 struct NodeQueue {
-public:
+  public:
     explicit NodeQueue(Node& node) : _node(&node) {}
-    [[nodiscard]] Node& node() { return *_node; }
-    [[nodiscard]] Node& node() const { return *_node; }
+    [[nodiscard]] auto node() const -> Node& {
+        return *_node;
+    }
 
     // Inverted comparison: priority_queue gives max by default,
     // so inverting '<' to '>' makes it return the smallest first.
-    bool operator<(const NodeQueue& n) const { return node() > n.node(); }
+    auto operator<(const NodeQueue& nodeQueue) const -> bool {
+        return node() > nodeQueue.node();
+    }
 
-private:
+  private:
     Node* _node;
 };
 

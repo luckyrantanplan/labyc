@@ -14,18 +14,14 @@ namespace laby {
 
 class OrientedRibbon {
 
-public:
-    void addCW(const Kernel::Segment_2& segment);
-    void addCCW(const Kernel::Segment_2& segment);
+  public:
+    auto addCW(const Kernel::Segment_2& segment) -> void;
+    auto addCCW(const Kernel::Segment_2& segment) -> void;
 
-    [[nodiscard]] std::vector<Ribbon> getResult() const;
-    [[nodiscard]] Ribbon createOrientedRibbon() const;
+    [[nodiscard]] auto getResult() const -> std::vector<Ribbon>;
+    [[nodiscard]] auto createOrientedRibbon() const -> Ribbon;
 
-private:
-    static bool isRight(const Kernel::Point_2& p1, const Kernel::Point_2& p2);
-    static Ribbon createRibbonOfEdge(const Arrangement_2& arr);
-    static void setPolylineOrientation(const Halfedge& he, Polyline& poly);
-
+  private:
     std::vector<Kernel::Segment_2> _left;
     std::vector<Kernel::Segment_2> _right;
 };

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <deque>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <unordered_map>
@@ -50,7 +51,7 @@ Placement::Placement(proto::Placement config, const proto::Filepaths& filepaths)
         // the skeleton grid info is on stroke color
         // put it on fill color, in order to make the arrangement with different circular, radial
         // info
-        rib.set_fill_color(rib.strokeColor());
+        rib.setFillColor(rib.strokeColor());
     }
     std::unordered_map<uint32_t, GridIndex> mapOfGrids = GridIndex::getIndexMap(ribList);
 
@@ -140,14 +141,18 @@ void Placement::statistics(const Arrangement_2& arr) {
 }
 
 auto Placement::crossOtherNet(const Vertex& vertex, int32_t netId) -> bool {
-    // NOLINTNEXTLINE(readability-use-anyofallof)
+    std::vector<std::reference_wrapper<const Halfedge>> incidentHalfedges;
+    incidentHalfedges.reserve(static_cast<std::size_t>(vertex.degree()));
     for (const Halfedge& halfedge : RangeHelper::make(vertex.incident_halfedges())) {
-        if (halfedge.curve().data().congestion() > 0 and
-            halfedge.curve().data().getNet() != netId) {
-            return true;
-        }
+        incidentHalfedges.emplace_back(halfedge);
     }
-    return false;
+
+    return std::any_of(incidentHalfedges.begin(), incidentHalfedges.end(),
+                       [netId](const std::reference_wrapper<const Halfedge> halfedgeRef) {
+                           const Halfedge& halfedge = halfedgeRef.get();
+                           return halfedge.curve().data().congestion() > 0 &&
+                                  halfedge.curve().data().getNet() != netId;
+                       });
 }
 
 auto Placement::explodeGraph(const std::vector<PolyConvex>& initialConvex,

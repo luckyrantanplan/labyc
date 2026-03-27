@@ -500,13 +500,13 @@ Arrangement_2 VoronoiMedialSkeleton::getSimpleArr(const Ribbon& rib, const Ribbo
     std::vector<Segment_info_2> result_convert;
 
     rib.addToSegments(result_convert);
-    std::vector<Point_2> pointsK = rib.get_Points();
+    std::vector<Point_2> pointsK = rib.getPoints();
 
     for (const Kernel::Segment_2& s : _result) {
-        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, EdgeInfo::Coordinate{0}));
+        result_convert.emplace_back(s, EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
     }
-    for (const Kernel::Segment_2& s : ribLimit.get_segments()) {
-        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, EdgeInfo::Coordinate{0}));
+    for (const Kernel::Segment_2& s : ribLimit.getSegments()) {
+        result_convert.emplace_back(s, EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
     }
 
     Arrangement_2 arr;

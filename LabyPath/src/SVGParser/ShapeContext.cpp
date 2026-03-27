@@ -27,7 +27,7 @@ auto ShapeContext::currentRibbon() -> Ribbon& {
 }
 
 // SVG++ discovers these callbacks by exact name.
-// NOLINTBEGIN(readability-identifier-naming)
+
 void ShapeContext::path_move_to(double xCoordinate, double yCoordinate,
                                 svgpp::tag::coordinate::absolute coordinateTag) {
     static_cast<void>(coordinateTag);
@@ -95,7 +95,7 @@ void ShapeContext::path_close_subpath() {
     currentRibbon().lines().emplace_back();
 }
 
-// NOLINTEND(readability-identifier-naming)
+
 
 auto ShapeContext::getColor(const Paint& paint) -> color_t {
     EffectivePaint epaint = style().getEffectivePaint(paint);
@@ -106,12 +106,12 @@ auto ShapeContext::getColor(const Paint& paint) -> color_t {
 }
 
 void ShapeContext::path_exit() {
-    currentRibbon().set_fill_color(getColor(style().fill_paint_));
+    currentRibbon().setFillColor(getColor(style().fill_paint_));
     currentRibbon().setStrokeColor(getColor(style().stroke_paint_));
     currentRibbon().setStrokeWidth(style().stroke_width_);
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+
 void ShapeContext::marker(svgpp::marker_vertex vertex, double xCoordinate, double yCoordinate,
                           double directionality, unsigned markerIndex) {
     if (markerIndex >= _markers.size()) {

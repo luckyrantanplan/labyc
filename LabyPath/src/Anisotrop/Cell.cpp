@@ -42,7 +42,7 @@ constexpr double kMidpointDivisor = 2.0;
 
 Cell::Cell(proto::Cell config, Arrangement_2& arr, const Ribbon& limit)
     : _config(std::move(config)), _arr(&arr), _random(0, 100.0, _config.seed()) {
-    std::vector<Point_2> points = limit.get_Points();
+    std::vector<Point_2> points = limit.getPoints();
 
     std::cout << " points.size() " << points.size() << '\n';
 

@@ -83,7 +83,7 @@ GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std
     }
 
     using laby::basic::Color;
-    const auto fillColorValue = static_cast<uint32_t>(ribbon.fill_color());
+    const auto fillColorValue = static_cast<uint32_t>(ribbon.fillColor());
     svg::Path path(svg::Color(static_cast<int32_t>(Color::get_red(fillColorValue)),
                               static_cast<int32_t>(Color::get_green(fillColorValue)),
                               static_cast<int32_t>(Color::get_blue(fillColorValue))),
@@ -110,7 +110,7 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
         }
 
         using laby::basic::Color;
-        const auto fillColorValue = static_cast<uint32_t>(cleanRibbon.fill_color());
+        const auto fillColorValue = static_cast<uint32_t>(cleanRibbon.fillColor());
         svg::Stroke stroke(thickness,
                            svg::Color(static_cast<int32_t>(Color::get_red(fillColorValue)),
                                       static_cast<int32_t>(Color::get_green(fillColorValue)),

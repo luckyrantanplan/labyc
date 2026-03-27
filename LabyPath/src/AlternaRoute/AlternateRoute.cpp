@@ -250,7 +250,7 @@ auto AlternateRoute::voronoiArr(const Arrangement_2& arrangement, int32_t direct
     CGAL::insert(arr2, segments.begin(), segments.end());
 
     Ribbon ribContour = Ribbon::createRibbonOfEdge(arr2, _config.simplifydist());
-    ribContour.set_fill_color(direction);
+    ribContour.setFillColor(direction);
     Ribbon ribContourFramed = ribContour;
     ribContourFramed.lines().emplace_back();
     Polyline& framePolyline = ribContourFramed.lines().back();
@@ -358,8 +358,8 @@ void AlternateRoute::populateTrapeze(const GridIndex& gridIndex, const std::vect
                                      const CGAL::Bbox_2& viewBox,
                                      std::vector<alter::SegmentTrapezeInfo2>& trapezeVect) {
     const Ribbon& ribLimit = gridIndex.limit(ribList);
-    const Ribbon& ribCircular = ribList.at(gridIndex._circular);
-    const Ribbon& ribRadial = ribList.at(gridIndex._radial);
+    const Ribbon& ribCircular = ribList.at(gridIndex.circularIndex());
+    const Ribbon& ribRadial = ribList.at(gridIndex.radialIndex());
     Arrangement_2 arr = gridIndex.getArr(ribList);
     // remove inner  antenna
     arr = pruneArrangement(arr);
@@ -373,7 +373,7 @@ void AlternateRoute::copyStrokeColorToFillColor(std::vector<Ribbon>& ribList) {
     for (Ribbon& rib : ribList) {
         // The skeleton grid info is on stroke color. Move it to fill color so
         // arrangement construction keeps circular/radial metadata separate.
-        rib.set_fill_color(rib.strokeColor());
+        rib.setFillColor(rib.strokeColor());
     }
 }
 

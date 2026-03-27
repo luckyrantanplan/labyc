@@ -22,7 +22,7 @@ class ShapeContext : public BaseContext {
     explicit ShapeContext(BaseContext& parent);
 
     // SVG++ discovers these callbacks by exact name.
-    // NOLINTBEGIN(readability-identifier-naming)
+    
     void path_move_to(double xCoordinate, double yCoordinate,
                       svgpp::tag::coordinate::absolute coordinateTag);
 
@@ -45,9 +45,9 @@ class ShapeContext : public BaseContext {
     void path_close_subpath();
 
     void path_exit();
-    // NOLINTEND(readability-identifier-naming)
+    
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    
     void marker(svgpp::marker_vertex vertex, double xCoordinate, double yCoordinate,
                 double directionality, unsigned markerIndex);
 

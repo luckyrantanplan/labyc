@@ -20,9 +20,9 @@ struct IndexedPoint {
     IndexedPoint(double ix, double iy, std::size_t i) : x(ix), y(iy), index(i) {}
     IndexedPoint() = default;
 
-    double x = 0;          // NOLINT(misc-non-private-member-variables-in-classes)
-    double y = 0;          // NOLINT(misc-non-private-member-variables-in-classes)
-    std::size_t index = 0; // NOLINT(misc-non-private-member-variables-in-classes)
+    double x = 0;          
+    double y = 0;          
+    std::size_t index = 0; 
 };
 } /* namespace laby */
 

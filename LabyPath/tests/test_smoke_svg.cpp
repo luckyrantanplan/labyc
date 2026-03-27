@@ -251,7 +251,7 @@ TEST_F(SvgLoaderTest, RibbonColorIsValid) {
     laby::svgp::Loader loader(path);
     for (const auto& rib : loader.ribList()) {
         // Fill color is encoded as a 32-bit RGB value; should be non-negative
-        EXPECT_GE(rib.fill_color(), 0) << "Fill color should be a valid positive value";
+        EXPECT_GE(rib.fillColor(), 0) << "Fill color should be a valid positive value";
     }
 }
 

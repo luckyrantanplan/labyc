@@ -109,7 +109,7 @@ Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
         }
     }
     std::sort(vectSeg.begin(), vectSeg.end());
-    Ribbon result(ribbon.fill_color());
+    Ribbon result(ribbon.fillColor());
     for (SegmentPS& seg : vectSeg) {
 
         if (set.count(seg.source()) == 0 and set.count(seg.target()) == 0) {

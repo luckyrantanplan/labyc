@@ -367,7 +367,7 @@ void Curve3::init(double startX, double startY, double controlX, double controlY
 //------------------------------------------------------------------------
 void Curve3::recursiveBezier(double startX, double startY, double controlX, double controlY,
                              double endX, double endY,
-                             unsigned level) { // NOLINT(misc-no-recursion)
+                             unsigned level) { 
     if (level > kCurveRecursionLimit) {
         return;
     }
@@ -420,7 +420,7 @@ void Curve4::init(double startX, double startY, double control1X, double control
 //------------------------------------------------------------------------
 void Curve4::recursiveBezier(double startX, double startY, double control1X, double control1Y,
                              double control2X, double control2Y, double endX, double endY,
-                             unsigned level) { // NOLINT(misc-no-recursion)
+                             unsigned level) { 
     if (level > kCurveRecursionLimit) {
         return;
     }

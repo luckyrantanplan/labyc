@@ -23,65 +23,100 @@ class CoverSpatialIndex;
 namespace laby {
 
 struct IndexRange {
+    std::size_t min;
+    std::size_t max;
+};
 
-    IndexRange(std::size_t range_min, std::size_t range_max) : min{range_min}, max{range_max} {} // NOLINT(bugprone-easily-swappable-parameters)
+struct GiveSpaceConfig {
+    double space;
+    double subdivisionFactor;
+    double minimalLength;
+};
 
-    std::size_t min; // NOLINT(misc-non-private-member-variables-in-classes)
-    std::size_t max; // NOLINT(misc-non-private-member-variables-in-classes)
+struct SubRibbonConfig {
+    double space;
+    double minimalLength;
+};
+
+struct SplitRibbonConfig {
+    double thickness;
+    int octave;
 };
 
 class Ribbon {
 
-public:
-    [[nodiscard]] std::vector<Ribbon> splitRibbon(double thickness, int octave) const;
-    [[nodiscard]] std::vector<Kernel::Segment_2> get_segments() const; // NOLINT(readability-identifier-naming)
-    [[nodiscard]] std::vector<Point_2> get_Points() const;             // NOLINT(readability-identifier-naming)
-    [[nodiscard]] Arrangement_2 createArr() const;
+  public:
+    [[nodiscard]] auto splitRibbon(SplitRibbonConfig config) const -> std::vector<Ribbon>;
+    [[nodiscard]] auto getSegments() const -> std::vector<Kernel::Segment_2>;
+    [[nodiscard]] auto getPoints() const -> std::vector<Point_2>;
+    [[nodiscard]] auto createArr() const -> Arrangement_2;
     void reverse();
-    static Arrangement_2 createArr(const Ribbon& r1, const Ribbon& r2);
-    static Arrangement_2 createArr(const std::vector<Ribbon>& ribList);
-    static void appendToArr(const Ribbon& r1, const Ribbon& r2, Arrangement_2& arr);
+    static auto createArr(const Ribbon& firstRibbon, const Ribbon& secondRibbon) -> Arrangement_2;
+    static auto createArr(const std::vector<Ribbon>& ribbonList) -> Arrangement_2;
+    static void appendToArr(const Ribbon& firstRibbon, const Ribbon& secondRibbon,
+                            Arrangement_2& arrangement);
 
-    [[nodiscard]] static Ribbon createRibbonOfEdge(const Arrangement_2& arr, double simplification);
+    [[nodiscard]] static auto createRibbonOfEdge(const Arrangement_2& arrangement,
+                                                 double simplification) -> Ribbon;
 
-    Ribbon(const int32_t fill_color = 0, const std::vector<Polyline>& lines = {}) : _lines{lines}, _fill_color{fill_color} {}
+    explicit Ribbon(int32_t fillColor = 0, const std::vector<Polyline>& lines = {})
+        : _lines{lines}, _fillColor{fillColor} {}
 
-    [[nodiscard]] int32_t fill_color() const { return _fill_color; } // NOLINT(readability-identifier-naming)
-    void set_fill_color(int32_t color) { _fill_color = color; }      // NOLINT(readability-identifier-naming)
+    [[nodiscard]] auto fillColor() const -> int32_t {
+        return _fillColor;
+    }
+    void setFillColor(int32_t color) {
+        _fillColor = color;
+    }
 
-    std::vector<Polyline>& lines() { return _lines; }
+    auto lines() -> std::vector<Polyline>& {
+        return _lines;
+    }
 
-    [[nodiscard]] const std::vector<Polyline>& lines() const { return _lines; }
-    void addToSegments(std::vector<Segment_info_2>& listSeg) const;
+    [[nodiscard]] auto lines() const -> const std::vector<Polyline>& {
+        return _lines;
+    }
+    void addToSegments(std::vector<Segment_info_2>& segmentList) const;
 
-    void order_lines(); // NOLINT(readability-identifier-naming)
+    void orderLines();
 
-    [[nodiscard]] Ribbon give_space(const double& space, const double& subdivision_factor,
-                                    const double& minimal_length) const; // NOLINT(readability-identifier-naming)
+    [[nodiscard]] auto giveSpace(GiveSpaceConfig config) const -> Ribbon;
 
-    Ribbon subdived(const double& thickness) const;
+    [[nodiscard]] auto subdived(double thickness) const -> Ribbon;
 
-    Ribbon subRibbon(const double& space, const double& minimal_length) const;
+    [[nodiscard]] auto subRibbon(SubRibbonConfig config) const -> Ribbon;
 
-    void print(std::ostream& os) const { os << " _fill_color " << _fill_color << " _lines " << _lines; }
+    void print(std::ostream& outputStream) const {
+        outputStream << " _fill_color " << _fillColor << " _lines " << _lines;
+    }
     void simplify(double dist);
 
-    [[nodiscard]] int32_t strokeColor() const { return _stroke_color; }
+    [[nodiscard]] auto strokeColor() const -> int32_t {
+        return _strokeColor;
+    }
 
-    void setStrokeColor(int32_t strokeColor) { _stroke_color = strokeColor; }
+    void setStrokeColor(int32_t strokeColor) {
+        _strokeColor = strokeColor;
+    }
 
-    [[nodiscard]] double strokeWidth() const { return _stroke_width; }
+    [[nodiscard]] auto strokeWidth() const -> double {
+        return _strokeWidth;
+    }
 
-    void setStrokeWidth(double width) { _stroke_width = width; }
+    void setStrokeWidth(double width) {
+        _strokeWidth = width;
+    }
 
-private:
+  private:
     std::vector<Polyline> _lines;
-    int32_t _fill_color = 0;
-    int32_t _stroke_color = 0;
-    double _stroke_width = 1.;
+    int32_t _fillColor = 0;
+    int32_t _strokeColor = 0;
+    double _strokeWidth = 1.;
 
-    [[nodiscard]] std::vector<std::size_t> middleOrder(std::size_t min, std::size_t max) const;
-    [[nodiscard]] bool isLongEnough(const std::vector<Point_2>& coarse, double thickness) const;
+    [[nodiscard]] static auto middleOrder(std::size_t minIndex,
+                                          std::size_t maxIndex) -> std::vector<std::size_t>;
+    [[nodiscard]] static auto isLongEnough(const std::vector<Point_2>& coarsePoints,
+                                           double thickness) -> bool;
 };
 
 } /* namespace laby */

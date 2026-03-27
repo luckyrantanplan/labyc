@@ -21,45 +21,65 @@
 namespace laby {
 
 class Intersection {
-public:
+  public:
     Intersection(const std::size_t first, const std::size_t second) {
         if (first < second) {
             _first = first;
             _second = second;
-        }
-        else {
+        } else {
             _second = first;
             _first = second;
         }
     }
 
-    bool operator==(const Intersection& other) const { return (_first == other._first && _second == other._second); }
+    using Handle = CGAL::Union_find<std::size_t>::handle;
 
-    std::size_t first() const { return _first; }
+    auto operator==(const Intersection& other) const -> bool {
+        return (_first == other._first && _second == other._second);
+    }
 
-    std::size_t second() const { return _second; }
+    auto first() const -> std::size_t {
+        return _first;
+    }
 
-    mutable CGAL::Union_find<std::size_t>::handle handle;
-    mutable CGAL::Union_find<std::size_t>::handle family_handle;
+    auto second() const -> std::size_t {
+        return _second;
+    }
 
-private:
+    void setHandle(Handle unionFindHandle) const {
+        _handle = unionFindHandle;
+    }
+    [[nodiscard]] auto handle() const -> const Handle& {
+        return _handle;
+    }
+
+    void setFamilyHandle(Handle familyHandle) const {
+        _familyHandle = familyHandle;
+    }
+    [[nodiscard]] auto familyHandle() const -> const Handle& {
+        return _familyHandle;
+    }
+
+  private:
     std::size_t _first;
     std::size_t _second;
+    mutable Handle _handle;
+    mutable Handle _familyHandle;
 };
 } /* namespace laby */
 
 namespace std {
 
 template <> struct hash<laby::Intersection> {
-    std::size_t operator()(const laby::Intersection& c) const {
+    auto operator()(const laby::Intersection& intersection) const -> std::size_t {
         // Start with a hash value of 0    .
         std::size_t seed = 0;
 
         // Compute individual hash values for first,
         // second and third and combine them using XOR
         // and bit shifting:
-        boost::hash_combine(seed, hash<std::size_t>()(c.first()));
-        boost::hash_combine(seed, hash<std::size_t>()(c.second()));
+        boost::hash_combine(seed, hash<std::size_t>()(intersection.first()));
+        boost::hash_combine(seed, hash<std::size_t>()(intersection.second()));
 
         // Return the result.
         return seed;
@@ -69,19 +89,19 @@ template <> struct hash<laby::Intersection> {
 } // namespace std
 namespace laby {
 class Family {
-public:
-    void createPatch(const std::vector<PolyConvex>& polyConvexList);
+  public:
+    auto createPatch(const std::vector<PolyConvex>& polyConvexList) -> void;
 
     std::vector<Intersection> _intersections;
 
     std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
     mutable CGAL::Union_find<std::size_t>::handle handle;
 
-    static void createUnionFind(const std::unordered_set<std::size_t>& coverSet, const std::vector<PolyConvex>& polyConvexList,
-                                CGAL::Union_find<std::size_t>& uf);
-    void printFind(const std::unordered_set<std::size_t>& coverSet, std::size_t i);
+    static void createUnionFind(const std::unordered_set<std::size_t>& coverSet,
+                                const std::vector<PolyConvex>& polyConvexList,
+                                CGAL::Union_find<std::size_t>& unionFind);
 
-private:
+  private:
 };
 
 } /* namespace laby */

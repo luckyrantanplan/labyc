@@ -104,11 +104,11 @@ TEST(NumericRangeIteratorTest, DereferenceIsConst) {
 struct MockCirculator {
     using reference = int32_t&;
 
-    int32_t* data;    // NOLINT(misc-non-private-member-variables-in-classes)
-    std::size_t size; // NOLINT(misc-non-private-member-variables-in-classes)
-    std::size_t pos;  // NOLINT(misc-non-private-member-variables-in-classes)
+    int32_t* data;    
+    std::size_t size; 
+    std::size_t pos;  
 
-    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0) // NOLINT(bugprone-easily-swappable-parameters)
+    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0) 
         : data(d), size(s), pos(p) {}
 
     reference operator*() const { return data[pos]; }

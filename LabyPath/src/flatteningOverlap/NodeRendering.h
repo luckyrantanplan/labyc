@@ -11,10 +11,10 @@
 #include <cstdint>
 #include <vector>
 
-#include "../basic/AugmentedPolygonSet.h"
 #include "../GeomData.h"
-#include "../PolyConvex.h"
 #include "../OrientedRibbon.h"
+#include "../PolyConvex.h"
+#include "../basic/AugmentedPolygonSet.h"
 
 #include "Node.h"
 
@@ -24,18 +24,17 @@ struct NodeOverlap {
 
     std::vector<Node*> _nodes;
 
-    void sortNode();
-    void render(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList);
+    auto sortNode() -> void;
+    auto render(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList) -> void;
 
-private:
-    void addIdToPolygon(const std::vector<PolyConvex>& polyConvexList);
-    bool testSeg(int32_t index, const basic::HalfedgeNode& he);
-    bool has_face(basic::Arrangement_2Node& res);
+  private:
+    auto addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) -> void;
 };
 
 class NodeRendering {
-public:
-    static void render(OrientedRibbon& oribbon, std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList);
+  public:
+    static auto render(OrientedRibbon& oribbon, std::vector<Node>& nodes,
+                       const std::vector<PolyConvex>& polyConvexList) -> void;
 };
 
 } /* namespace laby */

@@ -54,10 +54,10 @@ struct Polyline {
 
     void simplify(double distance);
 
-    int32_t id = 0;              // NOLINT(misc-non-private-member-variables-in-classes)
-    std::vector<Point_2> points; // NOLINT(misc-non-private-member-variables-in-classes)
-    bool closed = false;         // NOLINT(misc-non-private-member-variables-in-classes)
-    Point_2 min_point;           // NOLINT(misc-non-private-member-variables-in-classes)
+    int32_t id = 0;              
+    std::vector<Point_2> points; 
+    bool closed = false;         
+    Point_2 min_point;           
 };
 
 } /* namespace laby */

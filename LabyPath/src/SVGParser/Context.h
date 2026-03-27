@@ -35,7 +35,7 @@ class BaseContext : public Stylable {
     auto operator=(BaseContext&&) -> BaseContext& = delete;
 
     // SVG++ discovers these hooks by exact name.
-    // NOLINTBEGIN(readability-identifier-naming)
+    
     void on_exit_element() {}
 
     void transform_matrix(const boost::array<double, kTransformMatrixSize>& /*matrix*/) {}
@@ -54,13 +54,13 @@ class BaseContext : public Stylable {
     }
 
     void disable_rendering() {}
-    // NOLINTEND(readability-identifier-naming)
+    
 
     [[nodiscard]] auto getRibbon() const -> const std::vector<Ribbon>& {
         return *_vectRibbonRef;
     }
 
-    // NOLINTNEXTLINE(readability-make-member-function-const)
+    
     auto getRibbon() -> std::vector<Ribbon>& {
         return *_vectRibbonRef;
     }
