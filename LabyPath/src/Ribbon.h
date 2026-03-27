@@ -24,81 +24,55 @@ namespace laby {
 
 struct IndexRange {
 
-    IndexRange(std::size_t range_min, std::size_t range_max)
-        : min{range_min}, max{range_max} {
-    }
+    IndexRange(std::size_t range_min, std::size_t range_max) : min{range_min}, max{range_max} {} // NOLINT(bugprone-easily-swappable-parameters)
 
-    std::size_t min;
-    std::size_t max;
-
+    std::size_t min; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::size_t max; // NOLINT(misc-non-private-member-variables-in-classes)
 };
 
 class Ribbon {
 
 public:
-    std::vector<Ribbon> splitRibbon(const double thickness, const int octave);
-    std::vector<Kernel::Segment_2> get_segments() const;
-    std::vector<Point_2> get_Points() const;
-    Arrangement_2 createArr() const;
+    [[nodiscard]] std::vector<Ribbon> splitRibbon(double thickness, int octave) const;
+    [[nodiscard]] std::vector<Kernel::Segment_2> get_segments() const; // NOLINT(readability-identifier-naming)
+    [[nodiscard]] std::vector<Point_2> get_Points() const;             // NOLINT(readability-identifier-naming)
+    [[nodiscard]] Arrangement_2 createArr() const;
     void reverse();
-    static Arrangement_2 createArr(const Ribbon & r1, const Ribbon & r2);
-    static Arrangement_2 createArr(const std::vector<Ribbon> & ribList);
-    static void appendToArr(const Ribbon & r1, const Ribbon & r2, Arrangement_2& arr);
+    static Arrangement_2 createArr(const Ribbon& r1, const Ribbon& r2);
+    static Arrangement_2 createArr(const std::vector<Ribbon>& ribList);
+    static void appendToArr(const Ribbon& r1, const Ribbon& r2, Arrangement_2& arr);
 
-    static Ribbon createRibbonOfEdge(const Arrangement_2& arr, const double simplification);
+    [[nodiscard]] static Ribbon createRibbonOfEdge(const Arrangement_2& arr, double simplification);
 
+    Ribbon(const int32_t fill_color = 0, const std::vector<Polyline>& lines = {}) : _lines{lines}, _fill_color{fill_color} {}
 
-    Ribbon(const int32_t fill_color = 0, const std::vector<Polyline>& lines = { }) :
-            _lines { lines }, _fill_color { fill_color } {
+    [[nodiscard]] int32_t fill_color() const { return _fill_color; } // NOLINT(readability-identifier-naming)
+    void set_fill_color(int32_t color) { _fill_color = color; }      // NOLINT(readability-identifier-naming)
 
-    }
+    std::vector<Polyline>& lines() { return _lines; }
 
-    int32_t fill_color() const {
-        return _fill_color;
-    }
-    void set_fill_color(const int32_t color) {
-        _fill_color = color;
-    }
-
-    std::vector<Polyline>& lines() {
-        return _lines;
-    }
-
-    const std::vector<Polyline>& lines() const {
-        return _lines;
-    }
+    [[nodiscard]] const std::vector<Polyline>& lines() const { return _lines; }
     void addToSegments(std::vector<Segment_info_2>& listSeg) const;
 
-    void order_lines();
+    void order_lines(); // NOLINT(readability-identifier-naming)
 
-    Ribbon give_space(const double& space, const double& subdivision_factor, const double& minimal_length) const;
+    [[nodiscard]] Ribbon give_space(const double& space, const double& subdivision_factor,
+                                    const double& minimal_length) const; // NOLINT(readability-identifier-naming)
 
     Ribbon subdived(const double& thickness) const;
 
     Ribbon subRibbon(const double& space, const double& minimal_length) const;
 
-    void print(std::ostream& os) const {
+    void print(std::ostream& os) const { os << " _fill_color " << _fill_color << " _lines " << _lines; }
+    void simplify(double dist);
 
-        os << " _fill_color " << _fill_color << " _lines " << _lines;
+    [[nodiscard]] int32_t strokeColor() const { return _stroke_color; }
 
-    }
-    void simplify(const double dist);
+    void setStrokeColor(int32_t strokeColor) { _stroke_color = strokeColor; }
 
-    int32_t strokeColor() const {
-        return _stroke_color;
-    }
+    [[nodiscard]] double strokeWidth() const { return _stroke_width; }
 
-    void setStrokeColor(int32_t strokeColor) {
-        _stroke_color = strokeColor;
-    }
-
-    double strokeWidth() const {
-        return _stroke_width;
-    }
-
-    void setStrokeWidth(double width) {
-        _stroke_width = width;
-    }
+    void setStrokeWidth(double width) { _stroke_width = width; }
 
 private:
     std::vector<Polyline> _lines;
@@ -106,10 +80,9 @@ private:
     int32_t _stroke_color = 0;
     double _stroke_width = 1.;
 
-    std::vector<std::size_t> middleOrder(std::size_t min, std::size_t max) const;
-    bool isLongEnough(const std::vector<Point_2>& coarse, double thickness) const;
-}
-;
+    [[nodiscard]] std::vector<std::size_t> middleOrder(std::size_t min, std::size_t max) const;
+    [[nodiscard]] bool isLongEnough(const std::vector<Point_2>& coarse, double thickness) const;
+};
 
 } /* namespace laby */
 

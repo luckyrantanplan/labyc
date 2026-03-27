@@ -9,7 +9,7 @@
 #include "basic/RangeHelper.h"
 #include "flatteningOverlap/Node.h"
 
-#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <queue>
 #include <vector>
@@ -24,7 +24,7 @@ namespace {
 TEST(NumericRangeConstTest, ConstRangeIteration) {
     const NumericRange<int32_t> range(0, 6, 2);
     std::vector<int32_t> values;
-    for (int32_t v : range) {
+    for (const int32_t v : range) {
         values.push_back(v);
     }
     // 0, 2, 4, 6
@@ -36,7 +36,7 @@ TEST(NumericRangeConstTest, ConstRangeIteration) {
 TEST(NumericRangeConstTest, ConstDoubleRange) {
     const NumericRange<double> range(0.0, 1.0, 0.5);
     std::vector<double> values;
-    for (double v : range) {
+    for (const double v : range) {
         values.push_back(v);
     }
     // 0.0, 0.5, 1.0
@@ -56,9 +56,9 @@ TEST(NumericRangeConstTest, ConstGetValue) {
 TEST(NumericRangeFloatPrecisionTest, FloatStepNoTruncation) {
     // Regression: (4.0 - 0.0) / 0.5 = 8.0 which could truncate to 7
     // if static_cast<int32_t> is used instead of std::lround.
-    NumericRange<double> range(0.0, 4.0, 0.5);
+    const NumericRange<double> range(0.0, 4.0, 0.5);
     std::vector<double> values;
-    for (double v : range) {
+    for (const double v : range) {
         values.push_back(v);
     }
     // 0.0, 0.5, 1.0, ..., 4.0 = 9 values
@@ -68,9 +68,9 @@ TEST(NumericRangeFloatPrecisionTest, FloatStepNoTruncation) {
 
 TEST(NumericRangeFloatPrecisionTest, ThirdStepNoTruncation) {
     // (1.0 - 0.0) / (1.0/3.0) ≈ 3.0 - floating point may give 2.9999...
-    NumericRange<double> range(0.0, 1.0, 1.0 / 3.0);
+    const NumericRange<double> range(0.0, 1.0, 1.0 / 3.0);
     std::vector<double> values;
-    for (double v : range) {
+    for (const double v : range) {
         values.push_back(v);
     }
     // 0.0, 0.333..., 0.666..., 1.0 = 4 values
@@ -92,7 +92,7 @@ TEST(NumericRangeIteratorTest, DereferenceIsConst) {
     const NumericRange<int32_t> range(5, 5, 1);
     auto it = range.begin();
     // operator* should be callable on const-qualified iterator
-    int32_t val = *it;
+    const int32_t val = *it;
     EXPECT_EQ(val, 5);
 }
 
@@ -104,14 +104,14 @@ TEST(NumericRangeIteratorTest, DereferenceIsConst) {
 struct MockCirculator {
     using reference = int32_t&;
 
-    int32_t* data;
-    std::size_t size;
-    std::size_t pos;
+    int32_t* data;    // NOLINT(misc-non-private-member-variables-in-classes)
+    std::size_t size; // NOLINT(misc-non-private-member-variables-in-classes)
+    std::size_t pos;  // NOLINT(misc-non-private-member-variables-in-classes)
 
-    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0)
+    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0) // NOLINT(bugprone-easily-swappable-parameters)
         : data(d), size(s), pos(p) {}
 
-    reference operator*() { return data[pos]; }
+    reference operator*() const { return data[pos]; }
     MockCirculator& operator++() {
         pos = (pos + 1) % size;
         return *this;
@@ -122,7 +122,7 @@ struct MockCirculator {
 
 TEST(RangeHelperTest, HalfedgeRangeIteratesAll) {
     int32_t data[] = {10, 20, 30};
-    MockCirculator circ(data, 3, 0);
+    const MockCirculator circ(data, 3, 0);
     HalfedgeRange<MockCirculator> range(circ);
 
     std::vector<int32_t> values;
@@ -137,7 +137,7 @@ TEST(RangeHelperTest, HalfedgeRangeIteratesAll) {
 
 TEST(RangeHelperTest, HalfedgeRangeSingleElement) {
     int32_t data[] = {42};
-    MockCirculator circ(data, 1, 0);
+    const MockCirculator circ(data, 1, 0);
     HalfedgeRange<MockCirculator> range(circ);
 
     std::vector<int32_t> values;
@@ -153,7 +153,7 @@ TEST(RangeHelperTest, RangeIteratorBasic) {
     RangeIterator<std::vector<int32_t>::iterator> range(data.begin(), data.end());
 
     std::vector<int32_t> values;
-    for (int32_t v : range) {
+    for (const int32_t v : range) {
         values.push_back(v);
     }
     ASSERT_EQ(values.size(), 5U);
@@ -166,7 +166,7 @@ TEST(RangeHelperTest, RangeIteratorEmpty) {
     RangeIterator<std::vector<int32_t>::iterator> range(data.begin(), data.end());
 
     int32_t count = 0;
-    for ([[maybe_unused]] int32_t v : range) {
+    for ([[maybe_unused]] const int32_t v : range) {
         ++count;
     }
     EXPECT_EQ(count, 0);
@@ -177,7 +177,7 @@ TEST(RangeHelperTest, MakeWithIteratorPair) {
     auto range = RangeHelper::make(data.begin(), data.end());
 
     std::vector<int32_t> values;
-    for (int32_t v : range) {
+    for (const int32_t v : range) {
         values.push_back(v);
     }
     ASSERT_EQ(values.size(), 3U);
@@ -199,9 +199,9 @@ TEST(NodeQueueTest, PopDoesNotInvalidateNodeReference) {
 
     // Give different opposite counts for priority ordering
     nodes[0]._opposite.push_back(&nodes[1]);
-    nodes[0]._opposite.push_back(&nodes[2]); // degree 2
-    nodes[1]._opposite.push_back(&nodes[0]); // degree 1
-    nodes[2]._opposite.push_back(&nodes[0]); // degree 1
+    nodes[0]._opposite.push_back(&nodes[2]);    // degree 2
+    nodes[1]._opposite.push_back(nodes.data()); // degree 1
+    nodes[2]._opposite.push_back(nodes.data()); // degree 1
 
     std::priority_queue<NodeQueue> queue;
     queue.emplace(nodes[0]);
@@ -210,7 +210,7 @@ TEST(NodeQueueTest, PopDoesNotInvalidateNodeReference) {
 
     // Get reference before pop
     Node& topNode = queue.top().node();
-    int32_t topId = topNode._nodeId;
+    const int32_t topId = topNode._nodeId;
     queue.pop();
 
     // Node reference should still be valid (points into nodes vector)
@@ -228,7 +228,7 @@ TEST(NodeQueueTest, MinDegreeFirst) {
 
     nodes[0]._opposite = {&nodes[1], &nodes[2]};
     nodes[1]._opposite = {};
-    nodes[2]._opposite = {&nodes[0]};
+    nodes[2]._opposite = {nodes.data()};
 
     std::priority_queue<NodeQueue> queue;
     queue.emplace(nodes[0]);
@@ -249,25 +249,31 @@ TEST(NodeQueueTest, MinDegreeFirst) {
 // ============================================================
 
 TEST(NodeAnyOfTest, NoOpposites) {
-    Node node(0);
+    const Node node(0);
     EXPECT_FALSE(node.haveOppositeState());
 }
 
 TEST(NodeAnyOfTest, AllUnassigned) {
-    Node n0(0), n1(1), n2(2);
+    Node n0(0);
+    Node n1(1);
+    Node n2(2);
     n0._opposite = {&n1, &n2};
     EXPECT_FALSE(n0.haveOppositeState());
 }
 
 TEST(NodeAnyOfTest, OneAssigned) {
-    Node n0(0), n1(1), n2(2);
+    Node n0(0);
+    Node n1(1);
+    Node n2(2);
     n1._state = 0;
     n0._opposite = {&n1, &n2};
     EXPECT_TRUE(n0.haveOppositeState());
 }
 
 TEST(NodeAnyOfTest, AllAssigned) {
-    Node n0(0), n1(1), n2(2);
+    Node n0(0);
+    Node n1(1);
+    Node n2(2);
     n1._state = 0;
     n2._state = 1;
     n0._opposite = {&n1, &n2};

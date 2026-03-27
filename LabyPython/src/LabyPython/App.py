@@ -128,7 +128,7 @@ class AppWindow(QMainWindow):
         return model.filePath(view.currentIndex())
 
     def resetPath(self, model, view):
-        model.setRootPath(self.project_dir);
+        model.setRootPath(self.project_dir)
         view.setRootIndex(model.index(self.project_dir))    
         
     def editGedit(self, fileToOpen):
@@ -162,12 +162,12 @@ class AppWindow(QMainWindow):
         return self.modelRenderingGeneration.filePath(self.viewRenderingGeneration.currentIndex())
     
     def renderingGenerationResetPath(self):
-        self.modelRenderingGeneration.setRootPath(self.project_dir);
+        self.modelRenderingGeneration.setRootPath(self.project_dir)
         self.viewRenderingGeneration.setRootIndex(self.modelRenderingGeneration.index(self.project_dir))
     
     def renderingGenerationSetup(self):
-        self.viewRenderingGeneration = self.ui.ResultList;
-        self.modelRenderingGeneration = QFileSystemModel(self.viewRenderingGeneration);
+        self.viewRenderingGeneration = self.ui.ResultList
+        self.modelRenderingGeneration = QFileSystemModel(self.viewRenderingGeneration)
         
         self.modelRenderingGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -231,8 +231,8 @@ class AppWindow(QMainWindow):
                 allConf.gGraphicRendering.penConfig.symmetric_seed = 8 
                 allConf.gGraphicRendering.penConfig.resolution = 1. 
                
-            allConf.gGraphicRendering.outputfile = os.path.join(self.project_dir, self.getNewRenderOutputName(fileOriginalPrefix, i));
-            allConf.gGraphicRendering.inputfile = os.path.join(self.project_dir, fileOriginal);
+            allConf.gGraphicRendering.outputfile = os.path.join(self.project_dir, self.getNewRenderOutputName(fileOriginalPrefix, i))
+            allConf.gGraphicRendering.inputfile = os.path.join(self.project_dir, fileOriginal)
             
             jsonObj = json_format.MessageToJson(allConf)
             print(newGridConf + " " + str(jsonObj))
@@ -254,12 +254,12 @@ class AppWindow(QMainWindow):
         pass
     
     def renderConfigResetPath(self):
-        self.modelRenderConfig.setRootPath(self.project_dir);
+        self.modelRenderConfig.setRootPath(self.project_dir)
         self.viewRenderConfig.setRootIndex(self.modelRenderConfig.index(self.project_dir))
     
     def renderConfigSetup(self):
-        self.viewRenderConfig = self.ui.ConfForRenderingList;
-        self.modelRenderConfig = QFileSystemModel(self.viewRenderConfig);
+        self.viewRenderConfig = self.ui.ConfForRenderingList
+        self.modelRenderConfig = QFileSystemModel(self.viewRenderConfig)
         
         self.modelRenderConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -307,12 +307,12 @@ class AppWindow(QMainWindow):
         return self.modelRoutingGeneration.filePath(self.viewRoutingGeneration.currentIndex())
     
     def routingGenerationResetPath(self):
-        self.modelRoutingGeneration.setRootPath(self.project_dir);
+        self.modelRoutingGeneration.setRootPath(self.project_dir)
         self.viewRoutingGeneration.setRootIndex(self.modelRoutingGeneration.index(self.project_dir))
     
     def routingGenerationSetup(self):
-        self.viewRoutingGeneration = self.ui.RoutingResultList;
-        self.modelRoutingGeneration = QFileSystemModel(self.viewRoutingGeneration);
+        self.viewRoutingGeneration = self.ui.RoutingResultList
+        self.modelRoutingGeneration = QFileSystemModel(self.viewRoutingGeneration)
         
         self.modelRoutingGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -364,23 +364,23 @@ class AppWindow(QMainWindow):
                     print("There is an Exception during newRouteConfigFile")
                     print(e.__doc__) 
             else:           
-                allConf.routing.placement.cell.seed = 1;
-                allConf.routing.placement.cell.maxPin = 400;
-                allConf.routing.placement.cell.startNet = 30;
-                allConf.routing.placement.cell.resolution = 1.0;
-                allConf.routing.placement.initial_thickness = 1.8;
-                allConf.routing.placement.decrement_factor = 1.5;
-                allConf.routing.placement.minimal_thickness = 0.5;
-                allConf.routing.placement.smoothing_tension = 1;
-                allConf.routing.placement.smoothing_iteration = 3;
-                allConf.routing.placement.max_routing_attempt = 300;
-                allConf.routing.placement.routing.seed = 5;
-                allConf.routing.placement.routing.max_random = 300;
-                allConf.routing.placement.routing.distance_unit_cost = 1;
-                allConf.routing.placement.routing.via_unit_cost = 10;
+                allConf.routing.placement.cell.seed = 1
+                allConf.routing.placement.cell.maxPin = 400
+                allConf.routing.placement.cell.startNet = 30
+                allConf.routing.placement.cell.resolution = 1.0
+                allConf.routing.placement.initial_thickness = 1.8
+                allConf.routing.placement.decrement_factor = 1.5
+                allConf.routing.placement.minimal_thickness = 0.5
+                allConf.routing.placement.smoothing_tension = 1
+                allConf.routing.placement.smoothing_iteration = 3
+                allConf.routing.placement.max_routing_attempt = 300
+                allConf.routing.placement.routing.seed = 5
+                allConf.routing.placement.routing.max_random = 300
+                allConf.routing.placement.routing.distance_unit_cost = 1
+                allConf.routing.placement.routing.via_unit_cost = 10
                
-            allConf.routing.filepaths.outputfile = os.path.join(self.project_dir, self.getNewRouteOutputName(fileOriginalPrefix, i));
-            allConf.routing.filepaths.inputfile = os.path.join(self.project_dir, fileOriginal);
+            allConf.routing.filepaths.outputfile = os.path.join(self.project_dir, self.getNewRouteOutputName(fileOriginalPrefix, i))
+            allConf.routing.filepaths.inputfile = os.path.join(self.project_dir, fileOriginal)
             
             jsonObj = json_format.MessageToJson(allConf)
             print(newGridConf + " " + str(jsonObj))
@@ -402,12 +402,12 @@ class AppWindow(QMainWindow):
         pass
     
     def routeConfigResetPath(self):
-        self.modelRouteConfig.setRootPath(self.project_dir);
+        self.modelRouteConfig.setRootPath(self.project_dir)
         self.viewRouteConfig.setRootIndex(self.modelRouteConfig.index(self.project_dir))
     
     def routeConfigSetup(self):
-        self.viewRouteConfig = self.ui.ConfForRoutingList;
-        self.modelRouteConfig = QFileSystemModel(self.viewRouteConfig);
+        self.viewRouteConfig = self.ui.ConfForRoutingList
+        self.modelRouteConfig = QFileSystemModel(self.viewRouteConfig)
         
         self.modelRouteConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -464,12 +464,12 @@ class AppWindow(QMainWindow):
         return self.modelGridGeneration.filePath(self.viewGridGeneration.currentIndex())
     
     def gridGenerationResetPath(self):
-        self.modelGridGeneration.setRootPath(self.project_dir);
+        self.modelGridGeneration.setRootPath(self.project_dir)
         self.viewGridGeneration.setRootIndex(self.modelGridGeneration.index(self.project_dir))
     
     def gridGenerationSetup(self):
-        self.viewGridGeneration = self.ui.GridList;
-        self.modelGridGeneration = QFileSystemModel(self.viewGridGeneration);
+        self.viewGridGeneration = self.ui.GridList
+        self.modelGridGeneration = QFileSystemModel(self.viewGridGeneration)
         
         self.modelGridGeneration.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -522,13 +522,13 @@ class AppWindow(QMainWindow):
                     print("There is an Exception during newGridConfigFile")
                     print(e.__doc__) 
             else:           
-                allConf.skeletonGrid.simplificationOfOriginalSVG = 0.1;
-                allConf.skeletonGrid.max_sep = 5;
-                allConf.skeletonGrid.min_sep = 0.1; 
-                allConf.skeletonGrid.seed = 3; 
+                allConf.skeletonGrid.simplificationOfOriginalSVG = 0.1
+                allConf.skeletonGrid.max_sep = 5
+                allConf.skeletonGrid.min_sep = 0.1 
+                allConf.skeletonGrid.seed = 3 
                
-            allConf.skeletonGrid.outputfile = os.path.join(self.project_dir, self.getNewGridOutputName(fileOriginalPrefix, i));
-            allConf.skeletonGrid.inputfile = os.path.join(self.project_dir, fileOriginal);
+            allConf.skeletonGrid.outputfile = os.path.join(self.project_dir, self.getNewGridOutputName(fileOriginalPrefix, i))
+            allConf.skeletonGrid.inputfile = os.path.join(self.project_dir, fileOriginal)
             
             jsonObj = json_format.MessageToJson(allConf)
             print(newGridConf + " " + str(jsonObj))
@@ -550,12 +550,12 @@ class AppWindow(QMainWindow):
         pass
     
     def gridConfigResetPath(self):
-        self.modelGridConfig.setRootPath(self.project_dir);
+        self.modelGridConfig.setRootPath(self.project_dir)
         self.viewGridConfig.setRootIndex(self.modelGridConfig.index(self.project_dir))
     
     def gridConfigSetup(self):
-        self.viewGridConfig = self.ui.gridConfigList;
-        self.modelGridConfig = QFileSystemModel(self.viewGridConfig);
+        self.viewGridConfig = self.ui.gridConfigList
+        self.modelGridConfig = QFileSystemModel(self.viewGridConfig)
         
         self.modelGridConfig.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -606,7 +606,7 @@ class AppWindow(QMainWindow):
         self.callInkscape(fileToOpen) 
     
     def originalResetPath(self):
-        self.modelOriginal.setRootPath(self.project_dir);
+        self.modelOriginal.setRootPath(self.project_dir)
         self.viewOriginal.setRootIndex(self.modelOriginal.index(self.project_dir))
     
     def getSelectedOriginalFile(self):
@@ -615,8 +615,8 @@ class AppWindow(QMainWindow):
         return self.modelOriginal.filePath (self.viewOriginal.currentIndex())
         
     def originalImageSetup(self):
-        self.viewOriginal = self.ui.OriginalImageList;
-        self.modelOriginal = QFileSystemModel(self.viewOriginal);
+        self.viewOriginal = self.ui.OriginalImageList
+        self.modelOriginal = QFileSystemModel(self.viewOriginal)
         
         self.modelOriginal.setFilter(QDir.Filter.NoDotAndDotDot | QDir.Filter.Files)
         
@@ -650,7 +650,7 @@ class AppWindow(QMainWindow):
         
     
     def projectSetup(self):
-        self.viewproject = self.ui.actionNew_Project;
+        self.viewproject = self.ui.actionNew_Project
         self.viewproject.triggered.connect(self.createNewProject)
         self.workspace_root = self.findWorkspaceRoot()
         self.binary_path = self.resolveBinaryPath()

@@ -36,6 +36,8 @@ std::unordered_map<uint32_t, GridIndex> GridIndex::getIndexMap(const std::vector
             gridIndex._limit = i;
             break;
         }
+        default:
+            break;
         }
     }
     return mapOfGrids;
@@ -46,7 +48,8 @@ Arrangement_2 GridIndex::getArr(const std::vector<Ribbon>& ribList) const {
     if (!isValid()) {
         std::cout << "bad GridIndex" << std::endl;
         return Arrangement_2();
-    } else {
+    }
+    else {
         const Ribbon& ribCircular = ribList.at(_circular);
         const Ribbon& ribRadial = ribList.at(_radial);
         return Ribbon::createArr(ribCircular, ribRadial);
@@ -54,6 +57,5 @@ Arrangement_2 GridIndex::getArr(const std::vector<Ribbon>& ribList) const {
 }
 const Ribbon& GridIndex::limit(const std::vector<Ribbon>& ribList) const {
     return ribList.at(_limit);
-
 }
 } /* namespace laby */

@@ -7,23 +7,28 @@
 
 #include "PenStroke.h"
 
-#include <cstdint>
-#include <CGAL/enum.h>
+#include "../agg/agg_arc.h"
 #include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
+#include <CGAL/Polygon_set_2.h>
 #include <CGAL/Vector_2.h>
+#include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <random>
 #include <vector>
-#include <CGAL/Polygon_set_2.h>
-#include "../agg/agg_arc.h"
 
 namespace laby {
 
-const Polyline& PenStroke::LineConstruct::getMedianList() const {
+namespace {
+constexpr double kHalfWidthScale = 2.0;
+constexpr double kSimplifyTolerance = 0.0001;
+} // namespace
+
+auto PenStroke::LineConstruct::getMedianList() const -> const Polyline& {
     return _anti;
 }
 
@@ -31,295 +36,314 @@ void PenStroke::LineConstruct::setClosed() {
     _anti.closed = true;
     _anti.points.emplace_back(_anti.points.front());
     _sym.emplace_back(_sym.front());
-
 }
-bool PenStroke::LineConstruct::isClosed() const {
+auto PenStroke::LineConstruct::isClosed() const -> bool {
     return _anti.closed;
 }
 
-const Point_2& PenStroke::LineConstruct::getMedian(const size_t& i) const {
-    return _anti.points.at(i);
+auto PenStroke::LineConstruct::getMedian(const std::size_t pointIndex) const -> const Point_2& {
+    return _anti.points.at(pointIndex);
 }
 
-const double& PenStroke::LineConstruct::getBorder(const size_t& i) const {
-    return _sym.at(i);
+auto PenStroke::LineConstruct::getBorder(const std::size_t pointIndex) const -> const double& {
+    return _sym.at(pointIndex);
 }
 
-double PenStroke::smoothstep(double edge0, double edge1, double x) const {
+auto PenStroke::smoothstep(const double edgeStart, const double edgeEnd, double value) -> double {
     // Scale, bias and saturate x to 0..1 range
-    x = std::clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    value = std::clamp((value - edgeStart) / (edgeEnd - edgeStart), 0.0, 1.0);
     // Evaluate polynomial
-    return x * x * (3 - 2 * x);
+    return value * value * (3 - 2 * value);
 }
 
-Point_2 PenStroke::barycentre(const Point_2& ori, const int32_t vi, const CGAL::Vector_2<Kernel>& u) const {
-    return ori + vi * u;
+auto PenStroke::barycentre(const Point_2& origin, const int32_t vertexIndex,
+                           const CGAL::Vector_2<Kernel>& unitVector) -> Point_2 {
+    return origin + vertexIndex * unitVector;
 }
 
-double PenStroke::smooth(const Point_2& p, const Point_2& o) const {
-    if (p == o) {
+auto PenStroke::smooth(const Point_2& point, const Point_2& origin) const -> double {
+    if (point == origin) {
         return 0;
     }
-    return smoothstep(0, _config.antisymmetric_amplitude(), sqrt(CGAL::to_double((p - o).squared_length())));
+    return smoothstep(0, _config.antisymmetric_amplitude(),
+                      sqrt(CGAL::to_double((point - origin).squared_length())));
 }
 
-void PenStroke::LineConstruct::addPoint(const Point_2& p, const double& v) {
-
-    _anti.points.emplace_back(p);
-    _sym.emplace_back(v);
-
+void PenStroke::LineConstruct::addPoint(const Point_2& point, const double borderValue) {
+    _anti.points.emplace_back(point);
+    _sym.emplace_back(borderValue);
 }
 
-void PenStroke::addPoint(LineConstruct& lc, const Point_2& p, const Point_2& o, const Point_2& d, int32_t inc, const CGAL::Vector_2<Kernel>& v) {
+void PenStroke::addPoint(LineConstruct& lineConstruct, const Point_2& point, const Point_2& origin,
+                         const Point_2& destination, const int32_t increment,
+                         const CGAL::Vector_2<Kernel>& normalVector) {
 
-    double sym = hqNoise2D_sym.get(CGAL::to_double(p.x()) + 10., CGAL::to_double(p.y()) + 10.);
-    double anti = hqNoise2D_anti.get(CGAL::to_double(p.x()) + 10., CGAL::to_double(p.y()) + 10.);
+    const double symmetricNoise =
+        _hqNoise2DSym.get(CGAL::to_double(point.x()) + 10., CGAL::to_double(point.y()) + 10.);
+    const double antisymmetricNoise =
+        _hqNoise2DAnti.get(CGAL::to_double(point.x()) + 10., CGAL::to_double(point.y()) + 10.);
 
-    double antiClamp = anti * smooth(p, o) * smooth(p, d);
+    const double antisymmetricClamp =
+        antisymmetricNoise * smooth(point, origin) * smooth(point, destination);
 
-    lc.addPoint(p + v * (inc * antiClamp), sym + _config.thickness());
-
+    lineConstruct.addPoint(point + normalVector * (increment * antisymmetricClamp),
+                           symmetricNoise + _config.thickness());
 }
 
-void PenStroke::line_to(svg::Path& cr, const Point_2& p) {
-    cr << p;
+void PenStroke::lineTo(svg::Path& path, const Point_2& point) {
+    path << point;
 }
 
-void PenStroke::move_to(svg::Path& cr, const Point_2& p) {
-    cr.startNewSubPath();
-    cr << p;
+void PenStroke::moveTo(svg::Path& path, const Point_2& point) {
+    path.startNewSubPath();
+    path << point;
 }
 
-PenStroke PenStroke::createPenStroke(const proto::PenStroke& config, const CGAL::Bbox_2& bbox) {
-    generator::HqNoiseConfig config_sym;
-    config_sym.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
-    config_sym.seed = config.symmetric_seed();
-    config_sym.amplitude = config.symmetric_amplitude();
-    config_sym.accuracy = static_cast<uint32_t>(std::ceil(1. / config.resolution()));
-    config_sym.gaussian.frequency = config_sym.maxN * 100.;
-    config_sym.powerlaw.frequency = config_sym.maxN / config.symmetric_freq();
-    config_sym.powerlaw.power = 2;
-    config_sym.complex = false;
+auto PenStroke::createPenStroke(const proto::PenStroke& config,
+                                const CGAL::Bbox_2& bbox) -> PenStroke {
+    NoiseConfigs noiseConfigs{};
+    noiseConfigs.symmetric.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
+    noiseConfigs.symmetric.seed = config.symmetric_seed();
+    noiseConfigs.symmetric.amplitude = config.symmetric_amplitude();
+    noiseConfigs.symmetric.accuracy = static_cast<uint32_t>(std::ceil(1. / config.resolution()));
+    noiseConfigs.symmetric.gaussian.frequency = noiseConfigs.symmetric.maxN * 100.;
+    noiseConfigs.symmetric.powerlaw.frequency =
+        noiseConfigs.symmetric.maxN / config.symmetric_freq();
+    noiseConfigs.symmetric.powerlaw.power = 2;
+    noiseConfigs.symmetric.complex = false;
 
-    generator::HqNoiseConfig config_anti;
-    config_anti.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
-    config_anti.seed = config.antisymmetric_seed();
-    config_anti.amplitude = config.antisymmetric_amplitude();
-    config_anti.accuracy = static_cast<uint32_t>(std::ceil(1. / config.resolution()));
-    config_anti.gaussian.frequency = config_sym.maxN * 100.;
-    config_anti.powerlaw.frequency = config_sym.maxN / config.antisymmetric_freq();
-    config_anti.powerlaw.power = 2;
-    config_anti.complex = false;
+    noiseConfigs.antisymmetric.maxN = static_cast<uint32_t>(std::max(bbox.xmax(), bbox.ymax()));
+    noiseConfigs.antisymmetric.seed = config.antisymmetric_seed();
+    noiseConfigs.antisymmetric.amplitude = config.antisymmetric_amplitude();
+    noiseConfigs.antisymmetric.accuracy =
+        static_cast<uint32_t>(std::ceil(1. / config.resolution()));
+    noiseConfigs.antisymmetric.gaussian.frequency = noiseConfigs.symmetric.maxN * 100.;
+    noiseConfigs.antisymmetric.powerlaw.frequency =
+        noiseConfigs.symmetric.maxN / config.antisymmetric_freq();
+    noiseConfigs.antisymmetric.powerlaw.power = 2;
+    noiseConfigs.antisymmetric.complex = false;
 
-    return PenStroke(config, config_sym, config_anti);
+    return PenStroke(config, noiseConfigs);
 }
 
-void PenStroke::drawRibbonStroke(svg::Path& cr, const Ribbon& ribbon) {
-    for (const Polyline& pl : ribbon.lines()) {
-        if (pl.points.size() > 1ul) {
+void PenStroke::drawRibbonStroke(svg::Path& path, const Ribbon& ribbon) {
+    for (const Polyline& polyline : ribbon.lines()) {
+        if (polyline.points.size() > 1UL) {
 
-            move_to(cr, pl.points.at(0));
+            moveTo(path, polyline.points.at(0));
 
-            for (std::size_t i = 1; i < pl.points.size(); ++i) {
-                line_to(cr, pl.points.at(i));
+            for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
+                lineTo(path, polyline.points.at(pointIndex));
             }
-            if (pl.closed) {
-                cr.closeSubPath();
-            }
-
-        }
-    }
-}
-
-std::vector<Segment_info_2> PenStroke::getSegmentFromMedian(const std::unordered_set<std::size_t>& refMedLineSet) {
-    std::vector<Segment_info_2> listSeg;
-    for (const std::size_t& i : refMedLineSet) {
-        const Polyline& pl = _medrib.at(i).getMedianList();
-        for (std::size_t j = 1; j < pl.points.size(); ++j) {
-            listSeg.push_back(Segment_info_2(Kernel::Segment_2(pl.points.at(j - 1), pl.points.at(j)), EdgeInfo { 1, 0 }));
-        }
-    }
-    return listSeg;
-}
-
-Ribbon PenStroke::fillFace(const std::vector<Segment_info_2>& listSeg) const {
-    Ribbon rib;
-
-    Arrangement_2 arr;
-    CGAL::insert(arr, listSeg.begin(), listSeg.end());
-    for (const Face& fc : RangeHelper::make(arr.unbounded_faces_begin(), arr.unbounded_faces_end())) {
-        for (Arrangement_2::Inner_ccb_const_iterator ite = fc.holes_begin(); ite != fc.holes_end(); ++ite) {
-            rib.lines().emplace_back();
-            Polyline& pl = rib.lines().back();
-
-            pl.points.emplace_back((*ite)->source()->point());
-
-            for (const Halfedge& he : RangeHelper::make(*ite)) {
-                pl.points.emplace_back(he.target()->point());
-
-            }
-            pl.closed = true;
-        }
-    }
-
-    return rib;
-}
-
-const Face& PenStroke::faceWithoutAntenna(Arrangement_2& arr, const Face& fc) {
-    std::vector<Segment_info_2> listSeg;
-    for (const Halfedge& he : RangeHelper::make(fc.outer_ccb())) {
-        if (&*he.face() != &*he.twin()->face()) { // not an antenna
-            listSeg.push_back(he.curve());
-        }
-    }
-
-    for (Arrangement_2::Inner_ccb_const_iterator ite = fc.holes_begin(); ite != fc.holes_end(); ++ite) {
-        for (const Halfedge& he : RangeHelper::make(*ite)) {
-            if (&*he.face() != &*he.twin()->face()) { // not an antenna
-                listSeg.push_back(he.curve());
+            if (polyline.closed) {
+                path.closeSubPath();
             }
         }
     }
-
-    CGAL::insert(arr, listSeg.begin(), listSeg.end());
-
-    const Face& unbound = *arr.unbounded_face();
-    Arrangement_2::Inner_ccb_const_iterator ite = unbound.holes_begin();
-    return *((*ite)->twin()->face());
 }
 
-void PenStroke::drawFace(svg::Path& cr, const Face& fc) {
+auto PenStroke::getSegmentFromMedian(const std::unordered_set<std::size_t>& referenceMedianLineSet)
+    -> std::vector<Segment_info_2> {
+    std::vector<Segment_info_2> segmentList;
+    for (const std::size_t medianLineIndex : referenceMedianLineSet) {
+        const Polyline& medianPolyline = _medrib.at(medianLineIndex).getMedianList();
+        for (std::size_t pointIndex = 1; pointIndex < medianPolyline.points.size(); ++pointIndex) {
+            segmentList.emplace_back(Kernel::Segment_2(medianPolyline.points.at(pointIndex - 1),
+                                                       medianPolyline.points.at(pointIndex)),
+                                     EdgeInfo{1, EdgeInfo::Coordinate{0}});
+        }
+    }
+    return segmentList;
+}
 
-    if (fc.has_outer_ccb()) {
-        Arrangement_2 arrTemp;
-        const Face& fc2 = faceWithoutAntenna(arrTemp, fc);
+auto PenStroke::fillFace(const std::vector<Segment_info_2>& segmentList) -> Ribbon {
+    Ribbon ribbon;
+
+    Arrangement_2 arrangement;
+    CGAL::insert(arrangement, segmentList.begin(), segmentList.end());
+    for (const Face& face : RangeHelper::make(arrangement.unbounded_faces_begin(),
+                                              arrangement.unbounded_faces_end())) {
+        for (Arrangement_2::Inner_ccb_const_iterator holeIterator = face.holes_begin();
+             holeIterator != face.holes_end(); ++holeIterator) {
+            ribbon.lines().emplace_back();
+            Polyline& polyline = ribbon.lines().back();
+
+            polyline.points.emplace_back((*holeIterator)->source()->point());
+
+            for (const Halfedge& halfedge : RangeHelper::make(*holeIterator)) {
+                polyline.points.emplace_back(halfedge.target()->point());
+            }
+            polyline.closed = true;
+        }
+    }
+
+    return ribbon;
+}
+
+auto PenStroke::faceWithoutAntenna(Arrangement_2& arrangement, const Face& face) -> const Face& {
+    std::vector<Segment_info_2> segmentList;
+    for (const Halfedge& halfedge : RangeHelper::make(face.outer_ccb())) {
+        if (&*halfedge.face() != &*halfedge.twin()->face()) { // not an antenna
+            segmentList.push_back(halfedge.curve());
+        }
+    }
+
+    for (Arrangement_2::Inner_ccb_const_iterator holeIterator = face.holes_begin();
+         holeIterator != face.holes_end(); ++holeIterator) {
+        for (const Halfedge& halfedge : RangeHelper::make(*holeIterator)) {
+            if (&*halfedge.face() != &*halfedge.twin()->face()) { // not an antenna
+                segmentList.push_back(halfedge.curve());
+            }
+        }
+    }
+
+    CGAL::insert(arrangement, segmentList.begin(), segmentList.end());
+
+    const Face& unboundedFace = *arrangement.unbounded_face();
+    Arrangement_2::Inner_ccb_const_iterator holeIterator = unboundedFace.holes_begin();
+    return *((*holeIterator)->twin()->face());
+}
+
+void PenStroke::drawFace(svg::Path& path, const Face& face) {
+
+    if (face.has_outer_ccb()) {
+        Arrangement_2 arrangementWithoutAntenna;
+        const Face& simplifiedFace = faceWithoutAntenna(arrangementWithoutAntenna, face);
         {
-            std::unordered_set<std::size_t> refMedLineSet;
-            for (const Halfedge& he : RangeHelper::make(fc2.outer_ccb())) {
-                refMedLineSet.emplace(he.curve().data().coordinate());
-            };
-            Ribbon rib = fillFace(getSegmentFromMedian(refMedLineSet));
-            rib.reverse();
-            drawRibbonStroke(cr, rib);
-        }
-
-        for (Arrangement_2::Inner_ccb_const_iterator ite = fc2.holes_begin(); ite != fc2.holes_end(); ++ite) {
-            std::unordered_set<std::size_t> refMedLineSet;
-            for (const Halfedge& he : RangeHelper::make(*ite)) {
-                refMedLineSet.emplace(he.curve().data().coordinate());
+            std::unordered_set<std::size_t> referenceMedianLineSet;
+            for (const Halfedge& halfedge : RangeHelper::make(simplifiedFace.outer_ccb())) {
+                referenceMedianLineSet.emplace(halfedge.curve().data().coordinate());
             }
-            drawRibbonStroke(cr, fillFace(getSegmentFromMedian(refMedLineSet)));
-
+            Ribbon ribbon = fillFace(getSegmentFromMedian(referenceMedianLineSet));
+            ribbon.reverse();
+            drawRibbonStroke(path, ribbon);
         }
 
+        for (Arrangement_2::Inner_ccb_const_iterator holeIterator = simplifiedFace.holes_begin();
+             holeIterator != simplifiedFace.holes_end(); ++holeIterator) {
+            std::unordered_set<std::size_t> referenceMedianLineSet;
+            for (const Halfedge& halfedge : RangeHelper::make(*holeIterator)) {
+                referenceMedianLineSet.emplace(halfedge.curve().data().coordinate());
+            }
+            drawRibbonStroke(path, fillFace(getSegmentFromMedian(referenceMedianLineSet)));
+        }
     }
 }
 
-void PenStroke::createUnion(Ribbon& ribs, const std::vector<PolyConvex>& polyConvexList) const {
+void PenStroke::createUnion(Ribbon& ribbon, const std::vector<PolyConvex>& polyConvexList) {
 
     CGAL::Polygon_set_2<Kernel> set;
 
-    std::vector<Linear_polygon> plv;
-    plv.reserve(polyConvexList.size());
-    for (const PolyConvex& pc : polyConvexList) {
-        plv.emplace_back(pc._geometry);
+    std::vector<Linear_polygon> polygonList;
+    polygonList.reserve(polyConvexList.size());
+    for (const PolyConvex& polyConvex : polyConvexList) {
+        polygonList.emplace_back(polyConvex._geometry);
     }
-    set.join(plv.begin(), plv.end());
+    set.join(polygonList.begin(), polygonList.end());
 
-    std::vector<CGAL::Polygon_with_holes_2<Kernel> > polygons;
+    std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons;
 
     set.polygons_with_holes(std::back_inserter(polygons));
 
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
 
-        ribs.lines().emplace_back(polygon.outer_boundary());
+        ribbon.lines().emplace_back(polygon.outer_boundary());
 
         for (const auto& hole : RangeHelper::make(polygon.holes_begin(), polygon.holes_end())) {
-            ribs.lines().emplace_back(hole);
-
+            ribbon.lines().emplace_back(hole);
         }
     }
 }
 
-void PenStroke::draw_outline(svg::Path& cr) const {
-    for (const LineConstruct & medLine : _medrib) {
+void PenStroke::drawOutline(svg::Path& path) const {
+    for (const LineConstruct& medianLine : _medrib) {
 
-        std::vector<PolyConvex> polyConvexVect;
-        //we populate polyConvex
-        std::size_t size = medLine.getMedianList().points.size();
-        std::size_t begin = polyConvexVect.size();
-        for (std::size_t j = 1; j < size; ++j) {
-            std::size_t index = polyConvexVect.size();
-            const Point_2& ps = medLine.getMedian(j - 1);
-            const Point_2& pt = medLine.getMedian(j);
-            polyConvexVect.emplace_back(ps, pt, index, PolygonTools::makeTrapeze(ps, pt, medLine.getBorder(j - 1), medLine.getBorder(j)));
-
+        std::vector<PolyConvex> polyConvexVector;
+        // we populate polyConvex
+        const std::size_t pointCount = medianLine.getMedianList().points.size();
+        const std::size_t beginIndex = polyConvexVector.size();
+        for (std::size_t pointIndex = 1; pointIndex < pointCount; ++pointIndex) {
+            const std::size_t polyConvexIndex = polyConvexVector.size();
+            const Point_2& sourcePoint = medianLine.getMedian(pointIndex - 1);
+            const Point_2& targetPoint = medianLine.getMedian(pointIndex);
+            polyConvexVector.emplace_back(
+                sourcePoint, targetPoint, polyConvexIndex,
+                PolygonTools::makeTrapeze(sourcePoint, targetPoint,
+                                          medianLine.getBorder(pointIndex - 1),
+                                          medianLine.getBorder(pointIndex)));
         }
-        std::size_t last = polyConvexVect.size() - 1;
+        const std::size_t lastIndex = polyConvexVector.size() - 1;
 
-        PolyConvex::connect(begin, polyConvexVect);
+        PolyConvex::connect(beginIndex, polyConvexVector);
         {
-            const PolyConvex& first = polyConvexVect.front();
-            agg::Arc arc(medLine.getMedian(0), medLine.getBorder(0) / 2., first._geometry.vertex(0), first._geometry.vertex(1));
-            polyConvexVect.emplace_back();
-            polyConvexVect.back()._geometry.insert(polyConvexVect.back()._geometry.vertices_end(), arc.getPoints().begin(), arc.getPoints().end());
-
+            const PolyConvex& firstPolyConvex = polyConvexVector.front();
+            agg::Arc arc(medianLine.getMedian(0), medianLine.getBorder(0) / kHalfWidthScale,
+                         firstPolyConvex._geometry.vertex(0), firstPolyConvex._geometry.vertex(1));
+            polyConvexVector.emplace_back();
+            polyConvexVector.back()._geometry.insert(
+                polyConvexVector.back()._geometry.vertices_end(), arc.getPoints().begin(),
+                arc.getPoints().end());
         }
         {
-            const PolyConvex& pcl = polyConvexVect.at(last);
-            agg::Arc arc(medLine.getMedian(size - 1), medLine.getBorder(size - 1) / 2., pcl._geometry.vertex(2), pcl._geometry.vertex(3));
-            polyConvexVect.emplace_back();
-            polyConvexVect.back()._geometry.insert(polyConvexVect.back()._geometry.vertices_end(), arc.getPoints().begin(), arc.getPoints().end());
-
+            const PolyConvex& lastPolyConvex = polyConvexVector.at(lastIndex);
+            agg::Arc arc(medianLine.getMedian(pointCount - 1),
+                         medianLine.getBorder(pointCount - 1) / kHalfWidthScale,
+                         lastPolyConvex._geometry.vertex(2), lastPolyConvex._geometry.vertex(3));
+            polyConvexVector.emplace_back();
+            polyConvexVector.back()._geometry.insert(
+                polyConvexVector.back()._geometry.vertices_end(), arc.getPoints().begin(),
+                arc.getPoints().end());
         }
 
-        Ribbon rib;
-        createUnion(rib, polyConvexVect);
-        rib.simplify(0.0001);
-        drawRibbonStroke(cr, rib);
-
+        Ribbon ribbon;
+        createUnion(ribbon, polyConvexVector);
+        ribbon.simplify(kSimplifyTolerance);
+        drawRibbonStroke(path, ribbon);
     }
-
 }
 
-void PenStroke::createStroke(const Polyline& pl) {
+void PenStroke::createStroke(const Polyline& polyline) {
 
-    if (pl.points.size() <= 1ul) {
-        std::cout << "warning : polyline with size: " << pl.points.size() << std::endl;
+    if (polyline.points.size() <= 1UL) {
+        std::cout << "warning : polyline with size: " << polyline.points.size() << '\n';
         return;
     }
-    const Point_2& o = pl.points.front();
-    const Point_2& d = pl.points.back();
+    const Point_2& origin = polyline.points.front();
+    const Point_2& destination = polyline.points.back();
 
     _medrib.emplace_back();
-    LineConstruct &medLine = _medrib.back();
-    for (std::size_t i = 1; i < pl.points.size(); ++i) {
+    LineConstruct& medianLine = _medrib.back();
+    for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
 
-        CGAL::Vector_2<Kernel> vec = pl.points.at(i) - pl.points.at(i - 1);
+        CGAL::Vector_2<Kernel> segmentVector =
+            polyline.points.at(pointIndex) - polyline.points.at(pointIndex - 1);
 
-        double length = sqrt(CGAL::to_double(vec.squared_length()));
+        const double length = sqrt(CGAL::to_double(segmentVector.squared_length()));
         if (length > 0) {
-            CGAL::Vector_2<Kernel> u = vec / length;
-            CGAL::Vector_2<Kernel> v = u.perpendicular(CGAL::LEFT_TURN);
-            u = u * _config.resolution();
+            CGAL::Vector_2<Kernel> unitVector = segmentVector / length;
+            const CGAL::Vector_2<Kernel> normalVector = unitVector.perpendicular(CGAL::LEFT_TURN);
+            unitVector = unitVector * _config.resolution();
 
-            addPoint(medLine, pl.points.at(i - 1), o, d, +1, v);
-            for (int32_t vi = 1; vi < length / _config.resolution(); ++vi) {
-                addPoint(medLine, barycentre(pl.points.at(i - 1), vi, u), o, d, +1, v);
-
+            addPoint(medianLine, polyline.points.at(pointIndex - 1), origin, destination, +1,
+                     normalVector);
+            for (int32_t vertexIndex = 1; vertexIndex < length / _config.resolution();
+                 ++vertexIndex) {
+                addPoint(medianLine,
+                         barycentre(polyline.points.at(pointIndex - 1), vertexIndex, unitVector),
+                         origin, destination, +1, normalVector);
             }
-            if (i + 1 == pl.points.size()) {
+            if (pointIndex + 1 == polyline.points.size()) {
 
-                if (pl.closed or pl.points.front() == pl.points.back()) {
+                if (polyline.closed or polyline.points.front() == polyline.points.back()) {
 
-                    medLine.setClosed();
+                    medianLine.setClosed();
                 } else {
-                    addPoint(medLine, pl.points.at(i), o, d, +1, v);
+                    addPoint(medianLine, polyline.points.at(pointIndex), origin, destination, +1,
+                             normalVector);
                 }
             }
         }
     }
-
 }
 
 } /* namespace laby */

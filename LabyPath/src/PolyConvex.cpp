@@ -16,7 +16,7 @@
 
 namespace laby {
 
-bool PolyConvex::testConvexPolyIntersect(const Linear_polygon & a, const Linear_polygon& b) {
+bool PolyConvex::testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) {
     EASY_FUNCTION();
 
     for (const CGAL::Segment_2<Kernel>& ea : RangeHelper::make(a.edges_begin(), a.edges_end())) {
@@ -34,11 +34,10 @@ bool PolyConvex::testConvexPolyIntersect(const Linear_polygon & a, const Linear_
         return true;
     }
     return false;
-
 }
 
 void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList, const Point_2& center) {
-// we push in the vector, before to take reference on it (otherwise we get memory corruption)
+    // we push in the vector, before to take reference on it (otherwise we get memory corruption)
     polyConvexList.emplace_back();
 
     PolyConvex& pc1 = polyConvexList.at(first);
@@ -55,7 +54,6 @@ void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<Poly
     triangle._adjacents.push_back(pc1._id);
     pc1._adjacents.push_back(triangle._id);
     pc2._adjacents.push_back(triangle._id);
-
 }
 
 void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList) {
@@ -64,7 +62,6 @@ void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<Poly
 
     pc1._adjacents.push_back(pc2._id);
     pc2._adjacents.push_back(pc1._id);
-
 }
 
 void PolyConvex::connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList) {
@@ -77,12 +74,10 @@ void PolyConvex::connect(std::size_t begin, std::vector<PolyConvex>& polyConvexL
         pc2._adjacents.push_back(pc1._id);
 
         PolygonTools::extendPolygon(pc1._geometry, pc2._geometry);
-
     }
 }
 
-PolyConvex::PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad) :
-        _supportHe(&he), _id(id) {
+PolyConvex::PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad) : _supportHe(&he), _id(id) {
     EASY_FUNCTION();
     init(he.source()->point(), he.target()->point(), lgrad);
 }
@@ -94,15 +89,13 @@ void PolyConvex::init(const Point_2& ps, const Point_2& pt, basic::LinearGradien
     _originalTrapeze = _geometry;
     set_average_thickness((t1 + t2) / 2.);
 }
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, const Linear_polygon& geometry) :
-        _geometry(geometry), _id(id) {
+PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, const Linear_polygon& geometry) : _geometry(geometry), _id(id) {
     _ps = ps;
     _pt = pt;
     _has_points = true;
     _originalTrapeze = _geometry;
 }
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad) :
-        _supportHe(nullptr), _id(id) {
+PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad) : _id(id) {
     EASY_FUNCTION();
     init(ps, pt, lgrad);
     _ps = ps;

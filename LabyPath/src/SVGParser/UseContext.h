@@ -8,160 +8,182 @@
 #ifndef SVGPARSER_USECONTEXT_H_
 #define SVGPARSER_USECONTEXT_H_
 
+#include <boost/variant.hpp>
 #include <rapidxml_ns/rapidxml_ns.hpp>
 #include <rapidxml_ns/rapidxml_ns_utils.hpp>
 #include <svgpp/policy/xml/rapidxml_ns.hpp>
 #include <svgpp/svgpp.hpp>
-#include <boost/variant.hpp>
 
-#include "ShapeContext.h"
 #include "Context.h"
+#include "ShapeContext.h"
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
-typedef rapidxml_ns::xml_node<> const * xml_element_t;
+using xml_element_t = rapidxml_ns::xml_node<> const*;
 
-class UseContext: public BaseContext {
-public:
-    UseContext(BaseContext const & /*parent*/) {
+class UseContext : public BaseContext {
+  public:
+    explicit UseContext(const BaseContext& parent) : BaseContext(parent) {}
+
+    [[nodiscard]] auto width() const -> const boost::optional<double>& {
+        return _width;
     }
 
-    boost::optional<double> const & width() const {
-        return width_;
-    }
-    boost::optional<double> const & height() const {
-        return height_;
+    [[nodiscard]] auto height() const -> const boost::optional<double>& {
+        return _height;
     }
 
     using BaseContext::set;
 
-    template<class IRI>
-    void set(svgpp::tag::attribute::xlink::href, svgpp::tag::iri_fragment, IRI const & fragment) {
-        fragment_id_.assign(boost::begin(fragment), boost::end(fragment));
+    template <class IRI>
+    void set(svgpp::tag::attribute::xlink::href attributeTag, svgpp::tag::iri_fragment iriTag,
+             const IRI& fragment) {
+        static_cast<void>(attributeTag);
+        static_cast<void>(iriTag);
+        _fragmentId.assign(boost::begin(fragment), boost::end(fragment));
     }
 
-    template<class IRI>
-    void set(svgpp::tag::attribute::xlink::href, IRI const & /*fragment*/) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::xlink::href attributeTag, const IRI& fragment) {
+        static_cast<void>(attributeTag);
+        static_cast<void>(fragment);
         std::cerr << "External references aren't supported\n";
     }
 
-    void set(svgpp::tag::attribute::x, double val) {
-        x_ = val;
+    void set(svgpp::tag::attribute::x attributeTag, double value) {
+        static_cast<void>(attributeTag);
+        _x = value;
     }
 
-    void set(svgpp::tag::attribute::y, double val) {
-        y_ = val;
+    void set(svgpp::tag::attribute::y attributeTag, double value) {
+        static_cast<void>(attributeTag);
+        _y = value;
     }
 
-    void set(svgpp::tag::attribute::width, double val) {
-        width_ = val;
+    void set(svgpp::tag::attribute::width attributeTag, double value) {
+        static_cast<void>(attributeTag);
+        _width = value;
     }
 
-    void set(svgpp::tag::attribute::height, double val) {
-        height_ = val;
+    void set(svgpp::tag::attribute::height attributeTag, double value) {
+        static_cast<void>(attributeTag);
+        _height = value;
     }
 
     void on_exit_element();
 
-    xml_element_t FindCurrentDocumentElementById(std::string const &) {
-        return NULL;
+    // SVG++ discovers this hook by exact name.
+    // NOLINTNEXTLINE(readability-identifier-naming)
+    static auto FindCurrentDocumentElementById(const std::string& fragmentId) -> xml_element_t {
+        static_cast<void>(fragmentId);
+        return nullptr;
     }
 
-private:
-    std::string fragment_id_;
-    double x_ = 0;
-    double y_ = 0;
-    boost::optional<double> width_, height_;
+  private:
+    std::string _fragmentId;
+    double _x = 0;
+    double _y = 0;
+    boost::optional<double> _width;
+    boost::optional<double> _height;
 };
 
-class ReferencedSymbolOrSvgContext: public BaseContext {
-public:
-    ReferencedSymbolOrSvgContext(UseContext & referencing) :
-            BaseContext(referencing), referencing_(referencing) {
-    }
+class ReferencedSymbolOrSvgContext : public BaseContext {
+  public:
+    explicit ReferencedSymbolOrSvgContext(UseContext& referencing)
+        : BaseContext(static_cast<const BaseContext&>(referencing)), _referencing(&referencing) {}
 
-    void get_reference_viewport_size(double & width, double & height) {
-        if (referencing_.width())
-            width = *referencing_.width();
-        if (referencing_.height())
-            height = *referencing_.height();
+    // SVG++ discovers this hook by exact name.
+    // NOLINTBEGIN(readability-identifier-naming,bugprone-easily-swappable-parameters)
+    void get_reference_viewport_size(double& width, double& height) {
+        if (_referencing->width()) {
+            width = *_referencing->width();
+        }
+        if (_referencing->height()) {
+            height = *_referencing->height();
+        }
     }
+    // NOLINTEND(readability-identifier-naming,bugprone-easily-swappable-parameters)
 
-private:
-    UseContext & referencing_;
+  private:
+    UseContext* _referencing;
 };
 
+// SVG++ policy customization uses fixed trait names such as 'apply' and 'arc_as_cubic_bezier'.
+// NOLINTBEGIN(readability-identifier-naming)
 struct ChildContextFactories {
-    template<class ParentContext, class ElementTag, class Enable = void>
-    struct apply {
+    template <class ParentContext, class ElementTag, class Enable = void> struct apply {
         // Default definition handles "svg" and "g" elements
-        typedef svgpp::factory::context::on_stack<BaseContext> type;
+        using type = svgpp::factory::context::on_stack<BaseContext>;
     };
 };
 
-// This specialization handles all shape elements (elements from svgpp::traits::shape_elements sequence)
-template<class ElementTag>
-struct ChildContextFactories::apply<BaseContext, ElementTag, typename boost::enable_if<boost::mpl::has_key<svgpp::traits::shape_elements, ElementTag> >::type> {
-    typedef svgpp::factory::context::on_stack<ShapeContext> type;
+// This specialization handles all shape elements (elements from svgpp::traits::shape_elements
+// sequence)
+template <class ElementTag>
+struct ChildContextFactories::apply<BaseContext, ElementTag,
+                                    typename boost::enable_if<boost::mpl::has_key<
+                                        svgpp::traits::shape_elements, ElementTag>>::type> {
+    using type = svgpp::factory::context::on_stack<ShapeContext>;
 };
 
-template<>
-struct ChildContextFactories::apply<BaseContext, svgpp::tag::element::use_> {
-    typedef svgpp::factory::context::on_stack<UseContext> type;
+template <> struct ChildContextFactories::apply<BaseContext, svgpp::tag::element::use_> {
+    using type = svgpp::factory::context::on_stack<UseContext>;
 };
 
 // Elements referenced by 'use' element
-template<>
-struct ChildContextFactories::apply<UseContext, svgpp::tag::element::svg, void> {
-    typedef svgpp::factory::context::on_stack<ReferencedSymbolOrSvgContext> type;
+template <> struct ChildContextFactories::apply<UseContext, svgpp::tag::element::svg, void> {
+    using type = svgpp::factory::context::on_stack<ReferencedSymbolOrSvgContext>;
 };
 
-template<>
-struct ChildContextFactories::apply<UseContext, svgpp::tag::element::symbol, void> {
-    typedef svgpp::factory::context::on_stack<ReferencedSymbolOrSvgContext> type;
+template <> struct ChildContextFactories::apply<UseContext, svgpp::tag::element::symbol, void> {
+    using type = svgpp::factory::context::on_stack<ReferencedSymbolOrSvgContext>;
 };
 
-template<class ElementTag>
-struct ChildContextFactories::apply<UseContext, ElementTag, void>: ChildContextFactories::apply<BaseContext, ElementTag> {
-};
+template <class ElementTag>
+struct ChildContextFactories::apply<UseContext, ElementTag, void>
+    : ChildContextFactories::apply<BaseContext, ElementTag> {};
 
-template<class ElementTag>
-struct ChildContextFactories::apply<ReferencedSymbolOrSvgContext, ElementTag, void>: ChildContextFactories::apply<BaseContext, ElementTag> {
-};
+template <class ElementTag>
+struct ChildContextFactories::apply<ReferencedSymbolOrSvgContext, ElementTag, void>
+    : ChildContextFactories::apply<BaseContext, ElementTag> {};
 
-typedef boost::mpl::set<
-// SVG Structural Elements
-        svgpp::tag::element::svg, svgpp::tag::element::g, svgpp::tag::element::use_,
-        // SVG Shape Elements
-        svgpp::tag::element::circle, svgpp::tag::element::ellipse, svgpp::tag::element::line, svgpp::tag::element::path, svgpp::tag::element::polygon, svgpp::tag::element::polyline,
-        svgpp::tag::element::rect>::type processed_elements_t;
+using processed_elements_t = boost::mpl::set<
+    // SVG Structural Elements
+    svgpp::tag::element::svg, svgpp::tag::element::g, svgpp::tag::element::use_,
+    // SVG Shape Elements
+    svgpp::tag::element::circle, svgpp::tag::element::ellipse, svgpp::tag::element::line,
+    svgpp::tag::element::path, svgpp::tag::element::polygon, svgpp::tag::element::polyline,
+    svgpp::tag::element::rect>::type;
 
 // Joining some sequences from traits namespace with chosen attributes
-typedef boost::mpl::fold< //
-        boost::mpl::protect<boost::mpl::joint_view<svgpp::traits::shapes_attributes_by_element, svgpp::traits::viewport_attributes> >, //
-        boost::mpl::set<svgpp::tag::attribute::transform, //
-                svgpp::tag::attribute::stroke, //
-                svgpp::tag::attribute::stroke_width, //
+using processed_attributes_t = typename boost::mpl::fold< //
+    boost::mpl::protect<boost::mpl::joint_view<svgpp::traits::shapes_attributes_by_element,
+                                               svgpp::traits::viewport_attributes>>, //
+    boost::mpl::set<
+        svgpp::tag::attribute::transform,    //
+        svgpp::tag::attribute::stroke,       //
+        svgpp::tag::attribute::stroke_width, //
 
-                svgpp::tag::attribute::fill, //
+        svgpp::tag::attribute::fill, //
 
-                svgpp::tag::attribute::fill_rule, //
+        svgpp::tag::attribute::fill_rule, //
 
-                boost::mpl::pair<svgpp::tag::element::use_, svgpp::tag::attribute::xlink::href> >::type, boost::mpl::insert<boost::mpl::_1, boost::mpl::_2> >::type processed_attributes_t;
+        boost::mpl::pair<svgpp::tag::element::use_, svgpp::tag::attribute::xlink::href>>::type,
+    boost::mpl::insert<boost::mpl::_1, boost::mpl::_2>>::type;
 
-struct path_policy: svgpp::policy::path::no_shorthands {
-    static const bool arc_as_cubic_bezier = true;
+struct PathPolicy : svgpp::policy::path::no_shorthands {
+    static constexpr bool arc_as_cubic_bezier = true;
 };
 
-typedef svgpp::document_traversal<svgpp::processed_elements<processed_elements_t>, //
-        svgpp::processed_attributes<processed_attributes_t>, //
-        svgpp::path_policy<path_policy>, //
-        svgpp::viewport_policy<svgpp::policy::viewport::as_transform>, //
-        svgpp::context_factories<ChildContextFactories>, //
-        svgpp::markers_policy<svgpp::policy::markers::calculate_always> > document_traversal_t;
+using document_traversal_t =
+    svgpp::document_traversal<svgpp::processed_elements<processed_elements_t>,               //
+                              svgpp::processed_attributes<processed_attributes_t>,           //
+                              svgpp::path_policy<PathPolicy>,                                //
+                              svgpp::viewport_policy<svgpp::policy::viewport::as_transform>, //
+                              svgpp::context_factories<ChildContextFactories>,               //
+                              svgpp::markers_policy<svgpp::policy::markers::calculate_always>>;
+// NOLINTEND(readability-identifier-naming)
 
-} /* namespace svgp */
-} /* namespace laby */
+} /* namespace laby::svgp */
 
 #endif /* SVGPARSER_USECONTEXT_H_ */

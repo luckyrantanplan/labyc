@@ -7,63 +7,65 @@
 
 #include "MessageIO.h"
 
+#include "AlternaRoute/AlternateRoute.h"
+#include "Anisotrop/Placement.h"
+#include "Rendering/GraphicRendering.h"
+#include "SkeletonGrid.h"
+#include "protoc/AllConfig.pb.h"
+#include <fstream>
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "SkeletonGrid.h"
-#include "Anisotrop/Placement.h"
-#include "protoc/AllConfig.pb.h"
-#include "Rendering/GraphicRendering.h"
-#include "AlternaRoute/AlternateRoute.h"
+#include <string_view>
+#include <vector>
 
 namespace laby {
 
-int MessageIO::parseMessage(int argc, char *argv[]) {
+auto MessageIO::parseMessage(const std::vector<std::string_view>& arguments) -> int {
 
-    std::cout << "Start " << argc << std::endl;
+    std::cout << "Start " << arguments.size() << '\n';
 
-    if (argc < 2) {
-        std::cout << "conf missing" << std::endl;
+    if (arguments.size() < 2U) {
+        std::cout << "conf missing" << '\n';
+        return 1;
     }
-    std::cout << argv[1] << std::endl;
-    std::string filename(argv[1]);
-    std::cout << filename << std::endl;
+    std::cout << arguments.at(1) << '\n';
+    std::string filename(arguments.at(1));
+    std::cout << filename << '\n';
 
-    std::fstream fs;
-    fs.open(filename, std::fstream::in);
+    std::fstream inputFileStream;
+    inputFileStream.open(filename, std::fstream::in);
 
     std::stringstream strStream;
-    strStream << fs.rdbuf(); //read the file
+    strStream << inputFileStream.rdbuf(); // read the file
 
     proto::AllConfig message;
     google::protobuf::util::JsonStringToMessage(strStream.str(), &message);
 
     if (message.has_skeletongrid()) {
-        std::cout << "create Skeleton grid" << std::endl;
+        std::cout << "create Skeleton grid" << '\n';
         SkeletonGrid(message.skeletongrid());
     }
     if (message.has_routing()) {
         const proto::Routing& routingconf = message.routing();
 
         if (routingconf.has_placement()) {
-            const proto::Placement& placement_conf = routingconf.placement();
-            aniso::Placement placement(placement_conf, routingconf.filepaths());
+            const proto::Placement& placementConfig = routingconf.placement();
+            aniso::Placement placement(placementConfig, routingconf.filepaths());
         }
         if (routingconf.has_alternaterouting()) {
-            const proto::AlternateRouting& alternate_conf = routingconf.alternaterouting();
-            AlternateRoute route(alternate_conf, routingconf.filepaths());
+            const proto::AlternateRouting& alternateConfig = routingconf.alternaterouting();
+            AlternateRoute route(alternateConfig, routingconf.filepaths());
         }
-
     }
 
     if (message.has_ggraphicrendering()) {
         const proto::GraphicRendering& renderconf = message.ggraphicrendering();
-        GraphicRendering g(renderconf);
+        GraphicRendering graphicRendering(renderconf);
     }
     return 0;
 }
 
-} /* namespace laby */
+} // namespace laby

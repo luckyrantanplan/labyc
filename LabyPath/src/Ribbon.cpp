@@ -52,9 +52,9 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
             for (std::size_t i = 1; i < pl.points.size(); ++i) {
                 const Point_2& c = pl.points.at(i);
                 if (c_previous != c) {
-                    Segment_2 s { c_previous, c };
-                    std::size_t coordinate = static_cast<std::size_t>(pl.id);
-                    listSeg.push_back(Segment_info_2(s, EdgeInfo { _fill_color, coordinate }));
+                    Segment_2 s{c_previous, c};
+                    const auto coordinate = static_cast<std::size_t>(pl.id);
+                    listSeg.push_back(Segment_info_2(s, EdgeInfo{_fill_color, EdgeInfo::Coordinate{coordinate}}));
                 }
                 c_previous = c;
             }
@@ -62,13 +62,13 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& listSeg) const {
     }
 }
 
-Arrangement_2 Ribbon::createArr(const Ribbon & r1, const Ribbon & r2) {
+Arrangement_2 Ribbon::createArr(const Ribbon& r1, const Ribbon& r2) {
     Arrangement_2 arr;
     appendToArr(r1, r2, arr);
     return arr;
 }
 
-Arrangement_2 Ribbon::createArr(const std::vector<Ribbon> & ribList) {
+Arrangement_2 Ribbon::createArr(const std::vector<Ribbon>& ribList) {
     Arrangement_2 arr;
     std::vector<Segment_info_2> listSeg;
     for (const Ribbon& rib : ribList) {
@@ -88,7 +88,8 @@ std::vector<Kernel::Segment_2> Ribbon::get_segments() const {
                 const Point_2& c = pl.points.at(i);
                 if (c_previous == c) {
                     std::cout << "segment is degenerate !!" << std::endl;
-                } else {
+                }
+                else {
 
                     listSeg.emplace_back(c_previous, c);
                 }
@@ -99,19 +100,17 @@ std::vector<Kernel::Segment_2> Ribbon::get_segments() const {
     return listSeg;
 }
 
-void Ribbon::appendToArr(const Ribbon & r1, const Ribbon & r2, Arrangement_2& arr) {
+void Ribbon::appendToArr(const Ribbon& r1, const Ribbon& r2, Arrangement_2& arr) {
     EASY_FUNCTION();
     std::vector<Segment_info_2> listSeg;
     r1.addToSegments(listSeg);
     r2.addToSegments(listSeg);
     CGAL::insert(arr, listSeg.begin(), listSeg.end());
-
 }
 
 void Ribbon::reverse() {
     for (Polyline& pl : lines()) {
         pl.reverse();
-
     }
 }
 
@@ -137,32 +136,30 @@ std::vector<std::size_t> Ribbon::middleOrder(std::size_t min, std::size_t max) c
         std::size_t middle = (range.min + range.max) / 2;
         result.push_back(middle);
         if (middle != range.min) {
-            queue.push( { range.min, middle - 1 });
+            queue.push({range.min, middle - 1});
         }
         if (middle != range.max) {
-            queue.push( { middle + 1, range.max });
+            queue.push({middle + 1, range.max});
         }
     }
     return result;
 }
 
 bool Ribbon::isLongEnough(const std::vector<Point_2>& coarse, double thickness) const {
-    //TODO : use polyline instead of vector<Point_2>
+    // TODO : use polyline instead of vector<Point_2>
 
     if (coarse.size() < 2) {
         return false;
     }
     Polyline pl(0, coarse);
-    return pl.total_length() > thickness;
+    return pl.totalLength() > thickness;
 }
 
 void Ribbon::order_lines() {
     for (Polyline& polyline : _lines) {
-        polyline.compute_min_lexi();
+        polyline.computeMinLexi();
     }
-    std::sort(std::begin(_lines), std::end(_lines), [](const Polyline& a, const Polyline& b) {
-        return a.min_point < b.min_point;
-    });
+    std::sort(std::begin(_lines), std::end(_lines), [](const Polyline& a, const Polyline& b) { return a.min_point < b.min_point; });
 
     for (std::size_t i = 0; i < _lines.size(); ++i) {
         _lines.at(i).id = static_cast<int32_t>(i);
@@ -196,7 +193,6 @@ Ribbon Ribbon::subdived(const double& thickness) const {
                 }
             }
             pt_list.emplace_back(b);
-
         }
     }
     return result;
@@ -225,7 +221,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
         flattenRibbon.push_back(pair.second);
     }
 
-    std::vector<std::size_t> order = middleOrder(0lu, flattenRibbon.size() - 1);
+    std::vector<std::size_t> order = middleOrder(0LU, flattenRibbon.size() - 1);
     for (std::size_t i : order) {
 
         for (const Polyline& polyline : flattenRibbon.at(i)) {
@@ -235,20 +231,21 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
                 Vertex_handlePS vh = pointSet.nearest_neighbor(p);
 
                 if (vh != nullptr and //
-                        CGAL::compare_squared_distance(vh->point(), p, space * space) != CGAL::LARGER) {
+                    CGAL::compare_squared_distance(vh->point(), p, space * space) != CGAL::LARGER) {
 
                     if (isLongEnough(coarse, minimal_length)) {
-                        coarseq.lines().push_back(Polyline { polyline.id, coarse });
+                        coarseq.lines().push_back(Polyline{polyline.id, coarse});
                         pointSet.insert(coarse.begin(), coarse.end());
                     }
                     coarse.clear();
-                } else {
+                }
+                else {
                     coarse.push_back(p);
                 }
             }
             if (isLongEnough(coarse, minimal_length)) {
 
-                coarseq.lines().push_back(Polyline { polyline.id, coarse });
+                coarseq.lines().push_back(Polyline{polyline.id, coarse});
                 pointSet.insert(coarse.begin(), coarse.end());
             }
         }
@@ -257,7 +254,7 @@ Ribbon Ribbon::subRibbon(const double& space, const double& minimal_length) cons
     return coarseq;
 }
 
-std::vector<Ribbon> Ribbon::splitRibbon(const double thickness, const int octave) {
+std::vector<Ribbon> Ribbon::splitRibbon(const double thickness, const int octave) const {
     std::vector<Ribbon> stackRibbon;
     stackRibbon.push_back(*this);
     double p = 1;
@@ -271,15 +268,14 @@ std::vector<Ribbon> Ribbon::splitRibbon(const double thickness, const int octave
 void Ribbon::simplify(const double dist) {
     for (Polyline& pl : lines()) {
         pl.simplify(dist);
-
     }
 }
 
 Ribbon Ribbon::createRibbonOfEdge(const Arrangement_2& arr, const double simplification) {
-// Print the arrangement edges.
+    // Print the arrangement edges.
     EASY_FUNCTION();
 
-//init
+    // init
     for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
         const Segment_info_2& curve = eit.curve();
         curve.data().setVisit(-1);
@@ -308,14 +304,11 @@ Ribbon Ribbon::createRibbonOfEdge(const Arrangement_2& arr, const double simplif
                         }
                         he.curve().data().setVisit(1);
                     }
-
                 }
-
             }
         }
-
     }
-//loop (only degree 2 )
+    // loop (only degree 2 )
     for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
 
         if (eit.curve().data().getVisit() != 1) {
@@ -336,10 +329,9 @@ Ribbon Ribbon::createRibbonOfEdge(const Arrangement_2& arr, const double simplif
                 poly.points.emplace_back(eit.target()->point());
                 poly.closed = true;
             }
-
         }
     }
-// to do : add this parameter in the configuration
+    // to do : add this parameter in the configuration
     for (Polyline& poly : ribbon.lines()) {
         poly.removeConsecutiveDuplicatePoints();
     }
@@ -347,7 +339,6 @@ Ribbon Ribbon::createRibbonOfEdge(const Arrangement_2& arr, const double simplif
         ribbon.simplify(simplification);
     }
     return ribbon;
-
 }
 
 } /* namespace laby */

@@ -58,27 +58,27 @@ namespace laby {
 class Node {
 public:
     /// Nodes from nearby non-overlapping families (soft alternating-state constraint).
-    std::unordered_set<Node*> _adjacents;
+    std::unordered_set<Node*> _adjacents; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Nodes sharing the same overlap region but from a different patch
     /// (hard different-state constraint for graph coloring).
-    std::vector<Node*> _opposite;
+    std::vector<Node*> _opposite; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Indices into the PolyConvex vector that this node is responsible for.
-    std::vector<std::size_t> _cover;
+    std::vector<std::size_t> _cover; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Rendering state assigned by graph coloring.  -1 = unassigned.
-    int32_t _state = -1;
+    int32_t _state = -1; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Unique identifier for debugging/logging.
-    int32_t _nodeId = 0;
+    int32_t _nodeId = 0; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Traversal flag: 0 = unvisited, 1 = visited, -1 = BFS-marked.
     /// Declared mutable because BFS/DFS traversals modify it on const objects.
-    mutable int32_t _visited = 0;
+    mutable int32_t _visited = 0; // NOLINT(misc-non-private-member-variables-in-classes)
 
     /// Geometric union of covered polygons (used for arrangement overlay).
-    basic::Polygon_set_2Node _setPolygons;
+    basic::Polygon_set_2Node _setPolygons; // NOLINT(misc-non-private-member-variables-in-classes)
 
     explicit Node(const int32_t nodeId) : _nodeId{nodeId} {}
 
@@ -101,21 +101,20 @@ public:
     void print(std::ostream& os) const {
         os << "id" << _nodeId << " s" << _state;
         os << " opp [";
-        for (Node* opposite_node : _opposite) {
-            os << opposite_node->_nodeId << " s" << opposite_node->_state << " ";
+        for (Node* oppositeNode : _opposite) {
+            os << oppositeNode->_nodeId << " s" << oppositeNode->_state << " ";
         }
         os << " ] ";
         os << " adj [";
-        for (Node* adjacent_node : _adjacents) {
-            os << adjacent_node->_nodeId << " s" << adjacent_node->_state << " ";
+        for (Node* adjacentNode : _adjacents) {
+            os << adjacentNode->_nodeId << " s" << adjacentNode->_state << " ";
         }
         os << " ] ";
     }
 
     /// Returns true if any opposite node has been assigned a state (!= -1).
     bool haveOppositeState() const {
-        return std::any_of(_opposite.begin(), _opposite.end(),
-                           [](const Node* n) { return n->_state != -1; });
+        return std::any_of(_opposite.begin(), _opposite.end(), [](const Node* n) { return n->_state != -1; });
     }
 };
 
@@ -149,8 +148,8 @@ public:
         return static_cast<int32_t>(_current_index);
     }
 
-    std::size_t currentIndex() const { return _current_index; }
-    const std::vector<bool>& occupiedStates() const { return _occupied_states; }
+    [[nodiscard]] std::size_t currentIndex() const { return _current_index; }
+    [[nodiscard]] const std::vector<bool>& occupiedStates() const { return _occupied_states; }
 
 private:
     std::size_t _current_index = 0;
@@ -164,8 +163,8 @@ private:
 struct NodeQueue {
 public:
     explicit NodeQueue(Node& node) : _node(&node) {}
-    Node& node() { return *_node; }
-    Node& node() const { return *_node; }
+    [[nodiscard]] Node& node() { return *_node; }
+    [[nodiscard]] Node& node() const { return *_node; }
 
     // Inverted comparison: priority_queue gives max by default,
     // so inverting '<' to '>' makes it return the smallest first.

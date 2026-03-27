@@ -27,113 +27,108 @@
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Point_2.h>
+#include <array>
 #include <vector>
 
 namespace agg {
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
+using Point = CGAL::Point_2<Kernel>;
 // See Implementation agg_curves.cpp
+
+constexpr double kQuadraticDivisor = 2.0;
+constexpr double kHermiteDivisor = 3.0;
+constexpr double kCatmullRomDivisor = 6.0;
+constexpr double kCatmullRomDoubleWeight = 2.0;
+constexpr double kCatmullRomQuadrupleWeight = 4.0;
 
 //--------------------------------------------curve_approximation_method_e
 
-enum path_commands_e {
+enum path_commands_e : unsigned char {
     path_cmd_stop = 0,        //----path_cmd_stop
-    path_cmd_move_to = 1,        //----path_cmd_move_to
-    path_cmd_line_to = 2,        //----path_cmd_line_to
-    path_cmd_curve3 = 3,        //----path_cmd_curve3
-    path_cmd_curve4 = 4,        //----path_cmd_curve4
-    path_cmd_curveN = 5,        //----path_cmd_curveN
-    path_cmd_catrom = 6,        //----path_cmd_catrom
-    path_cmd_ubspline = 7,        //----path_cmd_ubspline
-    path_cmd_end_poly = 0x0F,     //----path_cmd_end_poly
+    path_cmd_move_to = 1,     //----path_cmd_move_to
+    path_cmd_line_to = 2,     //----path_cmd_line_to
+    path_cmd_curve3 = 3,      //----path_cmd_curve3
+    path_cmd_curve4 = 4,      //----path_cmd_curve4
+    path_cmd_curveN = 5,      //----path_cmd_curveN
+    path_cmd_catrom = 6,      //----path_cmd_catrom
+    path_cmd_ubspline = 7,    //----path_cmd_ubspline
+    path_cmd_end_poly = 0x0F, //----path_cmd_end_poly
     path_cmd_mask = 0x0F      //----path_cmd_mask
 };
 
 //-------------------------------------------------------------curve3_div
 class Curve3 {
-public:
-    Curve3() {
+  public:
+    Curve3() = default;
+
+    Curve3(double startX, double startY, double controlX, double controlY, double endX,
+           double endY) {
+        init(startX, startY, controlX, controlY, endX, endY);
     }
 
-    Curve3(double x1, double y1, double x2, double y2, double x3, double y3) {
-        init(x1, y1, x2, y2, x3, y3);
-    }
-
-    double calc_sq_distance(double x1, double y1, double x2, double y2) {
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        return dx * dx + dy * dy;
+    static auto calcSqDistance(const Point& firstPoint, const Point& secondPoint) -> double {
+        const double deltaX = CGAL::to_double(secondPoint.x() - firstPoint.x());
+        const double deltaY = CGAL::to_double(secondPoint.y() - firstPoint.y());
+        return deltaX * deltaX + deltaY * deltaY;
     }
 
     void reset() {
-        m_points.clear();
+        _points.clear();
+    }
+    void init(double startX, double startY, double controlX, double controlY, double endX,
+              double endY);
 
+    void setApproximationScale(double approximationScale) {
+        _approximationScale = approximationScale;
     }
-    void init(double x1, double y1, double x2, double y2, double x3, double y3);
-
-    void approximation_scale(double s) {
-        m_approximation_scale = s;
-    }
-    double approximation_scale() const {
-        return m_approximation_scale;
-    }
-
-    void angle_tolerance(double a) {
-        m_angle_tolerance = a;
-    }
-    double angle_tolerance() const {
-        return m_angle_tolerance;
+    [[nodiscard]] auto approximationScale() const -> double {
+        return _approximationScale;
     }
 
-    const std::vector<CGAL::Point_2<Kernel> >& getPoints() const {
-        return m_points;
+    void setAngleTolerance(double angleTolerance) {
+        _angleTolerance = angleTolerance;
+    }
+    [[nodiscard]] auto angleTolerance() const -> double {
+        return _angleTolerance;
     }
 
-private:
-    void bezier(double x1, double y1, double x2, double y2, double x3, double y3);
-    void recursive_bezier(double x1, double y1, double x2, double y2, double x3, double y3, unsigned level);
+    [[nodiscard]] auto getPoints() const -> const std::vector<Point>& {
+        return _points;
+    }
 
-    double m_approximation_scale = 1.0;
-    double m_distance_tolerance_square = 0;
-    double m_angle_tolerance = 0.;
+  private:
+    static constexpr double kDefaultApproximationScale = 1.0;
 
-    std::vector<CGAL::Point_2<Kernel>> m_points;
+    void bezier(double startX, double startY, double controlX, double controlY, double endX,
+                double endY);
+    void recursiveBezier(double startX, double startY, double controlX, double controlY,
+                         double endX, double endY, unsigned level);
+
+    double _approximationScale = kDefaultApproximationScale;
+    double _distanceToleranceSquare = 0.0;
+    double _angleTolerance = 0.0;
+
+    std::vector<Point> _points;
 };
 
 //-------------------------------------------------------------curve4_points
-struct curve4_points {
-    double cp[8];
-    curve4_points() {
-    }
-    curve4_points(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-        cp[0] = x1;
-        cp[1] = y1;
-        cp[2] = x2;
-        cp[3] = y2;
-        cp[4] = x3;
-        cp[5] = y3;
-        cp[6] = x4;
-        cp[7] = y4;
-    }
-    void init(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-        cp[0] = x1;
-        cp[1] = y1;
-        cp[2] = x2;
-        cp[3] = y2;
-        cp[4] = x3;
-        cp[5] = y3;
-        cp[6] = x4;
-        cp[7] = y4;
-    }
-    double operator [](unsigned i) const {
-        return cp[i];
-    }
-    double& operator [](unsigned i) {
-        return cp[i];
-    }
+struct Curve4Points {
+    double startX = 0.0;
+    double startY = 0.0;
+    double control1X = 0.0;
+    double control1Y = 0.0;
+    double control2X = 0.0;
+    double control2Y = 0.0;
+    double endX = 0.0;
+    double endY = 0.0;
+
+    Curve4Points() = default;
 };
 
 //-------------------------------------------------------catrom_to_bezier
-inline curve4_points catrom_to_bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+inline auto catromToBezier(double startX, double startY, double control1X, double control1Y,
+                           double control2X, double control2Y, double endX,
+                           double endY) -> Curve4Points {
     // Trans. matrix Catmull-Rom to Bezier
     //
     //  0       1       0       0
@@ -141,16 +136,27 @@ inline curve4_points catrom_to_bezier(double x1, double y1, double x2, double y2
     //  0       1/6     1       -1/6
     //  0       0       1       0
     //
-    return curve4_points(x2, y2, (-x1 + 6 * x2 + x3) / 6, (-y1 + 6 * y2 + y3) / 6, (x2 + 6 * x3 - x4) / 6, (y2 + 6 * y3 - y4) / 6, x3, y3);
+    return {control1X,
+            control1Y,
+            (-startX + kCatmullRomDivisor * control1X + control2X) / kCatmullRomDivisor,
+            (-startY + kCatmullRomDivisor * control1Y + control2Y) / kCatmullRomDivisor,
+            (control1X + kCatmullRomDivisor * control2X - endX) / kCatmullRomDivisor,
+            (control1Y + kCatmullRomDivisor * control2Y - endY) / kCatmullRomDivisor,
+            control2X,
+            control2Y};
 }
 
 //-----------------------------------------------------------------------
-inline curve4_points catrom_to_bezier(const curve4_points& cp) {
-    return catrom_to_bezier(cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]);
+inline auto catromToBezier(const Curve4Points& controlPoints) -> Curve4Points {
+    return catromToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
+                          controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
+                          controlPoints.endX, controlPoints.endY);
 }
 
 //-----------------------------------------------------ubspline_to_bezier
-inline curve4_points ubspline_to_bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+inline auto ubsplineToBezier(double startX, double startY, double control1X, double control1Y,
+                             double control2X, double control2Y, double endX,
+                             double endY) -> Curve4Points {
     // Trans. matrix Uniform BSpline to Bezier
     //
     //  1/6     4/6     1/6     0
@@ -158,17 +164,31 @@ inline curve4_points ubspline_to_bezier(double x1, double y1, double x2, double 
     //  0       2/6     4/6     0
     //  0       1/6     4/6     1/6
     //
-    return curve4_points((x1 + 4 * x2 + x3) / 6, (y1 + 4 * y2 + y3) / 6, (4 * x2 + 2 * x3) / 6, (4 * y2 + 2 * y3) / 6, (2 * x2 + 4 * x3) / 6, (2 * y2 + 4 * y3) / 6, (x2 + 4 * x3 + x4) / 6,
-            (y2 + 4 * y3 + y4) / 6);
+    return {(startX + kCatmullRomQuadrupleWeight * control1X + control2X) / kCatmullRomDivisor,
+            (startY + kCatmullRomQuadrupleWeight * control1Y + control2Y) / kCatmullRomDivisor,
+            (kCatmullRomQuadrupleWeight * control1X + kCatmullRomDoubleWeight * control2X) /
+                kCatmullRomDivisor,
+            (kCatmullRomQuadrupleWeight * control1Y + kCatmullRomDoubleWeight * control2Y) /
+                kCatmullRomDivisor,
+            (kCatmullRomDoubleWeight * control1X + kCatmullRomQuadrupleWeight * control2X) /
+                kCatmullRomDivisor,
+            (kCatmullRomDoubleWeight * control1Y + kCatmullRomQuadrupleWeight * control2Y) /
+                kCatmullRomDivisor,
+            (control1X + kCatmullRomQuadrupleWeight * control2X + endX) / kCatmullRomDivisor,
+            (control1Y + kCatmullRomQuadrupleWeight * control2Y + endY) / kCatmullRomDivisor};
 }
 
 //-----------------------------------------------------------------------
-inline curve4_points ubspline_to_bezier(const curve4_points& cp) {
-    return ubspline_to_bezier(cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]);
+inline auto ubsplineToBezier(const Curve4Points& controlPoints) -> Curve4Points {
+    return ubsplineToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
+                            controlPoints.control1Y, controlPoints.control2X,
+                            controlPoints.control2Y, controlPoints.endX, controlPoints.endY);
 }
 
 //------------------------------------------------------hermite_to_bezier
-inline curve4_points hermite_to_bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
+inline auto hermiteToBezier(double startX, double startY, double control1X, double control1Y,
+                            double control2X, double control2Y, double endX,
+                            double endY) -> Curve4Points {
     // Trans. matrix Hermite to Bezier
     //
     //  1       0       0       0
@@ -176,84 +196,103 @@ inline curve4_points hermite_to_bezier(double x1, double y1, double x2, double y
     //  0       1       0       -1/3
     //  0       1       0       0
     //
-    return curve4_points(x1, y1, (3 * x1 + x3) / 3, (3 * y1 + y3) / 3, (3 * x2 - x4) / 3, (3 * y2 - y4) / 3, x2, y2);
+    return {startX,
+            startY,
+            (kHermiteDivisor * startX + control2X) / kHermiteDivisor,
+            (kHermiteDivisor * startY + control2Y) / kHermiteDivisor,
+            (kHermiteDivisor * control1X - endX) / kHermiteDivisor,
+            (kHermiteDivisor * control1Y - endY) / kHermiteDivisor,
+            control1X,
+            control1Y};
 }
 
 //-----------------------------------------------------------------------
-inline curve4_points hermite_to_bezier(const curve4_points& cp) {
-    return hermite_to_bezier(cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]);
+inline auto hermiteToBezier(const Curve4Points& controlPoints) -> Curve4Points {
+    return hermiteToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
+                           controlPoints.control1Y, controlPoints.control2X,
+                           controlPoints.control2Y, controlPoints.endX, controlPoints.endY);
 }
 
 //-------------------------------------------------------------curve4_div
 class Curve4 {
-public:
-    Curve4() {
+  public:
+    Curve4() = default;
+
+    Curve4(double startX, double startY, double control1X, double control1Y, double control2X,
+           double control2Y, double endX, double endY) {
+        init(startX, startY, control1X, control1Y, control2X, control2Y, endX, endY);
     }
 
-    Curve4(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-        init(x1, y1, x2, y2, x3, y3, x4, y4);
+    explicit Curve4(const Curve4Points& controlPoints) {
+        init(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
+             controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
+             controlPoints.endX, controlPoints.endY);
     }
 
-    explicit Curve4(const curve4_points& cp) {
-        init(cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]);
-    }
-
-    double calc_sq_distance(double x1, double y1, double x2, double y2) {
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        return dx * dx + dy * dy;
+    static auto calcSqDistance(const Point& firstPoint, const Point& secondPoint) -> double {
+        const double deltaX = CGAL::to_double(secondPoint.x() - firstPoint.x());
+        const double deltaY = CGAL::to_double(secondPoint.y() - firstPoint.y());
+        return deltaX * deltaX + deltaY * deltaY;
     }
 
     void reset() {
-        m_points.clear();
+        _points.clear();
     }
 
-    void init(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4);
+    void init(double startX, double startY, double control1X, double control1Y, double control2X,
+              double control2Y, double endX, double endY);
 
-    void init(const curve4_points& cp) {
-        init(cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], cp[6], cp[7]);
+    void init(const Curve4Points& controlPoints) {
+        init(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
+             controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
+             controlPoints.endX, controlPoints.endY);
     }
 
-    void approximation_scale(double s) {
-        m_approximation_scale = s;
+    void setApproximationScale(double approximationScale) {
+        _approximationScale = approximationScale;
     }
-    double approximation_scale() const {
-        return m_approximation_scale;
-    }
-
-    void angle_tolerance(double a) {
-        m_angle_tolerance = a;
-    }
-    double angle_tolerance() const {
-        return m_angle_tolerance;
+    [[nodiscard]] auto approximationScale() const -> double {
+        return _approximationScale;
     }
 
-    void cusp_limit(double v) {
-        m_cusp_limit = (v == 0.0) ? 0.0 : M_PI - v;
+    void setAngleTolerance(double angleTolerance) {
+        _angleTolerance = angleTolerance;
+    }
+    [[nodiscard]] auto angleTolerance() const -> double {
+        return _angleTolerance;
     }
 
-    double cusp_limit() const {
-        return (m_cusp_limit == 0.0) ? 0.0 : M_PI - m_cusp_limit;
+    void setCuspLimit(double cuspLimit) {
+        _cuspLimit = (cuspLimit == 0.0) ? 0.0 : M_PI - cuspLimit;
     }
 
-    const std::vector<CGAL::Point_2<Kernel> >& getPoints() const {
-        return m_points;
+    [[nodiscard]] auto cuspLimit() const -> double {
+        return (_cuspLimit == 0.0) ? 0.0 : M_PI - _cuspLimit;
     }
 
-private:
-    void bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4);
+    [[nodiscard]] auto getPoints() const -> const std::vector<Point>& {
+        return _points;
+    }
 
-    void recursive_bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, unsigned level);
+  private:
+    static constexpr double kDefaultApproximationScale = 1.0;
 
-    double m_approximation_scale = 1;
-    double m_distance_tolerance_square = 0;
-    double m_angle_tolerance = 0;
-    double m_cusp_limit = 0;
-    std::vector<CGAL::Point_2<Kernel>> m_points;
+    void bezier(double startX, double startY, double control1X, double control1Y, double control2X,
+                double control2Y, double endX, double endY);
+
+    void recursiveBezier(double startX, double startY, double control1X, double control1Y,
+                         double control2X, double control2Y, double endX, double endY,
+                         unsigned level);
+
+    double _approximationScale = kDefaultApproximationScale;
+    double _distanceToleranceSquare = 0.0;
+    double _angleTolerance = 0.0;
+    double _cuspLimit = 0.0;
+    std::vector<Point> _points;
 };
 
 //-----------------------------------------------------------------curve4
 
-}
+} // namespace agg
 
 #endif

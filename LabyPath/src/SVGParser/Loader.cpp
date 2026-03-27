@@ -11,29 +11,26 @@
 
 #include <iostream>
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
 Loader::Loader(const std::string& filename) {
 
-    rapidxml_ns::file<> xml_file(filename.data());
-    std::cout << "load svg" << std::endl;
+    rapidxml_ns::file<> xmlFile(filename.data());
+    std::cout << "load svg\n";
     rapidxml_ns::xml_document<char> doc;
-    doc.parse<rapidxml_ns::parse_no_string_terminators>(xml_file.data());
-    if (rapidxml_ns::xml_node<> * svg_element = doc.first_node("svg")) {
+    doc.parse<rapidxml_ns::parse_no_string_terminators>(xmlFile.data());
+    if (rapidxml_ns::xml_node<>* svgElement = doc.first_node("svg")) {
 
         BaseContext context;
-        document_traversal_t::load_document(svg_element, context);
+        document_traversal_t::load_document(svgElement, context);
 
         _ribList = context.getRibbon();
         _viewBox = context.getViewbox();
-        std::cout << "context.getRibbon() " << _ribList.size() << std::endl;
+        std::cout << "context.getRibbon() " << _ribList.size() << '\n';
 
     } else {
-        std::cout << "invalid SVG file " << std::endl;
+        std::cout << "invalid SVG file \n";
     }
-
 }
 
-} /* namespace svgp */
-} /* namespace laby */
+} /* namespace laby::svgp */

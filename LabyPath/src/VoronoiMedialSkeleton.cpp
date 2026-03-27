@@ -449,7 +449,8 @@ Arrangement_2 VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr)
 
             CGAL::Comparison_result compare = CGAL::compare_squared_distance(source, target, 0.);
             if (compare == CGAL::LARGER) {
-                result_convert.emplace_back(Segment_info_2(Kernel::Segment_2(source, target), EdgeInfo(he2.curve().data().direction(), 0)));
+                result_convert.emplace_back(
+                    Segment_info_2(Kernel::Segment_2(source, target), EdgeInfo(he2.curve().data().direction(), EdgeInfo::Coordinate{0})));
             }
         }
         else {
@@ -502,10 +503,10 @@ Arrangement_2 VoronoiMedialSkeleton::getSimpleArr(const Ribbon& rib, const Ribbo
     std::vector<Point_2> pointsK = rib.get_Points();
 
     for (const Kernel::Segment_2& s : _result) {
-        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, 0));
+        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, EdgeInfo::Coordinate{0}));
     }
     for (const Kernel::Segment_2& s : ribLimit.get_segments()) {
-        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, 0));
+        result_convert.emplace_back(s, EdgeInfo(rib.fill_color() + 1, EdgeInfo::Coordinate{0}));
     }
 
     Arrangement_2 arr;

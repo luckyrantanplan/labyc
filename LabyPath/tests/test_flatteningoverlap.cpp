@@ -5,12 +5,12 @@
 
 #include <gtest/gtest.h>
 
+#include <queue>
 #include <unordered_set>
 #include <vector>
-#include <queue>
 
-#include "flatteningOverlap/Node.h"
 #include "flatteningOverlap/Family.h"
+#include "flatteningOverlap/Node.h"
 
 using namespace laby;
 
@@ -18,20 +18,20 @@ using namespace laby;
 
 TEST(IntersectionTest, OrdersIndicesAscending) {
     Intersection i(5, 3);
-    EXPECT_EQ(i.first(), 3u);
-    EXPECT_EQ(i.second(), 5u);
+    EXPECT_EQ(i.first(), 3U);
+    EXPECT_EQ(i.second(), 5U);
 }
 
 TEST(IntersectionTest, AlreadyOrdered) {
     Intersection i(2, 7);
-    EXPECT_EQ(i.first(), 2u);
-    EXPECT_EQ(i.second(), 7u);
+    EXPECT_EQ(i.first(), 2U);
+    EXPECT_EQ(i.second(), 7U);
 }
 
 TEST(IntersectionTest, SameIndex) {
     Intersection i(4, 4);
-    EXPECT_EQ(i.first(), 4u);
-    EXPECT_EQ(i.second(), 4u);
+    EXPECT_EQ(i.first(), 4U);
+    EXPECT_EQ(i.second(), 4U);
 }
 
 TEST(IntersectionTest, EqualityOperator) {
@@ -58,9 +58,9 @@ TEST(IntersectionTest, UnorderedSetLookup) {
     s.emplace(3, 7);
     s.emplace(1, 5);
 
-    EXPECT_EQ(s.count({7, 3}), 1u);
-    EXPECT_EQ(s.count({5, 1}), 1u);
-    EXPECT_EQ(s.count({2, 9}), 0u);
+    EXPECT_EQ(s.count({7, 3}), 1U);
+    EXPECT_EQ(s.count({5, 1}), 1U);
+    EXPECT_EQ(s.count({2, 9}), 0U);
 }
 
 // ─── Node ────────────────────────────────────────────────────────────────────
@@ -100,7 +100,9 @@ TEST(NodeTest, HaveOppositeStateReturnsTrueWhenOneSet) {
 TEST(NodeTest, LessThanComparesByOppositesThenAdjacents) {
     Node a(1);
     Node b(2);
-    Node dummy1(10), dummy2(11), dummy3(12);
+    Node dummy1(10);
+    Node dummy2(11);
+    Node dummy3(12);
 
     // a has 1 opposite, b has 2 opposites → a < b
     a._opposite.push_back(&dummy1);
@@ -113,7 +115,8 @@ TEST(NodeTest, LessThanComparesByOppositesThenAdjacents) {
 TEST(NodeTest, LessThanTieBreaksOnAdjacents) {
     Node a(1);
     Node b(2);
-    Node dummy1(10), dummy2(11);
+    Node dummy1(10);
+    Node dummy2(11);
 
     // Same opposites count (0), a has fewer adjacents
     a._adjacents.insert(&dummy1);
@@ -166,7 +169,9 @@ TEST(StateSelectTest, MarkOccupiedInvalidIndexIgnored) {
 }
 
 TEST(StateSelectTest, SequentialGetNextExhaustsSlots) {
-    Node opp1(1), opp2(2), opp3(3);
+    Node opp1(1);
+    Node opp2(2);
+    Node opp3(3);
     opp1.setState(-1);
     opp2.setState(-1);
     opp3.setState(-1);
@@ -193,8 +198,12 @@ TEST(NodeQueueTest, WrapsNode) {
 
 TEST(NodeQueueTest, PriorityQueueOrdersSmallerFirst) {
     // NodeQueue uses inverted < so priority_queue gives smallest first
-    Node a(1), b(2), c(3);
-    Node dummy1(10), dummy2(11), dummy3(12);
+    Node a(1);
+    Node b(2);
+    Node c(3);
+    Node dummy1(10);
+    Node dummy2(11);
+    Node dummy3(12);
 
     // a: 0 opposites, b: 1 opposite, c: 2 opposites
     b._opposite.push_back(&dummy1);

@@ -37,7 +37,7 @@ void PathRendering::unify(std::size_t second, const std::vector<std::size_t>& aA
     EASY_FUNCTION();
     for (std::size_t a : aAdjs) {
 
-        std::unordered_set<Intersection>::const_iterator ite = intersections.find({a, second});
+        const auto ite = intersections.find({a, second});
         if (ite != intersections.end()) {
             uf.unify_sets(i.handle, ite->handle);
         }
@@ -169,7 +169,7 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon, const std::vector<P
 
     CGAL::box_self_intersection_d(boxes.begin(), boxes.end(), [&](const BoxPolyConvex& a, const BoxPolyConvex& b) {
         const std::vector<std::size_t>& adjacents = a.handle()->_adjacents;
-        std::vector<std::size_t>::const_iterator ite = std::find(adjacents.begin(), adjacents.end(), b.handle()->_id);
+        const auto ite = std::find(adjacents.begin(), adjacents.end(), b.handle()->_id);
         if (ite != adjacents.end()) {
             intersections.emplace_back(a.handle()->_id, b.handle()->_id);
         }
@@ -241,7 +241,7 @@ void PathRendering::nodeAdjacence(std::vector<Node>& nodes, const std::vector<Po
         std::vector<Node*>& pcNodes = pc._nodes;
         while (pcNodes.size() > 1) {
             Node& n = *pcNodes.back();
-            pcNodes.resize(pcNodes.size() - 1u);
+            pcNodes.resize(pcNodes.size() - 1U);
             for (Node* m : pcNodes) {
                 n._adjacents.emplace(m);
                 m->_adjacents.emplace(&n);
@@ -317,13 +317,7 @@ void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
                         queue.emplace(*opp);
                     }
                 }
-                int32_t adjstate;
-                if (state == 0) {
-                    adjstate = 1;
-                }
-                else {
-                    adjstate = 0;
-                }
+                const int32_t adjstate = (state == 0) ? 1 : 0;
                 for (Node* adj : node._adjacents) {
 
                     int32_t& ostate = adj->_state;

@@ -11,69 +11,90 @@
 #include <cstddef>
 #include <vector>
 
-#include "../protoc/AllConfig.pb.h"
-#include "../basic/RandomUniDist.h"
-#include "../Ribbon.h"
 #include "../GeomData.h"
+#include "../Ribbon.h"
+#include "../basic/RandomUniDist.h"
+#include "../protoc/AllConfig.pb.h"
 #include "Net.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
+
+struct RectOutlineConfig {
+    double quantity = 0.0;
+    double thickness = 0.0;
+    double rayLength = 0.0;
+};
 
 class Cell {
 
-public:
-    Cell(const proto::Cell& config, Arrangement_2& arr, const Ribbon& limit);
+  public:
+    Cell(proto::Cell config, Arrangement_2& arr, const Ribbon& limit);
 
-    void drawRectOutline(const CGAL::Bbox_2& bbox, const double quantity, const double thickness, const double raylength);
+    void drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config);
 
-    const std::vector<Vertex*>& vertices() const { return listVertex; }
+    [[nodiscard]] auto vertices() const -> const std::vector<Vertex*>& {
+        return _listVertex;
+    }
+    [[nodiscard]] auto randomVertices() const -> const std::vector<Vertex*>& {
+        return _randomVertices;
+    }
 
-    void createRandomPin(const CGAL::Bbox_2& bbox, const std::size_t maxPin);
+    void createRandomPin(const CGAL::Bbox_2& bbox, std::size_t maxPin);
     void createRandomPinOnExistingVerticesOnly();
     void startNetWithRandomPin();
 
-    double resolution() const;
+    [[nodiscard]] auto resolution() const -> double;
 
-    std::vector<Point_2> subdivide(const Polyline& pl);
+    [[nodiscard]] auto subdivide(const Polyline& polyline) const -> std::vector<Point_2>;
 
-    std::vector<aniso::Net>& nets() { return _nets; }
-
-    const std::vector<aniso::Net>& nets() const { return _nets; }
-
-    std::vector<Vertex*>::iterator selectRandomVertex() {
-        std::vector<Vertex*>::iterator it = randomVertex.begin();
-        std::advance(it, _random.select(0, randomVertex.size()));
-        return it;
+    auto nets() -> std::vector<aniso::Net>& {
+        return _nets;
     }
-    void removeRandomPoint(std::vector<Vertex*>::iterator& ite) {
-        std::swap(*ite, randomVertex.back());
-        randomVertex.resize(randomVertex.size() - 1u);
+
+    [[nodiscard]] auto nets() const -> const std::vector<aniso::Net>& {
+        return _nets;
     }
+
+    auto selectRandomVertex() -> std::vector<Vertex*>::iterator {
+        auto iterator = _randomVertices.begin();
+        std::advance(iterator, _random.select(0, _randomVertices.size()));
+        return iterator;
+    }
+
+    void removeRandomPoint(std::vector<Vertex*>::iterator& iterator) {
+        std::swap(*iterator, _randomVertices.back());
+        _randomVertices.resize(_randomVertices.size() - 1U);
+    }
+
     void insertPointAndConnect(const Point_2& point2);
     void selectNearestPoint(const Point_2& point2);
     void shuffleVertices();
 
-    const Arrangement_2& arr() const { return _arr; }
+    [[nodiscard]] auto arr() const -> const Arrangement_2& {
+        return *_arr;
+    }
 
-    Arrangement_2& arr() { return _arr; }
+    auto arr() -> Arrangement_2& {
+        return *_arr;
+    }
 
-    const CGAL::Bbox_2& bbox() const { return _bbox; }
+    [[nodiscard]] auto bbox() const -> const CGAL::Bbox_2& {
+        return _bbox;
+    }
 
-    std::vector<Vertex*> randomVertex;
-    std::vector<Vertex*> listVertex;
-
-private:
+  private:
     void createOutlinedNet(std::size_t begin, double thickness);
-    const proto::Cell _config;
+    proto::Cell _config;
     CGAL::Bbox_2 _bbox;
-    Arrangement_2& _arr;
+    Arrangement_2* _arr = nullptr;
+
+    std::vector<Vertex*> _randomVertices;
+    std::vector<Vertex*> _listVertex;
 
     std::vector<aniso::Net> _nets;
     basic::RandomUniDist _random;
 };
 
-} /* namespace aniso */
-} /* namespace laby */
+} /* namespace laby::aniso */
 
 #endif /* ANISOTROP_CELL_H_ */

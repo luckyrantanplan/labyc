@@ -18,13 +18,13 @@
 #include <string>
 #include <vector>
 
-#include "GeomData.h"
-#include "Ribbon.h"
-#include "Polyline.h"
-#include "SVGParser/Loader.h"
-#include "Rendering/GraphicRendering.h"
-#include "SkeletonGrid.h"
 #include "AlternaRoute/AlternateRoute.h"
+#include "GeomData.h"
+#include "Polyline.h"
+#include "Rendering/GraphicRendering.h"
+#include "Ribbon.h"
+#include "SVGParser/Loader.h"
+#include "SkeletonGrid.h"
 #include "basic/Color.h"
 #include "protoc/AllConfig.pb.h"
 
@@ -32,16 +32,18 @@ namespace fs = std::filesystem;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-static std::string inputDir() {
+namespace {
+
+std::string inputDir() {
     fs::path base = fs::path(__FILE__).parent_path().parent_path() / "input";
     return base.string();
 }
 
-static std::string inputFile(const std::string& name) {
+std::string inputFile(const std::string& name) {
     return inputDir() + "/" + name;
 }
 
-static std::string tmpOutput(const std::string& name) {
+std::string tmpOutput(const std::string& name) {
     fs::path tmp = fs::temp_directory_path() / "labypath_test";
     fs::create_directories(tmp);
     return (tmp / name).string();
@@ -49,40 +51,32 @@ static std::string tmpOutput(const std::string& name) {
 
 /// Check that all points in a polyline lie within the given bounding box
 /// (with a tolerance margin for floating-point rounding).
-static bool allPointsInBounds(const laby::Polyline& polyline, const CGAL::Bbox_2& box, double margin = 1.0) {
-    for (const auto& pt : polyline.points) {
+bool allPointsInBounds(const laby::Polyline& polyline, const CGAL::Bbox_2& box,
+                       double margin = 1.0) {
+    return std::all_of(polyline.points.begin(), polyline.points.end(), [&](const auto& pt) {
         double x = CGAL::to_double(pt.x());
         double y = CGAL::to_double(pt.y());
-        if (x < box.xmin() - margin || x > box.xmax() + margin || y < box.ymin() - margin || y > box.ymax() + margin) {
-            return false;
-        }
-    }
-    return true;
+        return x >= box.xmin() - margin && x <= box.xmax() + margin && y >= box.ymin() - margin &&
+               y <= box.ymax() + margin;
+    });
 }
 
 /// Check that all coordinates are finite (not NaN or Inf).
-static bool allPointsFinite(const laby::Polyline& polyline) {
-    for (const auto& pt : polyline.points) {
+bool allPointsFinite(const laby::Polyline& polyline) {
+    return std::all_of(polyline.points.begin(), polyline.points.end(), [](const auto& pt) {
         double x = CGAL::to_double(pt.x());
         double y = CGAL::to_double(pt.y());
-        if (!std::isfinite(x) || !std::isfinite(y)) {
-            return false;
-        }
-    }
-    return true;
+        return std::isfinite(x) && std::isfinite(y);
+    });
 }
 
-static bool ribbonHasGeometry(const laby::Ribbon& ribbon) {
-    for (const auto& line : ribbon.lines()) {
-        if (line.points.size() > 1) {
-            return true;
-        }
-    }
-    return false;
+bool ribbonHasGeometry(const laby::Ribbon& ribbon) {
+    return std::any_of(ribbon.lines().begin(), ribbon.lines().end(),
+                       [](const auto& line) { return line.points.size() > 1; });
 }
 
 /// Count the number of path or polyline elements in SVG content.
-static std::size_t countSvgPathElements(const std::string& content) {
+std::size_t countSvgPathElements(const std::string& content) {
     std::size_t count = 0;
     std::size_t pos = 0;
     while ((pos = content.find("<path", pos)) != std::string::npos) {
@@ -98,8 +92,9 @@ static std::size_t countSvgPathElements(const std::string& content) {
 }
 
 /// Extract viewBox dimensions from SVG content.
-static bool extractViewBox(const std::string& content, double& x, double& y, double& w, double& h) {
-    std::regex viewBoxRe(R"(viewBox\s*=\s*["']([0-9.e+-]+)\s+([0-9.e+-]+)\s+([0-9.e+-]+)\s+([0-9.e+-]+)["'])");
+bool extractViewBox(const std::string& content, double& x, double& y, double& w, double& h) {
+    std::regex viewBoxRe(
+        R"(viewBox\s*=\s*["']([0-9.e+-]+)\s+([0-9.e+-]+)\s+([0-9.e+-]+)\s+([0-9.e+-]+)["'])");
     std::smatch match;
     if (std::regex_search(content, match, viewBoxRe) && match.size() == 5) {
         x = std::stod(match[1]);
@@ -111,6 +106,8 @@ static bool extractViewBox(const std::string& content, double& x, double& y, dou
     return false;
 }
 
+} // namespace
+
 // ─── SVG Loader Qualification Tests ─────────────────────────────────────────
 
 class SvgLoaderTest : public ::testing::Test {};
@@ -120,7 +117,7 @@ TEST_F(SvgLoaderTest, LoadSquareCircle) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u) << "Should extract at least one ribbon";
+    EXPECT_GT(loader.ribList().size(), 0U) << "Should extract at least one ribbon";
 
     const auto& box = loader.viewBox();
     EXPECT_GT(box.xmax() - box.xmin(), 0.0) << "viewBox should have positive width";
@@ -132,7 +129,7 @@ TEST_F(SvgLoaderTest, LoadDrawing) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 }
 
 TEST_F(SvgLoaderTest, Load591) {
@@ -140,11 +137,11 @@ TEST_F(SvgLoaderTest, Load591) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 
     // 591.svg has color-coded shapes
     for (const auto& rib : loader.ribList()) {
-        EXPECT_GT(rib.lines().size(), 0u) << "Each ribbon should have polylines";
+        EXPECT_GT(rib.lines().size(), 0U) << "Each ribbon should have polylines";
     }
 }
 
@@ -153,7 +150,7 @@ TEST_F(SvgLoaderTest, Load591Quarter) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 
     const auto& box = loader.viewBox();
     EXPECT_GT(box.xmax() - box.xmin(), 0.0);
@@ -165,7 +162,7 @@ TEST_F(SvgLoaderTest, Load591Tree) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 }
 
 TEST_F(SvgLoaderTest, Load591Circle) {
@@ -173,7 +170,7 @@ TEST_F(SvgLoaderTest, Load591Circle) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 }
 
 TEST_F(SvgLoaderTest, LoadWomanHair) {
@@ -181,7 +178,7 @@ TEST_F(SvgLoaderTest, LoadWomanHair) {
     ASSERT_TRUE(fs::exists(path)) << "Missing: " << path;
 
     laby::svgp::Loader loader(path);
-    EXPECT_GT(loader.ribList().size(), 0u);
+    EXPECT_GT(loader.ribList().size(), 0U);
 }
 
 TEST_F(SvgLoaderTest, RibbonsHavePolylines) {
@@ -190,14 +187,14 @@ TEST_F(SvgLoaderTest, RibbonsHavePolylines) {
 
     laby::svgp::Loader loader(path);
     for (const auto& rib : loader.ribList()) {
-        EXPECT_GT(rib.lines().size(), 0u) << "Ribbon should have polyline data";
+        EXPECT_GT(rib.lines().size(), 0U) << "Ribbon should have polyline data";
         std::size_t nonEmpty = 0;
         for (const auto& line : rib.lines()) {
             if (!line.points.empty()) {
                 ++nonEmpty;
             }
         }
-        EXPECT_GT(nonEmpty, 0u) << "Ribbon should have at least one non-empty polyline";
+        EXPECT_GT(nonEmpty, 0U) << "Ribbon should have at least one non-empty polyline";
     }
 }
 
@@ -212,7 +209,8 @@ TEST_F(SvgLoaderTest, CoordinatesWithinViewBox) {
 
     for (const auto& rib : loader.ribList()) {
         for (const auto& line : rib.lines()) {
-            EXPECT_TRUE(allPointsInBounds(line, box, 1.0)) << "All polyline points should lie within the viewBox (±1.0 margin)";
+            EXPECT_TRUE(allPointsInBounds(line, box, 1.0))
+                << "All polyline points should lie within the viewBox (±1.0 margin)";
         }
     }
 }
@@ -224,7 +222,8 @@ TEST_F(SvgLoaderTest, CoordinatesAreFinite) {
     laby::svgp::Loader loader(path);
     for (const auto& rib : loader.ribList()) {
         for (const auto& line : rib.lines()) {
-            EXPECT_TRUE(allPointsFinite(line)) << "All polyline coordinates must be finite (no NaN/Inf)";
+            EXPECT_TRUE(allPointsFinite(line))
+                << "All polyline coordinates must be finite (no NaN/Inf)";
         }
     }
 }
@@ -238,7 +237,8 @@ TEST_F(SvgLoaderTest, PolylinesHaveMinimumPoints) {
         for (const auto& line : rib.lines()) {
             if (!line.points.empty()) {
                 // A meaningful polyline should have at least 2 points
-                EXPECT_GE(line.points.size(), 2u) << "Non-empty polylines should have at least 2 points";
+                EXPECT_GE(line.points.size(), 2U)
+                    << "Non-empty polylines should have at least 2 points";
             }
         }
     }
@@ -264,14 +264,15 @@ TEST_F(PrintRibbonSvgTest, WriteSvgFromLoadedRibbons) {
     ASSERT_TRUE(fs::exists(svgIn));
 
     laby::svgp::Loader loader(svgIn);
-    ASSERT_GT(loader.ribList().size(), 0u);
+    ASSERT_GT(loader.ribList().size(), 0U);
 
     const std::string svgOut = tmpOutput("printribbon_output.svg");
 
-    EXPECT_NO_THROW(laby::GraphicRendering::printRibbonSvg(loader.viewBox(), svgOut, 1.0, loader.ribList()));
+    EXPECT_NO_THROW(
+        laby::GraphicRendering::printRibbonSvg(loader.viewBox(), svgOut, 1.0, loader.ribList()));
 
     ASSERT_TRUE(fs::exists(svgOut)) << "Output SVG should be created";
-    EXPECT_GT(fs::file_size(svgOut), 0u) << "Output SVG should not be empty";
+    EXPECT_GT(fs::file_size(svgOut), 0U) << "Output SVG should not be empty";
 
     // Read and validate SVG structure
     std::ifstream ifs(svgOut);
@@ -281,11 +282,15 @@ TEST_F(PrintRibbonSvgTest, WriteSvgFromLoadedRibbons) {
 
     // Verify the output has path/polyline elements matching the input ribbons
     std::size_t pathCount = countSvgPathElements(content);
-    EXPECT_GT(pathCount, 0u) << "Output SVG should contain path or polyline elements";
+    EXPECT_GT(pathCount, 0U) << "Output SVG should contain path or polyline elements";
 
     // Verify viewBox is preserved in the output
-    double vx, vy, vw, vh;
-    EXPECT_TRUE(extractViewBox(content, vx, vy, vw, vh)) << "Output SVG should have a viewBox attribute";
+    double vx = 0.0;
+    double vy = 0.0;
+    double vw = 0.0;
+    double vh = 0.0;
+    EXPECT_TRUE(extractViewBox(content, vx, vy, vw, vh))
+        << "Output SVG should have a viewBox attribute";
 
     fs::remove(svgOut);
 }
@@ -295,21 +300,22 @@ TEST_F(PrintRibbonSvgTest, WriteSvgFrom591) {
     ASSERT_TRUE(fs::exists(svgIn));
 
     laby::svgp::Loader loader(svgIn);
-    ASSERT_GT(loader.ribList().size(), 0u);
+    ASSERT_GT(loader.ribList().size(), 0U);
 
     const std::string svgOut = tmpOutput("printribbon_591_output.svg");
 
-    EXPECT_NO_THROW(laby::GraphicRendering::printRibbonSvg(loader.viewBox(), svgOut, 2.0, loader.ribList()));
+    EXPECT_NO_THROW(
+        laby::GraphicRendering::printRibbonSvg(loader.viewBox(), svgOut, 2.0, loader.ribList()));
 
     ASSERT_TRUE(fs::exists(svgOut));
-    EXPECT_GT(fs::file_size(svgOut), 0u);
+    EXPECT_GT(fs::file_size(svgOut), 0U);
 
     // Validate geometric output
     std::ifstream ifs(svgOut);
     std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
     std::size_t pathCount = countSvgPathElements(content);
-    EXPECT_GT(pathCount, 0u) << "591.svg rendering should produce multiple path elements";
+    EXPECT_GT(pathCount, 0U) << "591.svg rendering should produce multiple path elements";
 
     fs::remove(svgOut);
 }
@@ -322,7 +328,7 @@ TEST_F(PrintRibbonSvgTest, EmptyRibbonListProducesValidSvg) {
     EXPECT_NO_THROW(laby::GraphicRendering::printRibbonSvg(box, svgOut, 1.0, empty));
 
     ASSERT_TRUE(fs::exists(svgOut));
-    EXPECT_GT(fs::file_size(svgOut), 0u);
+    EXPECT_GT(fs::file_size(svgOut), 0U);
 
     // Even with empty input, the output should be well-formed SVG
     std::ifstream ifs(svgOut);
@@ -332,7 +338,7 @@ TEST_F(PrintRibbonSvgTest, EmptyRibbonListProducesValidSvg) {
 
     // Empty input should produce no path elements
     std::size_t pathCount = countSvgPathElements(content);
-    EXPECT_EQ(pathCount, 0u) << "Empty ribbon list should produce no path elements";
+    EXPECT_EQ(pathCount, 0U) << "Empty ribbon list should produce no path elements";
 
     fs::remove(svgOut);
 }
@@ -359,7 +365,7 @@ TEST_F(SkeletonGridQualTest, ProcessSquareCircle) {
 
     // Verify output SVG was produced
     ASSERT_TRUE(fs::exists(svgOut)) << "SkeletonGrid should produce output SVG";
-    EXPECT_GT(fs::file_size(svgOut), 100u) << "Output SVG should have substantial content";
+    EXPECT_GT(fs::file_size(svgOut), 100U) << "Output SVG should have substantial content";
 
     // Read output and validate structure
     std::ifstream ifs(svgOut);
@@ -369,7 +375,8 @@ TEST_F(SkeletonGridQualTest, ProcessSquareCircle) {
 
     // Skeleton output should have path/polyline elements for the grid
     std::size_t pathCount = countSvgPathElements(content);
-    EXPECT_GT(pathCount, 0u) << "Skeleton output should contain path elements for the grid structure";
+    EXPECT_GT(pathCount, 0U)
+        << "Skeleton output should contain path elements for the grid structure";
 
     laby::svgp::Loader outputLoader(svgOut);
     bool hasCircular = false;
@@ -387,7 +394,10 @@ TEST_F(SkeletonGridQualTest, ProcessSquareCircle) {
     EXPECT_TRUE(hasRadial) << "Skeleton output should include a non-empty radial channel";
 
     // Validate the output has a viewBox
-    double vx, vy, vw, vh;
+    double vx = 0.0;
+    double vy = 0.0;
+    double vw = 0.0;
+    double vh = 0.0;
     if (extractViewBox(content, vx, vy, vw, vh)) {
         EXPECT_GT(vw, 0.0) << "Output viewBox width should be positive";
         EXPECT_GT(vh, 0.0) << "Output viewBox height should be positive";
@@ -416,12 +426,12 @@ TEST_F(SkeletonGridQualTest, ProcessDrawing) {
     std::ifstream ifs(svgOut);
     std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
-    EXPECT_GT(fs::file_size(svgOut), 0u);
+    EXPECT_GT(fs::file_size(svgOut), 0U);
     EXPECT_TRUE(content.find("<svg") != std::string::npos);
 
     // Verify skeleton produced geometric elements
     std::size_t pathCount = countSvgPathElements(content);
-    EXPECT_GT(pathCount, 0u) << "Drawing skeleton should produce path elements";
+    EXPECT_GT(pathCount, 0U) << "Drawing skeleton should produce path elements";
 
     fs::remove(svgOut);
 }
@@ -448,10 +458,14 @@ TEST_F(SkeletonGridQualTest, OutputBoundsMatchInput) {
 
     // The skeleton's bounding box should be within or close to the input's
     const auto& skelBox = grid.bbox();
-    EXPECT_GE(skelBox.xmin(), inputBox.xmin() - 10.0) << "Skeleton should not extend far beyond input bounds";
-    EXPECT_LE(skelBox.xmax(), inputBox.xmax() + 10.0) << "Skeleton should not extend far beyond input bounds";
-    EXPECT_GE(skelBox.ymin(), inputBox.ymin() - 10.0) << "Skeleton should not extend far beyond input bounds";
-    EXPECT_LE(skelBox.ymax(), inputBox.ymax() + 10.0) << "Skeleton should not extend far beyond input bounds";
+    EXPECT_GE(skelBox.xmin(), inputBox.xmin() - 10.0)
+        << "Skeleton should not extend far beyond input bounds";
+    EXPECT_LE(skelBox.xmax(), inputBox.xmax() + 10.0)
+        << "Skeleton should not extend far beyond input bounds";
+    EXPECT_GE(skelBox.ymin(), inputBox.ymin() - 10.0)
+        << "Skeleton should not extend far beyond input bounds";
+    EXPECT_LE(skelBox.ymax(), inputBox.ymax() + 10.0)
+        << "Skeleton should not extend far beyond input bounds";
 
     fs::remove(svgOut);
 }
@@ -481,20 +495,19 @@ TEST_F(AlternateRouteQualTest, ProcessSquareCircleDoesNotSegfault) {
         laby::AlternateRoute route(altConfig, filepaths);
         ASSERT_TRUE(fs::exists(svgOut)) << "AlternateRoute should produce output SVG";
         if (fs::exists(svgOut)) {
-            EXPECT_GT(fs::file_size(svgOut), 0u);
+            EXPECT_GT(fs::file_size(svgOut), 0U);
 
             // Validate output is well-formed SVG
             std::ifstream ifs(svgOut);
-            std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+            std::string content((std::istreambuf_iterator<char>(ifs)),
+                                std::istreambuf_iterator<char>());
             EXPECT_TRUE(content.find("<svg") != std::string::npos);
 
             fs::remove(svgOut);
         }
-    }
-    catch (const std::bad_alloc&) {
+    } catch (const std::bad_alloc&) {
         SUCCEED() << "std::bad_alloc is expected for simple input shapes";
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         SUCCEED() << "Exception during AlternateRoute: " << e.what();
     }
 }
@@ -526,7 +539,8 @@ TEST_F(AlternateRouteQualTest, ConfigThicknessConstraint) {
     altConfig.set_minthickness(2.0);
 
     // Max thickness must be greater than min thickness
-    EXPECT_GT(altConfig.maxthickness(), altConfig.minthickness()) << "Max thickness should exceed min thickness";
+    EXPECT_GT(altConfig.maxthickness(), altConfig.minthickness())
+        << "Max thickness should exceed min thickness";
 
     // Thickness values should be positive
     EXPECT_GT(altConfig.maxthickness(), 0.0);

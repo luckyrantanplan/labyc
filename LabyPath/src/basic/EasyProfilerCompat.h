@@ -18,10 +18,10 @@
 #define EASY_BLOCK(...)
 #define EASY_END_BLOCK
 namespace profiler {
-    inline void startListen() {}
-    inline void stopListen() {}
-    inline void dumpBlocksToFile(const char*) {}
-}
+inline void startListen() {}
+inline void stopListen() {}
+inline void dumpBlocksToFile(const char* /*unused*/) {}
+} // namespace profiler
 #endif
 
 #endif // EASY_PROFILER_COMPAT_H_

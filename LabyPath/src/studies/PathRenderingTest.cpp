@@ -15,11 +15,11 @@
 
 #include "../Anisotrop/Cell.h"
 #include "../Anisotrop/Placement.h"
-#include "../generator/StreamLine.h"
 #include "../GeomFeatures.h"
 #include "../Rendering/Fenetre.h"
 #include "../Rendering/GraphicRendering.h"
 #include "../Rendering/PenStroke.h"
+#include "../generator/StreamLine.h"
 
 namespace laby {
 namespace aniso {
@@ -29,9 +29,9 @@ generator::StreamLine PathRenderingTest::createStreamLine() {
     config_st.divisor = 2;
     config_st.size = 320;
     generator::StreamLine st(config_st);
-    st.drawSpiral( { 80, 80 }, 100, M_PI / 40.);
-    st.drawSpiral( { 40., 40. }, 32, -M_PI / 4.);
-    st.drawSpiral( { 220., 200. }, 76, -M_PI / 4.);
+    st.drawSpiral({80, 80}, 100, M_PI / 40.);
+    st.drawSpiral({40., 40.}, 32, -M_PI / 4.);
+    st.drawSpiral({220., 200.}, 76, -M_PI / 4.);
     st.render();
     return st;
 }
@@ -41,27 +41,27 @@ aniso::Cell PathRenderingTest::createCell() {
 
     generator::StreamLine st = createStreamLine();
     st.addToArrangement(cell.arr());
-    //createArr
-    // global insertion of all segments
-    // insertion of additional segment to link random vertices to the present lattice
-    cell.drawRectOutline( { 60., 60., 100, 100. }, 10, 10, 60);
-    cell.drawRectOutline( { 180., 160., 260., 240. }, 10, 2.2, 100);
-    const CGAL::Bbox_2 bbox { 0., 0., 320., 320. };
+    // createArr
+    //  global insertion of all segments
+    //  insertion of additional segment to link random vertices to the present lattice
+    cell.drawRectOutline({60., 60., 100, 100.}, RectOutlineConfig{10, 10, 60});
+    cell.drawRectOutline({180., 160., 260., 240.}, RectOutlineConfig{10, 2.2, 100});
+    const CGAL::Bbox_2 bbox{0., 0., 320., 320.};
     cell.shuffleVertices();
-    std::size_t maxPin = 200;    //200;
+    std::size_t maxPin = 200; // 200;
     cell.createRandomPin(bbox, maxPin);
     return cell;
 }
 
-int PathRenderingTest::test(int argc, char *argv[]) {
+int PathRenderingTest::test(int argc, char* argv[]) {
 
     generator::StreamLine st = createStreamLine();
 
-    //aniso::Cell cell = createCell();
+    // aniso::Cell cell = createCell();
 
-//    GeomFeatures geoFeature;
-//    geoFeature.arr() = cell.arr();
-// geoFeature.setNets(aniso::Net::extractPins(cell.nets()));
+    //    GeomFeatures geoFeature;
+    //    geoFeature.arr() = cell.arr();
+    // geoFeature.setNets(aniso::Net::extractPins(cell.nets()));
 
     GraphicRendering::Config render_config;
     render_config.fenetre.height_point = 680;
@@ -80,7 +80,7 @@ int PathRenderingTest::test(int argc, char *argv[]) {
     render_config.penConfig.antisymmetric_freq = 10;
     render_config.penConfig.symmetric_freq = 3;
     render_config.penConfig.canvas_size = 1000;
-    //render_config.thickness = 0.5;
+    // render_config.thickness = 0.5;
 
     GraphicRendering render(render_config);
 
@@ -89,7 +89,6 @@ int PathRenderingTest::test(int argc, char *argv[]) {
     result.emplace_back(st.radialList());
 
     return render.render(result, argc, argv);
-
 }
 } /* namespace aniso */
 } /* namespace laby */

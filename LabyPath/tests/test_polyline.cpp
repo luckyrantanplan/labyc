@@ -37,18 +37,18 @@ TEST(PolylineTest, TotalLengthStraightLine) {
     pl.points.emplace_back(3, 4);
 
     // Length: 3 + 4 = 7
-    EXPECT_NEAR(pl.total_length(), 7.0, 1e-9);
+    EXPECT_NEAR(pl.totalLength(), 7.0, 1e-9);
 }
 
 TEST(PolylineTest, TotalLengthSinglePoint) {
     Polyline pl;
     pl.points.emplace_back(5, 5);
-    EXPECT_DOUBLE_EQ(pl.total_length(), 0.0);
+    EXPECT_DOUBLE_EQ(pl.totalLength(), 0.0);
 }
 
 TEST(PolylineTest, TotalLengthEmpty) {
     Polyline pl;
-    EXPECT_DOUBLE_EQ(pl.total_length(), 0.0);
+    EXPECT_DOUBLE_EQ(pl.totalLength(), 0.0);
 }
 
 TEST(PolylineTest, ConstructFromPolygon) {
@@ -68,7 +68,7 @@ TEST(PolylineTest, ComputeMinLexi) {
     pl.points.emplace_back(1, 2);
     pl.points.emplace_back(3, 1);
 
-    pl.compute_min_lexi();
+    pl.computeMinLexi();
     // Lexicographically smallest point: (1, 2)
     EXPECT_EQ(pl.min_point, Point_2(1, 2));
 }

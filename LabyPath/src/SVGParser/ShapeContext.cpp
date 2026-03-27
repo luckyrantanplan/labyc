@@ -7,103 +7,122 @@
 
 #include "ShapeContext.h"
 
-#include <boost/variant/get.hpp>
-#include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
-#include <svgpp/definitions.hpp>
+#include <CGAL/number_utils.h>
+#include <boost/variant/get.hpp>
 #include <iostream>
+#include <svgpp/definitions.hpp>
 
-#include "../agg/agg_curves.h"
 #include "../GeomData.h"
+#include "../agg/agg_curves.h"
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
-ShapeContext::ShapeContext(BaseContext & parent) :
-        BaseContext(parent) {
-
-    _vectRibbonRef.emplace_back();
-    _currentRibbon = &_vectRibbonRef.back();
-
+ShapeContext::ShapeContext(BaseContext& parent) : BaseContext(parent) {
+    _vectRibbonRef->emplace_back();
 }
 
-void ShapeContext::path_move_to(double x, double y, svgpp::tag::coordinate::absolute) {
+auto ShapeContext::currentRibbon() -> Ribbon& {
+    return _vectRibbonRef->back();
+}
 
-    if (_currentRibbon->lines().empty() or !_currentRibbon->lines().back().points.empty()) {
-        _currentRibbon->lines().emplace_back();
+// SVG++ discovers these callbacks by exact name.
+// NOLINTBEGIN(readability-identifier-naming)
+void ShapeContext::path_move_to(double xCoordinate, double yCoordinate,
+                                svgpp::tag::coordinate::absolute coordinateTag) {
+    static_cast<void>(coordinateTag);
+
+    if (currentRibbon().lines().empty() or !currentRibbon().lines().back().points.empty()) {
+        currentRibbon().lines().emplace_back();
     }
 
-    _currentRibbon->lines().back().points.emplace_back(Point_2(x, y));
+    currentRibbon().lines().back().points.emplace_back(xCoordinate, yCoordinate);
 }
 
-void ShapeContext::path_line_to(double x, double y, svgpp::tag::coordinate::absolute) {
-    _currentRibbon->lines().back().points.emplace_back(Point_2(x, y));
+void ShapeContext::path_line_to(double xCoordinate, double yCoordinate,
+                                svgpp::tag::coordinate::absolute coordinateTag) {
+    static_cast<void>(coordinateTag);
+    currentRibbon().lines().back().points.emplace_back(xCoordinate, yCoordinate);
 }
 
-void ShapeContext::path_cubic_bezier_to(double x1, double y1, double x2, double y2, double x, double y, svgpp::tag::coordinate::absolute) {
+void ShapeContext::path_cubic_bezier_to(double xControl1, double yControl1, double xControl2,
+                                        double yControl2, double xCoordinate, double yCoordinate,
+                                        svgpp::tag::coordinate::absolute coordinateTag) {
+    static_cast<void>(coordinateTag);
 
     {
-        Point_2& ref = _currentRibbon->lines().back().points.back();
-        agg::Curve4 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), x1, y1, x2, y2, x, y);
+        Point_2& ref = currentRibbon().lines().back().points.back();
+        agg::Curve4 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), xControl1, yControl1,
+                          xControl2, yControl2, xCoordinate, yCoordinate);
 
         const auto& vect = curve.getPoints();
-        auto& ribbonLine = _currentRibbon->lines().back().points;
-        //remove last item
+        auto& ribbonLine = currentRibbon().lines().back().points;
+        // remove last item
         ribbonLine.insert(ribbonLine.end(), ++vect.begin(), vect.end());
     }
-
 }
 
-void ShapeContext::path_quadratic_bezier_to(double x1, double y1, double x, double y, svgpp::tag::coordinate::absolute) {
+void ShapeContext::path_quadratic_bezier_to(double xControl, double yControl, double xCoordinate,
+                                            double yCoordinate,
+                                            svgpp::tag::coordinate::absolute coordinateTag) {
+    static_cast<void>(coordinateTag);
 
-    Point_2& ref = _currentRibbon->lines().back().points.back();
-    agg::Curve3 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), x1, y1, x, y);
+    Point_2& ref = currentRibbon().lines().back().points.back();
+    agg::Curve3 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), xControl, yControl,
+                      xCoordinate, yCoordinate);
 
     const auto& vect = curve.getPoints();
-    auto& ribbonLine = _currentRibbon->lines().back().points;
-//remove last item
+    auto& ribbonLine = currentRibbon().lines().back().points;
+    // remove last item
     ribbonLine.insert(ribbonLine.end(), ++vect.begin(), vect.end());
-
 }
 
-void ShapeContext::path_elliptical_arc_to(double /*rx*/, double /*ry*/, double /*x_axis_rotation*/, bool /*large_arc_flag*/, bool /*sweep_flag*/, double x, double y, svgpp::tag::coordinate::absolute) {
-    std::cout << "path_elliptical_arc_to " << x << " " << y << std::endl;
+void ShapeContext::path_elliptical_arc_to(double /*radiusX*/, double /*radiusY*/,
+                                          double /*xAxisRotation*/, bool /*largeArcFlag*/,
+                                          bool /*sweepFlag*/, double xCoordinate,
+                                          double yCoordinate,
+                                          svgpp::tag::coordinate::absolute coordinateTag) {
+    static_cast<void>(coordinateTag);
+    std::cout << "path_elliptical_arc_to " << xCoordinate << " " << yCoordinate << '\n';
 }
 
 void ShapeContext::path_close_subpath() {
-    _currentRibbon->lines().back().closed = true;
-    std::vector<Point_2>& points = _currentRibbon->lines().back().points;
+    currentRibbon().lines().back().closed = true;
+    std::vector<Point_2>& points = currentRibbon().lines().back().points;
     if (points.back() != points.front()) {
         points.emplace_back(points.front());
     }
-    _currentRibbon->lines().emplace_back();
+    currentRibbon().lines().emplace_back();
 }
 
-color_t ShapeContext::getColor(const Paint& paint) {
+// NOLINTEND(readability-identifier-naming)
+
+auto ShapeContext::getColor(const Paint& paint) -> color_t {
     EffectivePaint epaint = style().getEffectivePaint(paint);
-    if (boost::get<color_t>(&epaint)) {
+    if (boost::get<color_t>(&epaint) != nullptr) {
         return boost::get<color_t>(epaint);
     }
     return 0;
 }
 
 void ShapeContext::path_exit() {
-    _currentRibbon->set_fill_color(getColor(style().fill_paint_));
-    _currentRibbon->setStrokeColor(getColor(style().stroke_paint_));
-    _currentRibbon->setStrokeWidth(style().stroke_width_);
-
+    currentRibbon().set_fill_color(getColor(style().fill_paint_));
+    currentRibbon().setStrokeColor(getColor(style().stroke_paint_));
+    currentRibbon().setStrokeWidth(style().stroke_width_);
 }
 
-void ShapeContext::marker(svgpp::marker_vertex v, double x, double y, double directionality, unsigned marker_index) {
-    if (marker_index >= markers_.size())
-        markers_.resize(marker_index + 1);
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+void ShapeContext::marker(svgpp::marker_vertex vertex, double xCoordinate, double yCoordinate,
+                          double directionality, unsigned markerIndex) {
+    if (markerIndex >= _markers.size()) {
+        _markers.resize(markerIndex + 1);
+    }
 
-    MarkerPos& m = markers_[marker_index];
-    m.v = v;
-    m.x = x;
-    m.y = y;
-    m.directionality = directionality;
+    MarkerPos& markerPosition = _markers[markerIndex];
+    markerPosition.vertex = vertex;
+    markerPosition.xCoordinate = xCoordinate;
+    markerPosition.yCoordinate = yCoordinate;
+    markerPosition.directionality = directionality;
 }
 
-} /* namespace svgp */
-} /* namespace laby */
+} /* namespace laby::svgp */

@@ -18,8 +18,10 @@ using namespace laby;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+namespace {
+
 /// Create a simple square polygon from (x,y) to (x+s, y+s).
-static Linear_polygon makeSquare(double x, double y, double s) {
+Linear_polygon makeSquare(double x, double y, double s) {
     Linear_polygon poly;
     poly.push_back(Point_2(x, y));
     poly.push_back(Point_2(x + s, y));
@@ -28,12 +30,14 @@ static Linear_polygon makeSquare(double x, double y, double s) {
     return poly;
 }
 
+} // namespace
+
 // ─── Default Construction ───────────────────────────────────────────────────
 
 TEST(PolyConvexTest, DefaultConstruction) {
     PolyConvex pc;
     EXPECT_TRUE(pc.empty());
-    EXPECT_EQ(pc._id, 0u);
+    EXPECT_EQ(pc._id, 0U);
     EXPECT_EQ(pc._visited, 0);
     EXPECT_TRUE(pc._adjacents.empty());
     EXPECT_DOUBLE_EQ(pc.thickness(), 0.0);
@@ -47,7 +51,7 @@ TEST(PolyConvexTest, ConstructFromPointsAndGeometry) {
     Linear_polygon geom = makeSquare(0, -1, 10);
 
     PolyConvex pc(ps, pt, 42, geom);
-    EXPECT_EQ(pc._id, 42u);
+    EXPECT_EQ(pc._id, 42U);
     EXPECT_FALSE(pc.empty());
     EXPECT_TRUE(pc.has_points());
     EXPECT_EQ(pc.getSourcePoint(), ps);
@@ -58,7 +62,7 @@ TEST(PolyConvexTest, ConstructFromPointsAndGeometry) {
 
 TEST(PolyConvexTest, EmptyIsConst) {
     const PolyConvex pc;
-    EXPECT_TRUE(pc.empty());  // Must compile on const object
+    EXPECT_TRUE(pc.empty()); // Must compile on const object
 }
 
 // ─── Adjacency ──────────────────────────────────────────────────────────────
@@ -74,10 +78,10 @@ TEST(PolyConvexTest, ConnectTwoPolygons) {
 
     PolyConvex::connect(0, 1, list);
 
-    EXPECT_EQ(list[0]._adjacents.size(), 1u);
-    EXPECT_EQ(list[0]._adjacents[0], 1u);
-    EXPECT_EQ(list[1]._adjacents.size(), 1u);
-    EXPECT_EQ(list[1]._adjacents[0], 0u);
+    EXPECT_EQ(list[0]._adjacents.size(), 1U);
+    EXPECT_EQ(list[0]._adjacents[0], 1U);
+    EXPECT_EQ(list[1]._adjacents.size(), 1U);
+    EXPECT_EQ(list[1]._adjacents[0], 0U);
 }
 
 TEST(PolyConvexTest, ConnectChain) {
@@ -92,17 +96,17 @@ TEST(PolyConvexTest, ConnectChain) {
     PolyConvex::connect(0, list);
 
     // Each interior polygon should have 2 adjacents; endpoints have 1
-    EXPECT_EQ(list[0]._adjacents.size(), 1u);
-    EXPECT_GE(list[1]._adjacents.size(), 1u);
-    EXPECT_GE(list[2]._adjacents.size(), 1u);
-    EXPECT_EQ(list[3]._adjacents.size(), 1u);
+    EXPECT_EQ(list[0]._adjacents.size(), 1U);
+    EXPECT_GE(list[1]._adjacents.size(), 1U);
+    EXPECT_GE(list[2]._adjacents.size(), 1U);
+    EXPECT_EQ(list[3]._adjacents.size(), 1U);
 }
 
 TEST(PolyConvexTest, RemoveAdjacence) {
     PolyConvex pc;
     pc._adjacents = {10, 20, 30};
     pc.remove_adjacence(20);
-    EXPECT_EQ(pc._adjacents.size(), 2u);
+    EXPECT_EQ(pc._adjacents.size(), 2U);
     // 20 should no longer be present
     EXPECT_TRUE(std::find(pc._adjacents.begin(), pc._adjacents.end(), 20) == pc._adjacents.end());
 }
@@ -111,7 +115,7 @@ TEST(PolyConvexTest, RemoveAdjacence) {
 
 TEST(PolyConvexTest, OverlappingSquaresIntersect) {
     Linear_polygon a = makeSquare(0, 0, 10);
-    Linear_polygon b = makeSquare(5, 5, 10);  // Overlaps a
+    Linear_polygon b = makeSquare(5, 5, 10); // Overlaps a
 
     EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(a, b));
 }
@@ -133,7 +137,7 @@ TEST(PolyConvexTest, ContainedSquareIntersects) {
 
 TEST(PolyConvexTest, TouchingEdgesIntersect) {
     Linear_polygon a = makeSquare(0, 0, 10);
-    Linear_polygon b = makeSquare(10, 0, 10);  // Shares an edge
+    Linear_polygon b = makeSquare(10, 0, 10); // Shares an edge
 
     EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(a, b));
 }
@@ -163,7 +167,7 @@ TEST(PolyConvexTest, Clear) {
     pc.clear();
 
     EXPECT_TRUE(pc.empty());
-    EXPECT_EQ(pc._id, 0u);
+    EXPECT_EQ(pc._id, 0U);
     EXPECT_DOUBLE_EQ(pc.thickness(), 0.0);
 }
 
@@ -179,14 +183,15 @@ TEST(PolyConvexTest, PrintContainsId) {
     std::string out = oss.str();
 
     EXPECT_NE(out.find("id"), std::string::npos);
-    EXPECT_NE(out.find("7"), std::string::npos);
+    EXPECT_NE(out.find('7'), std::string::npos);
 }
 
 // ─── Node Containment ───────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, ContainsNode) {
     PolyConvex pc;
-    Node n1(1), n2(2);
+    Node n1(1);
+    Node n2(2);
     pc._nodes.push_back(&n1);
 
     EXPECT_TRUE(pc.contains(n1));

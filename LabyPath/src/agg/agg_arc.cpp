@@ -4,9 +4,9 @@
  *  Created on: Jul 4, 2018
  *      Author: florian
  */
-#include <math.h>
-#include <algorithm>    // std::reverse
 #include "agg_arc.h"
+#include <algorithm> // std::reverse
+#include <cmath>
 
 //----------------------------------------------------------------------------
 // Anti-Grain Geometry - Version 2.4
@@ -29,63 +29,82 @@
 
 namespace agg {
 
+namespace {
+constexpr double kPi = 3.14159265358979323846;
+constexpr double kAngleStepMultiplier = 2.0;
+constexpr double kFullTurn = 2.0 * kPi;
+constexpr double kQuarterTurnSegments = 4.0;
+constexpr double kApproximationOffset = 0.125;
+} // namespace
+
 //------------------------------------------------------------------------
-Arc::Arc(const CGAL::Point_2<Kernel>& center, double r, const CGAL::Point_2<Kernel>& pStart, const CGAL::Point_2<Kernel>& pEnd, bool ccw) {
+Arc::Arc(const Point& centerPoint, double radius, const Point& startPoint, const Point& endPoint,
+         bool isCounterClockwise) {
 
-    CGAL::Vector_2<Kernel> va = pStart - center;
+    const CGAL::Vector_2<Kernel> startVector = startPoint - centerPoint;
+    double startAngle =
+        std::atan2(CGAL::to_double(startVector.y()), CGAL::to_double(startVector.x()));
 
-    double a1 = atan2(CGAL::to_double(va.y()), CGAL::to_double(va.x()));
+    const CGAL::Vector_2<Kernel> endVector = endPoint - centerPoint;
+    double endAngle = std::atan2(CGAL::to_double(endVector.y()), CGAL::to_double(endVector.x()));
 
-    CGAL::Vector_2<Kernel> vb = pEnd - center;
-    double a2 = atan2(CGAL::to_double(vb.y()), CGAL::to_double(vb.x()));
-
-    if (!ccw) {
-        std::swap(a1, a2);
+    if (!isCounterClockwise) {
+        std::swap(startAngle, endAngle);
     }
 
-    init(CGAL::to_double(center.x()), CGAL::to_double(center.y()), r, a1, a2);
+    init(ArcParameters{
+        centerPoint,
+        radius,
+        startAngle,
+        endAngle,
+    });
 
-    if (!ccw) {
-        std::reverse(m_points.begin(), m_points.end());
+    if (!isCounterClockwise) {
+        std::reverse(_points.begin(), _points.end());
     }
-    m_points.front() = pStart;
-    m_points.back() = pEnd;
+    _points.front() = startPoint;
+    _points.back() = endPoint;
 }
 
 //------------------------------------------------------------------------
-void Arc::init(double x, double y, double r, double a1, double a2) {
+void Arc::init(const ArcParameters& parameters) {
 
-    normalize(a1, a2, r);
+    normalize(parameters);
 
-    m_angle = m_start;
+    _angle = _start;
     while (true) {
 
-        if (m_angle > m_end - m_da / 4.) {
-            m_points.emplace_back(x + cos(m_end) * r, y + sin(m_end) * r);
+        if (_angle > _end - _deltaAngle / kQuarterTurnSegments) {
+            _points.emplace_back(
+                CGAL::to_double(parameters.center.x()) + std::cos(_end) * parameters.radius,
+                CGAL::to_double(parameters.center.y()) + std::sin(_end) * parameters.radius);
             break;
         }
 
-        m_points.emplace_back(x + cos(m_angle) * r, y + sin(m_angle) * r);
-        m_angle += m_da;
+        _points.emplace_back(
+            CGAL::to_double(parameters.center.x()) + std::cos(_angle) * parameters.radius,
+            CGAL::to_double(parameters.center.y()) + std::sin(_angle) * parameters.radius);
+        _angle += _deltaAngle;
     }
 }
 
 //------------------------------------------------------------------------
-void Arc::normalize(double a1, double a2, double r) {
-    double ra = fabs(r);
-    m_da = acos(ra / (ra + 0.125 / m_scale)) * 2;
+void Arc::normalize(const ArcParameters& parameters) {
+    const double absoluteRadius = std::fabs(parameters.radius);
+    double normalizedEndAngle = parameters.endAngle;
+    _deltaAngle = std::acos(absoluteRadius / (absoluteRadius + kApproximationOffset / _scale)) *
+                  kAngleStepMultiplier;
 
-    while (a2 < a1) {
-        a2 += 2.0 * M_PI;
+    while (normalizedEndAngle < parameters.startAngle) {
+        normalizedEndAngle += kFullTurn;
     }
     // ccw only
-    if (m_da >= (a2 - a1)) {
-        m_da = (a2 - a1) / 4.;
+    if (_deltaAngle >= (normalizedEndAngle - parameters.startAngle)) {
+        _deltaAngle = (normalizedEndAngle - parameters.startAngle) / kQuarterTurnSegments;
     }
 
-    m_start = a1;
-    m_end = a2;
-
+    _start = parameters.startAngle;
+    _end = normalizedEndAngle;
 }
 
 } /* namespace agg */

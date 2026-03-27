@@ -3,14 +3,14 @@
  * @brief Unit tests for PoissonGenerator point structures and grid.
  */
 
-#include <gtest/gtest.h>
-#include <cmath>
 #include "generator/PoissonGenerator.h"
+#include <cmath>
+#include <gtest/gtest.h>
 
-using laby::generator::sPoint;
-using laby::generator::sGridPoint;
-using laby::generator::sGrid;
 using laby::generator::PoissonPoints;
+using laby::generator::sGrid;
+using laby::generator::sGridPoint;
+using laby::generator::sPoint;
 
 // ── sPoint ─────────────────────────────────────────────────────────────────
 
@@ -99,8 +99,8 @@ TEST(SGridTest, InsertAndNeighbourhood) {
 
 TEST(PoissonPointsTest, GenerateProducesPoints) {
     auto points = PoissonPoints::generate(50, 30, false);
-    EXPECT_GT(points.size(), 0u);
-    EXPECT_LE(points.size(), 50u);
+    EXPECT_GT(points.size(), 0U);
+    EXPECT_LE(points.size(), 50U);
 }
 
 TEST(PoissonPointsTest, GeneratedPointsInRectangle) {
@@ -115,7 +115,7 @@ TEST(PoissonPointsTest, GeneratedPointsInRectangle) {
 
 TEST(PoissonPointsTest, GeneratedPointsMinDistance) {
     auto points = PoissonPoints::generate(30, 30, false);
-    double minDist = std::sqrt(6.3 / 300.0);  // approximate MinDist for 30 points
+    double minDist = std::sqrt(6.3 / 300.0);    // approximate MinDist for 30 points
     double sqMinDist = minDist * minDist * 0.9; // slight tolerance
 
     for (size_t i = 0; i < points.size(); ++i) {

@@ -23,8 +23,7 @@
 
 namespace laby {
 
-SkeletonGrid::SkeletonGrid(const proto::SkeletonGrid& config) :
-        _config(config) {
+SkeletonGrid::SkeletonGrid(const proto::SkeletonGrid& config) : _config(config) {
 
     svgp::Loader load(config.inputfile());
     for (Ribbon& rib : load.ribList()) {
@@ -32,16 +31,15 @@ SkeletonGrid::SkeletonGrid(const proto::SkeletonGrid& config) :
     }
 
     create(load);
-
 }
-void SkeletonGrid::create(const svgp::Loader & load) {
+void SkeletonGrid::create(const svgp::Loader& load) {
     std::vector<Ribbon> result;
     result.reserve(load.ribList().size());
 
     int32_t ribNumber = 0;
 
     for (const Ribbon& rib : load.ribList()) {
-        std::vector<CGAL::Polygon_with_holes_2<Kernel> > polygons = SVGShapeToGrid::get_polygons(rib);
+        std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons = SVGShapeToGrid::get_polygons(rib);
 
         const double blue = laby::basic::Color::get_blue_normalized(static_cast<uint32_t>(rib.fill_color()));
 
@@ -55,7 +53,7 @@ void SkeletonGrid::create(const svgp::Loader & load) {
         {
             std::vector<Segment_info_2> segResult;
             for (const Kernel::Segment_2& seg : _circularList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo { static_cast<int32_t>(fillColor), 0 }));
+                segResult.push_back(Segment_info_2(seg, EdgeInfo{static_cast<int32_t>(fillColor), EdgeInfo::Coordinate{0}}));
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
@@ -67,7 +65,7 @@ void SkeletonGrid::create(const svgp::Loader & load) {
         {
             std::vector<Segment_info_2> segResult;
             for (const Kernel::Segment_2& seg : _radialList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo { static_cast<int32_t>(fillColor + 1), 0 }));
+                segResult.push_back(Segment_info_2(seg, EdgeInfo{static_cast<int32_t>(fillColor + 1), EdgeInfo::Coordinate{0}}));
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
@@ -77,7 +75,6 @@ void SkeletonGrid::create(const svgp::Loader & load) {
         }
         result.emplace_back(rib);
         result.back().set_fill_color(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 150)));
-
     }
 
     std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << std::endl;
@@ -107,10 +104,8 @@ void SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kern
         SkeletonOffset::create_all_offsets(distance, arr3, _circularList);
         const auto listSeg = radial.radialList();
         _radialList.insert(_radialList.end(), listSeg.begin(), listSeg.end());
-
     }
     std::cout << " result2 " << std::endl;
-
 }
 
 } /* namespace laby */

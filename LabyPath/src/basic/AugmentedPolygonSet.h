@@ -28,7 +28,7 @@ namespace basic {
 
 class EdgeNodeInfo {
 public:
-    int32_t _polygonId = -1;
+    int32_t _polygonId = -1; // NOLINT(misc-non-private-member-variables-in-classes)
 
     explicit EdgeNodeInfo(int32_t polygonId) : _polygonId{polygonId} {}
 
@@ -39,30 +39,38 @@ public:
 
 class FaceNodeInfo : public CGAL::Gps_face_base {
 public:
-    FaceNodeInfo() {}
-    virtual ~FaceNodeInfo() {}
+    FaceNodeInfo() = default;
+    FaceNodeInfo(const FaceNodeInfo&) = default;
+    FaceNodeInfo(FaceNodeInfo&&) noexcept = default;
+    FaceNodeInfo& operator=(const FaceNodeInfo&) = default;
+    FaceNodeInfo& operator=(FaceNodeInfo&&) noexcept = default;
+    ~FaceNodeInfo() override = default;
+
     void setPolygonId(int32_t polygonId) {
         if (contained()) {
             _polygonIds.emplace(polygonId);
         }
     }
-    std::unordered_set<int32_t> _polygonIds;
+    std::unordered_set<int32_t> _polygonIds; // NOLINT(misc-non-private-member-variables-in-classes)
 
-    void set_data(const std::unordered_set<int32_t>& data) { _polygonIds = data; }
+    void setData(const std::unordered_set<int32_t>& data) { _polygonIds = data; }
+
+    void set_data(const std::unordered_set<int32_t>& data) { setData(data); } // NOLINT(readability-identifier-naming)
 
     std::unordered_set<int32_t>& data() { return _polygonIds; }
 
     const std::unordered_set<int32_t>& data() const { return _polygonIds; }
     /*! Assign from another face. */
-    virtual void assign(const Arr_face_base& f) {
+    void assign(const Arr_face_base& f) override {
         Gps_face_base::assign(f);
 
-        const FaceNodeInfo& ex_f = static_cast<const FaceNodeInfo&>(f);
-        _polygonIds = ex_f._polygonIds;
+        // CGAL passes back the exact derived face type here.
+        const auto& exFace = static_cast<const FaceNodeInfo&>(f); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        _polygonIds = exFace._polygonIds;
     }
 };
 
-struct Overlay_label {
+struct OverlayLabel {
     std::unordered_set<int32_t> operator()(const std::unordered_set<int32_t>& a, const std::unordered_set<int32_t>& b) const {
         std::unordered_set<int32_t> fn;
         fn.insert(a.begin(), a.end());
@@ -71,32 +79,30 @@ struct Overlay_label {
     }
 };
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel KernelAug;
-typedef std::vector<CGAL::Point_2<KernelAug>> ContainerNode;
-typedef CGAL::Arr_segment_traits_2<KernelAug> Segment_traits_2;
-typedef CGAL::Arr_consolidated_curve_data_traits_2<Segment_traits_2, EdgeNodeInfo> SegTraitNode;
+using KernelAug = CGAL::Exact_predicates_exact_constructions_kernel;
+using ContainerNode = std::vector<CGAL::Point_2<KernelAug>>;
+using Segment_traits_2 = CGAL::Arr_segment_traits_2<KernelAug>;
+using SegTraitNode = CGAL::Arr_consolidated_curve_data_traits_2<Segment_traits_2, EdgeNodeInfo>;
 
 // Use plain segment traits for Gps_segment_traits_2 to avoid
 // Polygon_2_curve_iterator incompatibility with curve data traits in CGAL 5.x.
-typedef CGAL::Gps_segment_traits_2<KernelAug, ContainerNode> GpsSegTraitNode;
+using GpsSegTraitNode = CGAL::Gps_segment_traits_2<KernelAug, ContainerNode>;
 
-typedef CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename GpsSegTraitNode::Point_2>, CGAL::Gps_halfedge_base<typename GpsSegTraitNode::X_monotone_curve_2>,
-                            FaceNodeInfo>
-    DcelNode;
+using DcelNode = CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename GpsSegTraitNode::Point_2>,
+                                     CGAL::Gps_halfedge_base<typename GpsSegTraitNode::X_monotone_curve_2>, FaceNodeInfo>;
 
-typedef CGAL::General_polygon_set_2<GpsSegTraitNode, DcelNode> Polygon_set_2Node;
+using Polygon_set_2Node = CGAL::General_polygon_set_2<GpsSegTraitNode, DcelNode>;
 
-typedef Polygon_set_2Node::Arrangement_2 Arrangement_2Node;
-typedef Polygon_set_2Node::Polygon_2 Polygon_2Node;
-typedef Polygon_set_2Node::Polygon_with_holes_2 Polygon_with_holes_2Node;
-typedef Arrangement_2Node::Halfedge HalfedgeNode;
-typedef HalfedgeNode::X_monotone_curve SegmentNode;
-typedef Arrangement_2Node::Face FaceNode;
-typedef CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
-                                      Arrangement_2Node, //
-                                      Arrangement_2Node, //
-                                      Overlay_label>
-    Overlay_traitsNode;
+using Arrangement_2Node = Polygon_set_2Node::Arrangement_2;
+using Polygon_2Node = Polygon_set_2Node::Polygon_2;
+using Polygon_with_holes_2Node = Polygon_set_2Node::Polygon_with_holes_2;
+using HalfedgeNode = Arrangement_2Node::Halfedge;
+using SegmentNode = HalfedgeNode::X_monotone_curve;
+using FaceNode = Arrangement_2Node::Face;
+using Overlay_traitsNode = CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
+                                                         Arrangement_2Node, //
+                                                         Arrangement_2Node, //
+                                                         OverlayLabel>;
 
 } /* namespace basic */
 
@@ -105,8 +111,8 @@ typedef CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
 // which relied on Arr_consolidated_curve_data_traits_2 (incompatible with CGAL 5.x).
 namespace basic {
 inline bool edgeHasPolygonId(const HalfedgeNode& he, int32_t id) {
-    bool faceHas = he.face()->data().count(id) > 0;
-    bool twinFaceHas = he.twin()->face()->data().count(id) > 0;
+    const bool faceHas = he.face()->data().count(id) > 0;
+    const bool twinFaceHas = he.twin()->face()->data().count(id) > 0;
     return faceHas != twinFaceHas;
 }
 } // namespace basic

@@ -8,71 +8,112 @@
 #ifndef ANISOTROP_QUEUEELEMENT_H_
 #define ANISOTROP_QUEUEELEMENT_H_
 
-#include <cstdint>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/pairing_heap.hpp>
 #include <boost/heap/policies.hpp>
+#include <cstdint>
 
 #include "../GeomData.h"
 #include "../PolyConvex.h"
 #include "QueueCost.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
 class QueueElement {
 
-    class Element_greater {
+    class ElementGreater {
 
-    public:
-
-        bool operator()(const QueueElement* lhs, const QueueElement* rhs) const {
-
-            return lhs->cost > rhs->cost;
-
+      public:
+        auto operator()(const QueueElement* lhs, const QueueElement* rhs) const -> bool {
+            return lhs->cost() > rhs->cost();
         }
     };
-public:
 
-    explicit QueueElement(Vertex& ver) :
-            _vertex { ver } {
+  public:
+    explicit QueueElement(Vertex& vertex) : _vertex(&vertex) {}
 
+    using PriorityQueue =
+        boost::heap::pairing_heap<QueueElement*, boost::heap::compare<ElementGreater>>;
+    using HandleType = PriorityQueue::handle_type;
+
+    auto vertex() -> Vertex& {
+        return *_vertex;
     }
 
-    typedef boost::heap::pairing_heap<QueueElement*, boost::heap::compare<Element_greater>> PriorityQueue;
-    typedef PriorityQueue::handle_type HandleType;
+    [[nodiscard]] auto vertex() const -> const Vertex& {
+        return *_vertex;
+    }
+
+    auto polyConvex() -> PolyConvex& {
+        return _polyConvex;
+    }
+
+    [[nodiscard]] auto polyConvex() const -> const PolyConvex& {
+        return _polyConvex;
+    }
+
+    auto cost() -> QueueCost& {
+        return _cost;
+    }
+
+    [[nodiscard]] auto cost() const -> const QueueCost& {
+        return _cost;
+    }
+
+    void setDirection(int32_t direction) {
+        _direction = direction;
+    }
+
+    [[nodiscard]] auto direction() const -> int32_t {
+        return _direction;
+    }
+
+    void setParent(int32_t parent) {
+        _parent = parent;
+    }
+
+    [[nodiscard]] auto parent() const -> int32_t {
+        return _parent;
+    }
+
+    auto handle() -> HandleType& {
+        return _handle;
+    }
+
+    [[nodiscard]] auto handle() const -> const HandleType& {
+        return _handle;
+    }
 
     void resetHandle() {
-        handle = HandleType { };
+        _handle = HandleType{};
     }
 
     void clear() {
         resetHandle();
-        cost = QueueCost();
-        direction = -1;
-        parent = -1;
-        _pc.clear();
+        _cost = QueueCost();
+        _direction = -1;
+        _parent = -1;
+        _polyConvex.clear();
     }
 
-    void pushIn(PriorityQueue& pq) {
-        handle = pq.push(this);
+    void pushIn(PriorityQueue& queue) {
+        _handle = queue.push(this);
     }
 
-    bool isInQueue() {
-        return handle != HandleType { };
+    [[nodiscard]] auto isInQueue() const -> bool {
+        return _handle != HandleType{};
     }
 
-    Vertex& _vertex;
-    PolyConvex _pc;
-    QueueCost cost;
-    int32_t direction = -1;
-    int32_t parent = -1;
-    HandleType handle;            //Index in MMMPriortyQueue
-
+  private:
+    Vertex* _vertex = nullptr;
+    PolyConvex _polyConvex;
+    QueueCost _cost;
+    int32_t _direction = -1;
+    int32_t _parent = -1;
+    HandleType _handle; // Index in MMMPriortyQueue
 };
 
-typedef QueueElement::PriorityQueue PriorityQueue;
-} /* namespace aniso */
-} /* namespace laby */
+using PriorityQueue = QueueElement::PriorityQueue;
+} // namespace laby::aniso
 
 #endif /* ANISOTROP_QUEUEELEMENT_H_ */

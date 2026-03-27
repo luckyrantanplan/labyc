@@ -8,56 +8,65 @@
 #ifndef AGG_AGG_ARC_H_
 #define AGG_AGG_ARC_H_
 
-#include <math.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Point_2.h>
+#include <cmath>
 #include <vector>
 
 namespace agg {
 
 class Arc {
-    typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
-//----------------------------------------------------------------------------
-// Anti-Grain Geometry - Version 2.4
-// Copyright (C) 2002-2005 Maxim Shemanarev (http://www.antigrain.com)
-//
-// Permission to copy, use, modify, sell and distribute this software
-// is granted provided this copyright notice appears in all copies.
-// This software is provided "as is" without express or implied
-// warranty, and with no claim as to its suitability for any purpose.
-//
-//----------------------------------------------------------------------------
-// Contact: mcseem@antigrain.com
-//          mcseemagg@yahoo.com
-//          http://www.antigrain.com
-//----------------------------------------------------------------------------
-//
-// Arc vertex generator
-//
-//----------------------------------------------------------------------------
+    using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
+    //----------------------------------------------------------------------------
+    // Anti-Grain Geometry - Version 2.4
+    // Copyright (C) 2002-2005 Maxim Shemanarev (http://www.antigrain.com)
+    //
+    // Permission to copy, use, modify, sell and distribute this software
+    // is granted provided this copyright notice appears in all copies.
+    // This software is provided "as is" without express or implied
+    // warranty, and with no claim as to its suitability for any purpose.
+    //
+    //----------------------------------------------------------------------------
+    // Contact: mcseem@antigrain.com
+    //          mcseemagg@yahoo.com
+    //          http://www.antigrain.com
+    //----------------------------------------------------------------------------
+    //
+    // Arc vertex generator
+    //
+    //----------------------------------------------------------------------------
 
-public:
+  public:
+    using Point = CGAL::Point_2<Kernel>;
 
-    Arc(const CGAL::Point_2<Kernel>& center, double r, const CGAL::Point_2<Kernel>& pStart, const CGAL::Point_2<Kernel>& pEnd, bool ccw = true);
+    Arc(const Point& centerPoint, double radius, const Point& startPoint, const Point& endPoint,
+        bool isCounterClockwise = true);
 
-    void init(double x, double y, double r, double a1, double a2);
-
-    const std::vector<CGAL::Point_2<Kernel> >& getPoints() const {
-        return m_points;
+    [[nodiscard]] auto getPoints() const -> const std::vector<Point>& {
+        return _points;
     }
 
-private:
+  private:
+    struct ArcParameters {
+        Point center;
+        double radius = 0.0;
+        double startAngle = 0.0;
+        double endAngle = 0.0;
+    };
 
-    std::vector<CGAL::Point_2<Kernel>> m_points;
+    static constexpr double kDefaultScale = 300.0;
 
-    void normalize(double a1, double a2, double r);
+    std::vector<Point> _points;
 
-    double m_angle = 0;
-    double m_start = 0;
-    double m_end = 0;
-    double m_scale = 300;
-    double m_da = 0;
+    void init(const ArcParameters& parameters);
 
+    void normalize(const ArcParameters& parameters);
+
+    double _angle = 0.0;
+    double _start = 0.0;
+    double _end = 0.0;
+    double _scale = kDefaultScale;
+    double _deltaAngle = 0.0;
 };
 
 } /* namespace agg */

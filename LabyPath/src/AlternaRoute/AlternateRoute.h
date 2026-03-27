@@ -5,56 +5,85 @@
  *      Author: florian
  */
 
-#ifndef ALTERNAROUTE_ALTERNATEROUTE_H_
-#define ALTERNAROUTE_ALTERNATEROUTE_H_
+#ifndef WORKSPACE_LABYPATH_SRC_ALTERNAROUTE_ALTERNATEROUTE_H
+#define WORKSPACE_LABYPATH_SRC_ALTERNAROUTE_ALTERNATEROUTE_H
 
 #include "../GeomData.h"
-#include "../Ribbon.h"
 #include "../GridIndex.h"
-#include "StrokeArrangement.h"
+#include "../Ribbon.h"
 #include "../protoc/AllConfig.pb.h"
+#include "StrokeArrangement.h"
+
+#include <ostream>
+#include <unordered_map>
+#include <vector>
 
 namespace laby {
 
+class PolyConvex;
+
 class AlternateRoute {
 
-    struct Offset_pair {
+    struct OffsetPair {
         Kernel::Point_2 origin;
         Kernel::Point_2 offset;
 
-        void print(std::ostream& os) const {
+        void print(std::ostream& outputStream) const {
 
-            os << " origin " << origin;
-            os << " offset " << offset;
-
+            outputStream << " origin " << origin;
+            outputStream << " offset " << offset;
         }
-        static std::vector<Offset_pair> simplify(std::vector<Offset_pair>& list, const double& dist);
+        static auto simplify(std::vector<OffsetPair>& list,
+                             const double& distance) -> std::vector<OffsetPair>;
     };
 
-public:
+    struct OffsetEndpoints {
+        Kernel::Point_2 originPoint;
+        Kernel::Point_2 targetPoint;
+    };
 
-    AlternateRoute(const proto::AlternateRouting& configfilepaths, const proto::Filepaths& filepaths);
+  public:
+    AlternateRoute(proto::AlternateRouting configfilepaths, const proto::Filepaths& filepaths);
 
-private:
-    const proto::AlternateRouting _config;
-    double sq_max_thickness;
-    double sq_min_thickness;
+  private:
+    proto::AlternateRouting _config;
+    double _sqMaxThickness = 0.0;
+    double _sqMinThickness = 0.0;
 
-    Arrangement_2 prune_arrangement(const Arrangement_2& arr);
-    Arrangement_2 remove_antenna(const Arrangement_2& arr);
-    void add_point(std::vector<Offset_pair>& left, const Kernel::Point_2& o1, const Kernel::Point_2& o2);
-    std::vector<Offset_pair> couple_list(const Halfedge& he, int32_t direction);
-    void add_triplet(alter::Offset_triplet& triplet, //
-            const Offset_pair& a, const Kernel::Point_2& b, const Kernel::Point_2& c);
+    [[nodiscard]] auto pruneArrangement(const Arrangement_2& arrangement) const -> Arrangement_2;
+    [[nodiscard]] static auto removeAntenna(const Arrangement_2& arrangement) -> Arrangement_2;
+    void addPoint(std::vector<OffsetPair>& offsets, const OffsetEndpoints& endpoints);
+    [[nodiscard]] auto coupleList(const Halfedge& halfedge,
+                                  int32_t direction) -> std::vector<OffsetPair>;
+    static void addTriplet(alter::OffsetTriplet& triplet, const OffsetPair& offsetPair,
+                           const Kernel::Point_2& lineStart, const Kernel::Point_2& lineEnd);
 
-    Arrangement_2 voronoi_arr(const Arrangement_2& arr, const int32_t& direction, const CGAL::Bbox_2& viewBox, const Ribbon& ribLimit);
-    std::vector<alter::Offset_triplet> create_triplet_list(const Halfedge& he, const int32_t& direction);
-    void populateTrapeze(const GridIndex& gridIndex, const std::vector<Ribbon>& ribList, const CGAL::Bbox_2& viewBox, std::vector<alter::Segment_trapeze_info_2>& trapeze_vect);
-    void ribToTrapeze(const Ribbon& rib, std::vector<alter::Segment_trapeze_info_2>& trapeze_vect, //
-            const Arrangement_2& arr, const CGAL::Bbox_2& viewBox, const Ribbon& ribLimit);
-
+    [[nodiscard]] auto voronoiArr(const Arrangement_2& arrangement, int32_t direction,
+                                  const CGAL::Bbox_2& viewBox,
+                                  const Ribbon& ribLimit) -> Arrangement_2;
+    [[nodiscard]] auto createTripletList(const Halfedge& halfedge,
+                                         int32_t direction) -> std::vector<alter::OffsetTriplet>;
+    void populateTrapeze(const GridIndex& gridIndex, const std::vector<Ribbon>& ribList,
+                         const CGAL::Bbox_2& viewBox,
+                         std::vector<alter::SegmentTrapezeInfo2>& trapezeVect);
+    void ribToTrapeze(const Ribbon& rib, std::vector<alter::SegmentTrapezeInfo2>& trapezeVect,
+                      const Arrangement_2& arrangement, const CGAL::Bbox_2& viewBox,
+                      const Ribbon& ribLimit);
+    static void copyStrokeColorToFillColor(std::vector<Ribbon>& ribList);
+    [[nodiscard]] auto
+    buildTrapezeVector(const std::unordered_map<uint32_t, GridIndex>& mapOfGrids,
+                       const std::vector<Ribbon>& ribList,
+                       const CGAL::Bbox_2& viewBox) -> std::vector<alter::SegmentTrapezeInfo2>;
+    [[nodiscard]] static auto buildPolyConvexVector(
+        const alter::ArrTrapeze& arrTrapeze,
+        std::unordered_map<const alter::SegmentTrapezeInfo2*, std::size_t>& curvePlcMap)
+        -> std::vector<PolyConvex>;
+    static void connectPolyConvexes(
+        const alter::ArrTrapeze& arrTrapeze,
+        const std::unordered_map<const alter::SegmentTrapezeInfo2*, std::size_t>& curvePlcMap,
+        std::vector<PolyConvex>& polyConvexVect);
 };
 
 } /* namespace laby */
 
-#endif /* ALTERNAROUTE_ALTERNATEROUTE_H_ */
+#endif /* WORKSPACE_LABYPATH_SRC_ALTERNAROUTE_ALTERNATEROUTE_H */

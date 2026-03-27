@@ -3,9 +3,9 @@
  * @brief Unit tests for GeomData utility functions and types
  */
 
+#include "GeomData.h"
 #include <gtest/gtest.h>
 #include <sstream>
-#include "GeomData.h"
 
 namespace laby {
 namespace {
@@ -30,8 +30,8 @@ TEST(GeomDataTest, VectorOutput) {
     oss << v;
     std::string result = oss.str();
     EXPECT_FALSE(result.empty());
-    EXPECT_NE(result.find("1"), std::string::npos);
-    EXPECT_NE(result.find("3"), std::string::npos);
+    EXPECT_NE(result.find('1'), std::string::npos);
+    EXPECT_NE(result.find('3'), std::string::npos);
 }
 
 TEST(GeomDataTest, EmptyVectorOutput) {
@@ -42,13 +42,15 @@ TEST(GeomDataTest, EmptyVectorOutput) {
 }
 
 TEST(GlobalEdgeTest, Construction) {
-    GlobalEdge edge(1, 2, 3, 4);
-    EXPECT_EQ(edge._a, std::complex<int32_t>(1, 2));
-    EXPECT_EQ(edge._b, std::complex<int32_t>(3, 4));
+    GlobalEdge edge(
+        GlobalEdge::Endpoints{std::complex<int32_t>(1, 2), std::complex<int32_t>(3, 4)});
+    EXPECT_EQ(edge.a(), std::complex<int32_t>(1, 2));
+    EXPECT_EQ(edge.b(), std::complex<int32_t>(3, 4));
 }
 
 TEST(GlobalEdgeTest, Print) {
-    GlobalEdge edge(1, 2, 3, 4);
+    GlobalEdge edge(
+        GlobalEdge::Endpoints{std::complex<int32_t>(1, 2), std::complex<int32_t>(3, 4)});
     std::ostringstream oss;
     edge.print(oss);
     std::string result = oss.str();

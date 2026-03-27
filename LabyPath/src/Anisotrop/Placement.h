@@ -8,37 +8,36 @@
 #ifndef ANISOTROP_PLACEMENT_H_
 #define ANISOTROP_PLACEMENT_H_
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
-#include "../protoc/AllConfig.pb.h"
 #include "../GeomData.h"
 #include "../PolyConvex.h"
 #include "../PolyVertex.h"
+#include "../protoc/AllConfig.pb.h"
 #include "Routing.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 class Cell;
 
 class Placement {
 
-public:
+  public:
+    Placement(proto::Placement config, const proto::Filepaths& filepaths);
 
-    Placement(const proto::Placement& config, const proto::Filepaths& filepaths);
-
-private:
+  private:
     void statistics(const Arrangement_2& arr);
-    bool crossOtherNet(const Vertex& v, int32_t netId);
-    Routing create_route(Cell& cell);
-    std::vector<PolyConvex> refine_path(Cell& cell, const std::vector<PolyConvex>& initialConvex, std::vector<PolyConvex>& polyConvexList);
-    std::vector<PolyVertex> explodeGraph(const std::vector<PolyConvex>& initialConvex, Cell& cell);
+    static auto crossOtherNet(const Vertex& vertex, int32_t netId) -> bool;
+    auto createRoute(Cell& cell) -> Routing;
+    auto refinePath(Cell& cell, const std::vector<PolyConvex>& initialConvex,
+                    std::vector<PolyConvex>& polyConvexList) -> std::vector<PolyConvex>;
+    static auto explodeGraph(const std::vector<PolyConvex>& initialConvex,
+                             Cell& cell) -> std::vector<PolyVertex>;
 
-    const proto::Placement _config;
-}
-;
-} /* namespace aniso */
-} /* namespace laby */
+    proto::Placement _config;
+};
+
+} // namespace laby::aniso
 
 #endif /* ANISOTROP_PLACEMENT_H_ */

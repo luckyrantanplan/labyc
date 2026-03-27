@@ -1,0 +1,4 @@
+[tool.ruff]
+extend-exclude = [
+    "src/LabyPython/AllConfig_pb2.py",
+]

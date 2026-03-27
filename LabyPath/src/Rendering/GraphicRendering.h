@@ -8,27 +8,27 @@
 #ifndef GRAPHICRENDERING_H_
 #define GRAPHICRENDERING_H_
 
-//#include <cstdint>
+// #include <cstdint>
 
 #include <complex>
+#include <utility>
 #include <vector>
 
 #include "../Ribbon.h"
-#include "PenStroke.h"
 #include "../protoc/AllConfig.pb.h"
+#include "PenStroke.h"
 
 namespace laby {
 
 class GraphicRendering {
-public:
+  public:
+    explicit GraphicRendering(proto::GraphicRendering config);
 
-    GraphicRendering(const proto::GraphicRendering& config);
+    static void printRibbonSvg(const CGAL::Bbox_2& bbox, const std::string& filename,
+                               const double& thickness, const std::vector<Ribbon>& ribbonList);
 
-    static void printRibbonSvg(const CGAL::Bbox_2& bbox, const std::string& filename, const double& thickness, const std::vector<Ribbon>& ribbonList);
-
-private:
-
-    const proto::GraphicRendering _config;
+  private:
+    proto::GraphicRendering _config;
     CGAL::Bbox_2 _box;
 };
 

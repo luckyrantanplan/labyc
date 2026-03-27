@@ -22,313 +22,481 @@
 // MA 02110-1301, USA.
 //----------------------------------------------------------------------------
 
-#include <math.h>
 #include "agg_curves.h"
+#include <cmath>
 
 namespace agg {
 
 //------------------------------------------------------------------------
-const double curve_distance_epsilon = 1e-30;
-const double curve_collinearity_epsilon = 1e-30;
-const double curve_angle_tolerance_epsilon = 0.01;
-enum curve_recursion_limit_e {
-    curve_recursion_limit = 32
+constexpr double kCurveDistanceEpsilon = 1e-30;
+constexpr double kCurveCollinearityEpsilon = 1e-30;
+constexpr double kCurveAngleToleranceEpsilon = 0.01;
+constexpr double kHalf = 0.5;
+constexpr unsigned kCurveRecursionLimit = 32U;
+
+namespace {
+
+struct Curve3Segment {
+    double startX;
+    double startY;
+    double controlX;
+    double controlY;
+    double endX;
+    double endY;
 };
 
-//------------------------------------------------------------------------
-void Curve3::init(double x1, double y1, double x2, double y2, double x3, double y3) {
-    m_points.clear();
-    m_distance_tolerance_square = 0.5 / m_approximation_scale;
-    m_distance_tolerance_square *= m_distance_tolerance_square;
-    bezier(x1, y1, x2, y2, x3, y3);
+struct Curve4Segment {
+    double startX;
+    double startY;
+    double control1X;
+    double control1Y;
+    double control2X;
+    double control2Y;
+    double endX;
+    double endY;
+};
 
+struct Curve3ApproximationConfig {
+    double distanceToleranceSquare;
+    double angleTolerance;
+};
+
+struct Curve4ApproximationConfig {
+    double distanceToleranceSquare;
+    double angleTolerance;
+    double cuspLimit;
+};
+
+struct Curve4Midpoints {
+    double x12;
+    double y12;
+    double x23;
+    double y23;
+    double x34;
+    double y34;
+    double x123;
+    double y123;
+    double x234;
+    double y234;
+    double x1234;
+    double y1234;
+};
+
+auto computeCurve4Midpoints(const Curve4Segment& segment) -> Curve4Midpoints {
+    const double x12 = (segment.startX + segment.control1X) / kQuadraticDivisor;
+    const double y12 = (segment.startY + segment.control1Y) / kQuadraticDivisor;
+    const double x23 = (segment.control1X + segment.control2X) / kQuadraticDivisor;
+    const double y23 = (segment.control1Y + segment.control2Y) / kQuadraticDivisor;
+    const double x34 = (segment.control2X + segment.endX) / kQuadraticDivisor;
+    const double y34 = (segment.control2Y + segment.endY) / kQuadraticDivisor;
+    const double x123 = (x12 + x23) / kQuadraticDivisor;
+    const double y123 = (y12 + y23) / kQuadraticDivisor;
+    const double x234 = (x23 + x34) / kQuadraticDivisor;
+    const double y234 = (y23 + y34) / kQuadraticDivisor;
+    return {x12,
+            y12,
+            x23,
+            y23,
+            x34,
+            y34,
+            x123,
+            y123,
+            x234,
+            y234,
+            (x123 + x234) / kQuadraticDivisor,
+            (y123 + y234) / kQuadraticDivisor};
+}
+
+auto handleCurve3RegularSegment(const Curve3Segment& segment, double midpointX, double midpointY,
+                                const Curve3ApproximationConfig& config,
+                                std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    const double distanceToChord = std::fabs(
+        ((segment.controlX - segment.endX) * deltaY - (segment.controlY - segment.endY) * deltaX));
+    if (distanceToChord * distanceToChord >
+        config.distanceToleranceSquare * (deltaX * deltaX + deltaY * deltaY)) {
+        return false;
+    }
+    if (config.angleTolerance < kCurveAngleToleranceEpsilon) {
+        points.emplace_back(midpointX, midpointY);
+        return true;
+    }
+
+    double angleDelta =
+        std::fabs(std::atan2(segment.endY - segment.controlY, segment.endX - segment.controlX) -
+                  std::atan2(segment.controlY - segment.startY, segment.controlX - segment.startX));
+    if (angleDelta >= M_PI) {
+        angleDelta = 2 * M_PI - angleDelta;
+    }
+    if (angleDelta < config.angleTolerance) {
+        points.emplace_back(midpointX, midpointY);
+        return true;
+    }
+    return false;
+}
+
+auto handleCurve3CollinearSegment(const Curve3Segment& segment,
+                                  const Curve3ApproximationConfig& config,
+                                  std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    double projectionLength = deltaX * deltaX + deltaY * deltaY;
+    if (projectionLength == 0) {
+        projectionLength = Curve3::calcSqDistance(Point(segment.startX, segment.startY),
+                                                  Point(segment.controlX, segment.controlY));
+    } else {
+        projectionLength = ((segment.controlX - segment.startX) * deltaX +
+                            (segment.controlY - segment.startY) * deltaY) /
+                           projectionLength;
+        if (projectionLength > 0 && projectionLength < 1) {
+            return true;
+        }
+        if (projectionLength <= 0) {
+            projectionLength = Curve3::calcSqDistance(Point(segment.controlX, segment.controlY),
+                                                      Point(segment.startX, segment.startY));
+        } else if (projectionLength >= 1) {
+            projectionLength = Curve3::calcSqDistance(Point(segment.controlX, segment.controlY),
+                                                      Point(segment.endX, segment.endY));
+        } else {
+            projectionLength =
+                Curve3::calcSqDistance(Point(segment.controlX, segment.controlY),
+                                       Point(segment.startX + projectionLength * deltaX,
+                                             segment.startY + projectionLength * deltaY));
+        }
+    }
+    if (projectionLength < config.distanceToleranceSquare) {
+        points.emplace_back(segment.controlX, segment.controlY);
+        return true;
+    }
+    return false;
+}
+
+auto handleCurve4CollinearCase(const Curve4Segment& segment,
+                               const Curve4ApproximationConfig& config,
+                               std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    double projectionFactor = deltaX * deltaX + deltaY * deltaY;
+    double distanceControl1 = 0.0;
+    double distanceControl2 = 0.0;
+    if (projectionFactor == 0) {
+        distanceControl1 = Curve4::calcSqDistance(Point(segment.startX, segment.startY),
+                                                  Point(segment.control1X, segment.control1Y));
+        distanceControl2 = Curve4::calcSqDistance(Point(segment.endX, segment.endY),
+                                                  Point(segment.control2X, segment.control2Y));
+    } else {
+        projectionFactor = 1 / projectionFactor;
+        const double control1ProjectionX = segment.control1X - segment.startX;
+        const double control1ProjectionY = segment.control1Y - segment.startY;
+        const double control2ProjectionX = segment.control2X - segment.startX;
+        const double control2ProjectionY = segment.control2Y - segment.startY;
+        distanceControl1 =
+            projectionFactor * (control1ProjectionX * deltaX + control1ProjectionY * deltaY);
+        distanceControl2 =
+            projectionFactor * (control2ProjectionX * deltaX + control2ProjectionY * deltaY);
+        if (distanceControl1 > 0 && distanceControl1 < 1 && distanceControl2 > 0 &&
+            distanceControl2 < 1) {
+            return true;
+        }
+        if (distanceControl1 <= 0) {
+            distanceControl1 = Curve4::calcSqDistance(Point(segment.control1X, segment.control1Y),
+                                                      Point(segment.startX, segment.startY));
+        } else if (distanceControl1 >= 1) {
+            distanceControl1 = Curve4::calcSqDistance(Point(segment.control1X, segment.control1Y),
+                                                      Point(segment.endX, segment.endY));
+        } else {
+            distanceControl1 =
+                Curve4::calcSqDistance(Point(segment.control1X, segment.control1Y),
+                                       Point(segment.startX + distanceControl1 * deltaX,
+                                             segment.startY + distanceControl1 * deltaY));
+        }
+
+        if (distanceControl2 <= 0) {
+            distanceControl2 = Curve4::calcSqDistance(Point(segment.control2X, segment.control2Y),
+                                                      Point(segment.startX, segment.startY));
+        } else if (distanceControl2 >= 1) {
+            distanceControl2 = Curve4::calcSqDistance(Point(segment.control2X, segment.control2Y),
+                                                      Point(segment.endX, segment.endY));
+        } else {
+            distanceControl2 =
+                Curve4::calcSqDistance(Point(segment.control2X, segment.control2Y),
+                                       Point(segment.startX + distanceControl2 * deltaX,
+                                             segment.startY + distanceControl2 * deltaY));
+        }
+    }
+
+    if (distanceControl1 > distanceControl2) {
+        if (distanceControl1 < config.distanceToleranceSquare) {
+            points.emplace_back(segment.control1X, segment.control1Y);
+            return true;
+        }
+        return false;
+    }
+    if (distanceControl2 < config.distanceToleranceSquare) {
+        points.emplace_back(segment.control2X, segment.control2Y);
+        return true;
+    }
+    return false;
+}
+
+auto handleCurve4SecondControlCase(const Curve4Segment& segment, const Curve4Midpoints& midpoints,
+                                   const Curve4ApproximationConfig& config,
+                                   std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    const double distanceControl2 = std::fabs(((segment.control2X - segment.endX) * deltaY -
+                                               (segment.control2Y - segment.endY) * deltaX));
+    if (distanceControl2 * distanceControl2 >
+        config.distanceToleranceSquare * (deltaX * deltaX + deltaY * deltaY)) {
+        return false;
+    }
+    if (config.angleTolerance < kCurveAngleToleranceEpsilon) {
+        points.emplace_back(midpoints.x23, midpoints.y23);
+        return true;
+    }
+    double angleDelta = std::fabs(
+        std::atan2(segment.endY - segment.control2Y, segment.endX - segment.control2X) -
+        std::atan2(segment.control2Y - segment.control1Y, segment.control2X - segment.control1X));
+    if (angleDelta >= M_PI) {
+        angleDelta = 2 * M_PI - angleDelta;
+    }
+    if (angleDelta < config.angleTolerance) {
+        points.emplace_back(segment.control1X, segment.control1Y);
+        points.emplace_back(segment.control2X, segment.control2Y);
+        return true;
+    }
+    if (config.cuspLimit != 0.0 && angleDelta > config.cuspLimit) {
+        points.emplace_back(segment.control2X, segment.control2Y);
+        return true;
+    }
+    return false;
+}
+
+auto handleCurve4FirstControlCase(const Curve4Segment& segment, const Curve4Midpoints& midpoints,
+                                  const Curve4ApproximationConfig& config,
+                                  std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    const double distanceControl1 = std::fabs(((segment.control1X - segment.endX) * deltaY -
+                                               (segment.control1Y - segment.endY) * deltaX));
+    if (distanceControl1 * distanceControl1 >
+        config.distanceToleranceSquare * (deltaX * deltaX + deltaY * deltaY)) {
+        return false;
+    }
+    if (config.angleTolerance < kCurveAngleToleranceEpsilon) {
+        points.emplace_back(midpoints.x23, midpoints.y23);
+        return true;
+    }
+    double angleDelta = std::fabs(
+        std::atan2(segment.control2Y - segment.control1Y, segment.control2X - segment.control1X) -
+        std::atan2(segment.control1Y - segment.startY, segment.control1X - segment.startX));
+    if (angleDelta >= M_PI) {
+        angleDelta = 2 * M_PI - angleDelta;
+    }
+    if (angleDelta < config.angleTolerance) {
+        points.emplace_back(segment.control1X, segment.control1Y);
+        points.emplace_back(segment.control2X, segment.control2Y);
+        return true;
+    }
+    if (config.cuspLimit != 0.0 && angleDelta > config.cuspLimit) {
+        points.emplace_back(segment.control1X, segment.control1Y);
+        return true;
+    }
+    return false;
+}
+
+auto handleCurve4RegularCase(const Curve4Segment& segment, const Curve4Midpoints& midpoints,
+                             const Curve4ApproximationConfig& config,
+                             std::vector<Point>& points) -> bool {
+    const double deltaX = segment.endX - segment.startX;
+    const double deltaY = segment.endY - segment.startY;
+    const double distanceControl1 = std::fabs(((segment.control1X - segment.endX) * deltaY -
+                                               (segment.control1Y - segment.endY) * deltaX));
+    const double distanceControl2 = std::fabs(((segment.control2X - segment.endX) * deltaY -
+                                               (segment.control2Y - segment.endY) * deltaX));
+    if ((distanceControl1 + distanceControl2) * (distanceControl1 + distanceControl2) >
+        config.distanceToleranceSquare * (deltaX * deltaX + deltaY * deltaY)) {
+        return false;
+    }
+    if (config.angleTolerance < kCurveAngleToleranceEpsilon) {
+        points.emplace_back(midpoints.x23, midpoints.y23);
+        return true;
+    }
+
+    const double inflectionAngle =
+        std::atan2(segment.control2Y - segment.control1Y, segment.control2X - segment.control1X);
+    double firstAngleDelta =
+        std::fabs(inflectionAngle - std::atan2(segment.control1Y - segment.startY,
+                                               segment.control1X - segment.startX));
+    double secondAngleDelta =
+        std::fabs(std::atan2(segment.endY - segment.control2Y, segment.endX - segment.control2X) -
+                  inflectionAngle);
+    if (firstAngleDelta >= M_PI) {
+        firstAngleDelta = 2 * M_PI - firstAngleDelta;
+    }
+    if (secondAngleDelta >= M_PI) {
+        secondAngleDelta = 2 * M_PI - secondAngleDelta;
+    }
+
+    if (firstAngleDelta + secondAngleDelta < config.angleTolerance) {
+        points.emplace_back(midpoints.x23, midpoints.y23);
+    }
+    if (config.cuspLimit != 0.0 && firstAngleDelta > config.cuspLimit) {
+        points.emplace_back(segment.control1X, segment.control1Y);
+        return true;
+    }
+    if (config.cuspLimit != 0.0 && secondAngleDelta > config.cuspLimit) {
+        points.emplace_back(segment.control2X, segment.control2Y);
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
+//------------------------------------------------------------------------
+void Curve3::init(double startX, double startY, double controlX, double controlY, double endX,
+                  double endY) {
+    _points.clear();
+    _distanceToleranceSquare = kHalf / _approximationScale;
+    _distanceToleranceSquare *= _distanceToleranceSquare;
+    bezier(startX, startY, controlX, controlY, endX, endY);
 }
 
 //------------------------------------------------------------------------
-void Curve3::recursive_bezier(double x1, double y1, double x2, double y2, double x3, double y3, unsigned level) {
-    if (level > curve_recursion_limit) {
+void Curve3::recursiveBezier(double startX, double startY, double controlX, double controlY,
+                             double endX, double endY,
+                             unsigned level) { // NOLINT(misc-no-recursion)
+    if (level > kCurveRecursionLimit) {
         return;
     }
 
+    const Curve3Segment segment{startX, startY, controlX, controlY, endX, endY};
+    const Curve3ApproximationConfig config{_distanceToleranceSquare, _angleTolerance};
+
     // Calculate all the mid-points of the line segments
     //----------------------
-    double x12 = (x1 + x2) / 2;
-    double y12 = (y1 + y2) / 2;
-    double x23 = (x2 + x3) / 2;
-    double y23 = (y2 + y3) / 2;
-    double x123 = (x12 + x23) / 2;
-    double y123 = (y12 + y23) / 2;
+    double x12 = (startX + controlX) / kQuadraticDivisor;
+    double y12 = (startY + controlY) / kQuadraticDivisor;
+    double x23 = (controlX + endX) / kQuadraticDivisor;
+    double y23 = (controlY + endY) / kQuadraticDivisor;
+    double x123 = (x12 + x23) / kQuadraticDivisor;
+    double y123 = (y12 + y23) / kQuadraticDivisor;
 
-    double dx = x3 - x1;
-    double dy = y3 - y1;
-    double d = fabs(((x2 - x3) * dy - (y2 - y3) * dx));
-    double da;
-
-    if (d > curve_collinearity_epsilon) {
-        // Regular case
-        //-----------------
-        if (d * d <= m_distance_tolerance_square * (dx * dx + dy * dy)) {
-            // If the curvature doesn't exceed the distance_tolerance value
-            // we tend to finish subdivisions.
-            //----------------------
-            if (m_angle_tolerance < curve_angle_tolerance_epsilon) {
-                m_points.emplace_back(x123, y123);
-                return;
-            }
-
-            // Angle & Cusp Condition
-            //----------------------
-            da = fabs(atan2(y3 - y2, x3 - x2) - atan2(y2 - y1, x2 - x1));
-            if (da >= M_PI)
-                da = 2 * M_PI - da;
-
-            if (da < m_angle_tolerance) {
-                // Finally we can stop the recursion
-                //----------------------
-                m_points.emplace_back(x123, y123);
-                return;
-            }
-        }
-    } else {
-        // Collinear case
-        //------------------
-        da = dx * dx + dy * dy;
-        if (da == 0) {
-            d = calc_sq_distance(x1, y1, x2, y2);
-        } else {
-            d = ((x2 - x1) * dx + (y2 - y1) * dy) / da;
-            if (d > 0 && d < 1) {
-                // Simple collinear case, 1---2---3
-                // We can leave just two endpoints
-                return;
-            }
-            if (d <= 0)
-                d = calc_sq_distance(x2, y2, x1, y1);
-            else if (d >= 1)
-                d = calc_sq_distance(x2, y2, x3, y3);
-            else
-                d = calc_sq_distance(x2, y2, x1 + d * dx, y1 + d * dy);
-        }
-        if (d < m_distance_tolerance_square) {
-            m_points.emplace_back(x2, y2);
+    const double distanceToChord =
+        std::fabs(((controlX - endX) * (endY - startY) - (controlY - endY) * (endX - startX)));
+    if (distanceToChord > kCurveCollinearityEpsilon) {
+        if (handleCurve3RegularSegment(segment, x123, y123, config, _points)) {
             return;
         }
+    } else if (handleCurve3CollinearSegment(segment, config, _points)) {
+        return;
     }
 
     // Continue subdivision
     //----------------------
-    recursive_bezier(x1, y1, x12, y12, x123, y123, level + 1);
-    recursive_bezier(x123, y123, x23, y23, x3, y3, level + 1);
+    recursiveBezier(startX, startY, x12, y12, x123, y123, level + 1);
+    recursiveBezier(x123, y123, x23, y23, endX, endY, level + 1);
 }
 
 //------------------------------------------------------------------------
-void Curve3::bezier(double x1, double y1, double x2, double y2, double x3, double y3) {
-    m_points.emplace_back(x1, y1);
-    recursive_bezier(x1, y1, x2, y2, x3, y3, 0);
-    m_points.emplace_back(x3, y3);
+void Curve3::bezier(double startX, double startY, double controlX, double controlY, double endX,
+                    double endY) {
+    _points.emplace_back(startX, startY);
+    recursiveBezier(startX, startY, controlX, controlY, endX, endY, 0);
+    _points.emplace_back(endX, endY);
 }
 
 //------------------------------------------------------------------------
-void Curve4::init(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-    m_points.clear();
-    m_distance_tolerance_square = 0.5 / m_approximation_scale;
-    m_distance_tolerance_square *= m_distance_tolerance_square;
-    bezier(x1, y1, x2, y2, x3, y3, x4, y4);
-
+void Curve4::init(double startX, double startY, double control1X, double control1Y,
+                  double control2X, double control2Y, double endX, double endY) {
+    _points.clear();
+    _distanceToleranceSquare = kHalf / _approximationScale;
+    _distanceToleranceSquare *= _distanceToleranceSquare;
+    bezier(startX, startY, control1X, control1Y, control2X, control2Y, endX, endY);
 }
 
 //------------------------------------------------------------------------
-void Curve4::recursive_bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4, unsigned level) {
-    if (level > curve_recursion_limit) {
+void Curve4::recursiveBezier(double startX, double startY, double control1X, double control1Y,
+                             double control2X, double control2Y, double endX, double endY,
+                             unsigned level) { // NOLINT(misc-no-recursion)
+    if (level > kCurveRecursionLimit) {
         return;
     }
 
+    const Curve4Segment segment{startX,    startY,    control1X, control1Y,
+                                control2X, control2Y, endX,      endY};
+    const Curve4Midpoints midpoints = computeCurve4Midpoints(segment);
+    const Curve4ApproximationConfig config{_distanceToleranceSquare, _angleTolerance, _cuspLimit};
+
     // Calculate all the mid-points of the line segments
     //----------------------
-    double x12 = (x1 + x2) / 2;
-    double y12 = (y1 + y2) / 2;
-    double x23 = (x2 + x3) / 2;
-    double y23 = (y2 + y3) / 2;
-    double x34 = (x3 + x4) / 2;
-    double y34 = (y3 + y4) / 2;
-    double x123 = (x12 + x23) / 2;
-    double y123 = (y12 + y23) / 2;
-    double x234 = (x23 + x34) / 2;
-    double y234 = (y23 + y34) / 2;
-    double x1234 = (x123 + x234) / 2;
-    double y1234 = (y123 + y234) / 2;
+    const double x12 = midpoints.x12;
+    const double y12 = midpoints.y12;
+    const double x34 = midpoints.x34;
+    const double y34 = midpoints.y34;
+    const double x123 = midpoints.x123;
+    const double y123 = midpoints.y123;
+    const double x234 = midpoints.x234;
+    const double y234 = midpoints.y234;
+    const double x1234 = midpoints.x1234;
+    const double y1234 = midpoints.y1234;
 
     // Try to approximate the full cubic curve by a single straight line
     //------------------
-    double dx = x4 - x1;
-    double dy = y4 - y1;
+    const double deltaX = endX - startX;
+    const double deltaY = endY - startY;
+    const double distanceControl1 =
+        std::fabs(((control1X - endX) * deltaY - (control1Y - endY) * deltaX));
+    const double distanceControl2 =
+        std::fabs(((control2X - endX) * deltaY - (control2Y - endY) * deltaX));
+    const auto control1OffLine =
+        static_cast<unsigned>(distanceControl1 > kCurveCollinearityEpsilon);
+    const auto control2OffLine =
+        static_cast<unsigned>(distanceControl2 > kCurveCollinearityEpsilon);
 
-    double d2 = fabs(((x2 - x4) * dy - (y2 - y4) * dx));
-    double d3 = fabs(((x3 - x4) * dy - (y3 - y4) * dx));
-    double da1, da2, k;
-
-    switch ((int(d2 > curve_collinearity_epsilon) << 1) + int(d3 > curve_collinearity_epsilon)) {
+    switch ((control1OffLine << 1U) + control2OffLine) {
     case 0:
-        // All collinear OR p1==p4
-        //----------------------
-        k = dx * dx + dy * dy;
-        if (k == 0) {
-            d2 = calc_sq_distance(x1, y1, x2, y2);
-            d3 = calc_sq_distance(x4, y4, x3, y3);
-        } else {
-            k = 1 / k;
-            da1 = x2 - x1;
-            da2 = y2 - y1;
-            d2 = k * (da1 * dx + da2 * dy);
-            da1 = x3 - x1;
-            da2 = y3 - y1;
-            d3 = k * (da1 * dx + da2 * dy);
-            if (d2 > 0 && d2 < 1 && d3 > 0 && d3 < 1) {
-                // Simple collinear case, 1---2---3---4
-                // We can leave just two endpoints
-                return;
-            }
-            if (d2 <= 0)
-                d2 = calc_sq_distance(x2, y2, x1, y1);
-            else if (d2 >= 1)
-                d2 = calc_sq_distance(x2, y2, x4, y4);
-            else
-                d2 = calc_sq_distance(x2, y2, x1 + d2 * dx, y1 + d2 * dy);
-
-            if (d3 <= 0)
-                d3 = calc_sq_distance(x3, y3, x1, y1);
-            else if (d3 >= 1)
-                d3 = calc_sq_distance(x3, y3, x4, y4);
-            else
-                d3 = calc_sq_distance(x3, y3, x1 + d3 * dx, y1 + d3 * dy);
-        }
-        if (d2 > d3) {
-            if (d2 < m_distance_tolerance_square) {
-                m_points.emplace_back(x2, y2);
-                return;
-            }
-        } else {
-            if (d3 < m_distance_tolerance_square) {
-                m_points.emplace_back(x3, y3);
-                return;
-            }
+        if (handleCurve4CollinearCase(segment, config, _points)) {
+            return;
         }
         break;
 
     case 1:
-        // p1,p2,p4 are collinear, p3 is significant
-        //----------------------
-        if (d3 * d3 <= m_distance_tolerance_square * (dx * dx + dy * dy)) {
-            if (m_angle_tolerance < curve_angle_tolerance_epsilon) {
-                m_points.emplace_back(x23, y23);
-                return;
-            }
-
-            // Angle Condition
-            //----------------------
-            da1 = fabs(atan2(y4 - y3, x4 - x3) - atan2(y3 - y2, x3 - x2));
-            if (da1 >= M_PI)
-                da1 = 2 * M_PI - da1;
-
-            if (da1 < m_angle_tolerance) {
-                m_points.emplace_back(x2, y2);
-                m_points.emplace_back(x3, y3);
-                return;
-            }
-
-            if (m_cusp_limit != 0.0) {
-                if (da1 > m_cusp_limit) {
-                    m_points.emplace_back(x3, y3);
-                    return;
-                }
-            }
+        if (handleCurve4SecondControlCase(segment, midpoints, config, _points)) {
+            return;
         }
         break;
 
     case 2:
-        // p1,p3,p4 are collinear, p2 is significant
-        //----------------------
-        if (d2 * d2 <= m_distance_tolerance_square * (dx * dx + dy * dy)) {
-            if (m_angle_tolerance < curve_angle_tolerance_epsilon) {
-                m_points.emplace_back(x23, y23);
-                return;
-            }
-
-            // Angle Condition
-            //----------------------
-            da1 = fabs(atan2(y3 - y2, x3 - x2) - atan2(y2 - y1, x2 - x1));
-            if (da1 >= M_PI)
-                da1 = 2 * M_PI - da1;
-
-            if (da1 < m_angle_tolerance) {
-                m_points.emplace_back(x2, y2);
-                m_points.emplace_back(x3, y3);
-                return;
-            }
-
-            if (m_cusp_limit != 0.0) {
-                if (da1 > m_cusp_limit) {
-                    m_points.emplace_back(x2, y2);
-                    return;
-                }
-            }
+        if (handleCurve4FirstControlCase(segment, midpoints, config, _points)) {
+            return;
         }
         break;
 
     case 3:
-        // Regular case
-        //-----------------
-        if ((d2 + d3) * (d2 + d3) <= m_distance_tolerance_square * (dx * dx + dy * dy)) {
-            // If the curvature doesn't exceed the distance_tolerance value
-            // we tend to finish subdivisions.
-            //----------------------
-            if (m_angle_tolerance < curve_angle_tolerance_epsilon) {
-                m_points.emplace_back(x23, y23);
-                return;
-            }
-
-            // Angle & Cusp Condition
-            //----------------------
-            k = atan2(y3 - y2, x3 - x2);
-            da1 = fabs(k - atan2(y2 - y1, x2 - x1));
-            da2 = fabs(atan2(y4 - y3, x4 - x3) - k);
-            if (da1 >= M_PI)
-                da1 = 2 * M_PI - da1;
-            if (da2 >= M_PI)
-                da2 = 2 * M_PI - da2;
-
-            if (da1 + da2 < m_angle_tolerance) {
-                // Finally we can stop the recursion
-                //----------------------
-                m_points.emplace_back(x23, y23);
-            }
-
-            if (m_cusp_limit != 0.0) {
-                if (da1 > m_cusp_limit) {
-                    m_points.emplace_back(x2, y2);
-                    return;
-                }
-
-                if (da2 > m_cusp_limit) {
-                    m_points.emplace_back(x3, y3);
-                    return;
-                }
-            }
+        if (handleCurve4RegularCase(segment, midpoints, config, _points)) {
+            return;
         }
+        break;
+
+    default:
         break;
     }
 
     // Continue subdivision
     //----------------------
-    recursive_bezier(x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-    recursive_bezier(x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
+    recursiveBezier(startX, startY, x12, y12, x123, y123, x1234, y1234, level + 1);
+    recursiveBezier(x1234, y1234, x234, y234, x34, y34, endX, endY, level + 1);
 }
 
 //------------------------------------------------------------------------
-void Curve4::bezier(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-    m_points.emplace_back(x1, y1);
-    recursive_bezier(x1, y1, x2, y2, x3, y3, x4, y4, 0);
-    m_points.emplace_back(x4, y4);
+void Curve4::bezier(double startX, double startY, double control1X, double control1Y,
+                    double control2X, double control2Y, double endX, double endY) {
+    _points.emplace_back(startX, startY);
+    recursiveBezier(startX, startY, control1X, control1Y, control2X, control2Y, endX, endY, 0);
+    _points.emplace_back(endX, endY);
 }
 
-}
+} // namespace agg

@@ -19,7 +19,7 @@ TEST(EdgeInfoTest, DefaultConstruction) {
 }
 
 TEST(EdgeInfoTest, ConstructWithDirectionAndCoordinate) {
-    EdgeInfo info(42, 7);
+    EdgeInfo info(42, EdgeInfo::Coordinate{7});
     EXPECT_EQ(info.direction(), 42);
     EXPECT_EQ(info.coordinate(), 7U);
 }
@@ -82,7 +82,7 @@ TEST(EdgeInfoTest, Equality) {
 TEST(EdgeInfoTest, GetNetReturnsFirstPath) {
     EdgeInfo info;
     info.addPath(42);
-    EXPECT_EQ(info.get_net(), 42);
+    EXPECT_EQ(info.getNet(), 42);
 }
 
 TEST(EdgeInfoTest, AllTypeValues) {

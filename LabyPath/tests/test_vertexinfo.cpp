@@ -3,9 +3,10 @@
  * @brief Unit tests for VertexInfo class
  */
 
-#include <gtest/gtest.h>
-#include <complex>
 #include "GeomData.h"
+#include <complex>
+#include <gtest/gtest.h>
+#include <optional>
 
 namespace laby {
 namespace {
@@ -34,7 +35,7 @@ TEST(VertexInfoTest, GlobalCoordinate) {
     info.setGlobalCoordinate(coord);
 
     EXPECT_TRUE(info.getGlobalCoordinate().has_value());
-    EXPECT_EQ(info.getGlobalCoordinate().value(), coord);
+    EXPECT_EQ(info.getGlobalCoordinate(), std::optional<std::complex<int32_t>>(coord));
 }
 
 TEST(VertexInfoTest, Detail) {
@@ -43,7 +44,7 @@ TEST(VertexInfoTest, Detail) {
     info.setDetail(detail);
 
     EXPECT_TRUE(info.getDetail().has_value());
-    EXPECT_EQ(info.getDetail().value(), detail);
+    EXPECT_EQ(info.getDetail(), std::optional<std::complex<int32_t>>(detail));
 }
 
 TEST(VertexInfoTest, IdGetSet) {

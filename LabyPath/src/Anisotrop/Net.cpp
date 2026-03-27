@@ -7,30 +7,29 @@
 
 #include "Net.h"
 
-#include <CGAL/Arr_dcel_base.h>
-#include <CGAL/number_utils.h>
-#include <CGAL/Point_2.h>
 #include "../basic/LinearGradient.h"
+#include <CGAL/Arr_dcel_base.h>
+#include <CGAL/Point_2.h>
+#include <CGAL/number_utils.h>
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
-std::vector<std::complex<double> > Net::extractPins(const std::vector<Net>& nets) {
-    std::vector<std::complex<double> > result;
-    for (const Net& n : nets) {
+auto Net::extractPins(const std::vector<Net>& nets) -> std::vector<std::complex<double>> {
+    std::vector<std::complex<double>> result;
+    for (const Net& net : nets) {
         {
-            const Point_2& p = n.source().vertex().point();
-            result.emplace_back(CGAL::to_double(p.x()), CGAL::to_double(p.y()));
+            const Point_2& point = net.source().vertex().point();
+            result.emplace_back(CGAL::to_double(point.x()), CGAL::to_double(point.y()));
         }
         {
-            const Point_2& p = n.target().vertex().point();
-            result.emplace_back(CGAL::to_double(p.x()), CGAL::to_double(p.y()));
+            const Point_2& point = net.target().vertex().point();
+            result.emplace_back(CGAL::to_double(point.x()), CGAL::to_double(point.y()));
         }
     }
     return result;
 }
-laby::basic::LinearGradient Net::gradient() const {
-    return basic::LinearGradient(_source.vertex().point(), _source.thickness(), _target.vertex().point(), _target.thickness());
+auto Net::gradient() const -> laby::basic::LinearGradient {
+    return {_source.vertex().point(), _source.thickness(), _target.vertex().point(),
+            _target.thickness()};
 }
-}/* namespace aniso */
-}/* namespace laby */
+} // namespace laby::aniso

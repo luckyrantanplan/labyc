@@ -8,13 +8,16 @@
 #ifndef MESSAGEIO_H_
 #define MESSAGEIO_H_
 
+#include <string_view>
+#include <vector>
+
 namespace laby {
 
 class MessageIO {
-public:
-    static int parseMessage(int argc, char *argv[]);
+  public:
+    static auto parseMessage(const std::vector<std::string_view>& arguments) -> int;
 };
 
-} /* namespace laby */
+} // namespace laby
 
 #endif /* MESSAGEIO_H_ */

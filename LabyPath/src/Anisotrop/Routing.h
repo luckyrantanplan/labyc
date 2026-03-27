@@ -8,58 +8,58 @@
 #ifndef ANISOTROP_ROUTING_H_
 #define ANISOTROP_ROUTING_H_
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
-#include "../protoc/AllConfig.pb.h"
 #include "../GeomData.h"
 #include "../PolyConvex.h"
 #include "../basic/RandomInteger.h"
+#include "../protoc/AllConfig.pb.h"
 #include "Net.h"
 #include "QueueCost.h"
 #include "QueueElement.h"
 #include "SpatialIndex.h"
 
-namespace laby {
-namespace basic {
+namespace laby::basic {
 class LinearGradient;
-} /* namespace basic */
+} // namespace laby::basic
 
-namespace aniso {
+namespace laby::aniso {
 
 class Routing {
 
-public:
+  public:
+    Routing(Arrangement_2& arr, proto::RoutingCost config);
 
-    Routing(Arrangement_2& arr, const proto::RoutingCost& config);
-
-    const std::vector<PolyConvex>& polyConvexList() const {
+    [[nodiscard]] auto polyConvexList() const -> const std::vector<PolyConvex>& {
         return _convexList;
     }
 
-    std::vector<PolyConvex>& polyConvexList() {
+    auto polyConvexList() -> std::vector<PolyConvex>& {
         return _convexList;
     }
 
-    static void connectTwoPinPath(const std::vector<aniso::Net>& nets, const SpatialIndex& si, std::vector<PolyConvex>& _convexList);
+    static void connectTwoPinPath(const std::vector<aniso::Net>& nets,
+                                  const SpatialIndex& spatialIndex,
+                                  std::vector<PolyConvex>& convexList);
 
-    bool findRoute(Net & net);
+    auto findRoute(Net& net) -> bool;
 
     void createMaze();
-    static void connectMaze(std::vector<PolyConvex>& _convexList);
-private:
+    static void connectMaze(std::vector<PolyConvex>& polyConvexList);
+
+  private:
     void commitNewPath(const int32_t& targetId, Net& net);
-    const proto::RoutingCost _config;
-    Arrangement_2& _arr;
+    proto::RoutingCost _config;
+    Arrangement_2* _arr = nullptr;
     std::vector<PolyConvex> _convexList;
-    std::vector<QueueElement> edgesQList;
-    SpatialIndex si;
+    std::vector<QueueElement> _edgesQList;
+    SpatialIndex _spatialIndex;
 
     basic::RandomInteger<int32_t> _random;
 };
 
-} /* namespace aniso */
-} /* namespace laby */
+} // namespace laby::aniso
 
 #endif /* ANISOTROP_ROUTING_H_ */

@@ -3,10 +3,10 @@
  * @brief Unit tests for SimplifyLines (Boost.Geometry line decimation).
  */
 
-#include <gtest/gtest.h>
-#include <cmath>
-#include <boost/geometry.hpp>
 #include "basic/SimplifyLines.h"
+#include <boost/geometry.hpp>
+#include <cmath>
+#include <gtest/gtest.h>
 
 using laby::SimplifyLines;
 
@@ -17,11 +17,11 @@ TEST(SimplifyLinesTest, DecimateReducesPoints) {
         double x = static_cast<double>(i) * 0.1;
         line.push_back(SimplifyLines::xy(x, 0.0));
     }
-    ASSERT_EQ(line.size(), 101u);
+    ASSERT_EQ(line.size(), 101U);
 
     auto simplified = SimplifyLines::decimate(line, 1.0);
-    EXPECT_LT(simplified.size(), 101u);
-    EXPECT_GT(simplified.size(), 0u);
+    EXPECT_LT(simplified.size(), 101U);
+    EXPECT_GT(simplified.size(), 0U);
 }
 
 TEST(SimplifyLinesTest, DecimatePreservesEndpoints) {
@@ -33,7 +33,7 @@ TEST(SimplifyLinesTest, DecimatePreservesEndpoints) {
     line.push_back(SimplifyLines::xy(10.0, 0.0));
 
     auto simplified = SimplifyLines::decimate(line, 0.5);
-    EXPECT_GE(simplified.size(), 2u);
+    EXPECT_GE(simplified.size(), 2U);
 
     // First and last points should be preserved
     EXPECT_DOUBLE_EQ(simplified.front().x(), 0.0);
@@ -47,30 +47,30 @@ TEST(SimplifyLinesTest, DecimateSmallDistanceKeepsAll) {
     line.push_back(SimplifyLines::xy(10.0, 0.0));
 
     auto simplified = SimplifyLines::decimate(line, 0.001);
-    EXPECT_EQ(simplified.size(), 3u);
+    EXPECT_EQ(simplified.size(), 3U);
 }
 
 TEST(SimplifyLinesTest, DecimateIndexReducesPoints) {
     SimplifyLines::LineStringIndexed line;
     for (int i = 0; i <= 50; ++i) {
         double x = static_cast<double>(i) * 0.1;
-        line.push_back(laby::Indexed_Point(x, 0.0, static_cast<std::size_t>(i)));
+        line.push_back(laby::IndexedPoint(x, 0.0, static_cast<std::size_t>(i)));
     }
-    ASSERT_EQ(line.size(), 51u);
+    ASSERT_EQ(line.size(), 51U);
 
     auto simplified = SimplifyLines::decimateIndex(line, 0.5);
-    EXPECT_LT(simplified.size(), 51u);
-    EXPECT_GT(simplified.size(), 0u);
+    EXPECT_LT(simplified.size(), 51U);
+    EXPECT_GT(simplified.size(), 0U);
 }
 
 TEST(SimplifyLinesTest, DecimateIndexPreservesIndices) {
     SimplifyLines::LineStringIndexed line;
-    line.push_back(laby::Indexed_Point(0.0, 0.0, 0));
-    line.push_back(laby::Indexed_Point(5.0, 5.0, 1));
-    line.push_back(laby::Indexed_Point(10.0, 0.0, 2));
+    line.push_back(laby::IndexedPoint(0.0, 0.0, 0));
+    line.push_back(laby::IndexedPoint(5.0, 5.0, 1));
+    line.push_back(laby::IndexedPoint(10.0, 0.0, 2));
 
     auto simplified = SimplifyLines::decimateIndex(line, 0.001);
-    EXPECT_EQ(simplified.size(), 3u);
-    EXPECT_EQ(simplified.front().index, 0u);
-    EXPECT_EQ(simplified.back().index, 2u);
+    EXPECT_EQ(simplified.size(), 3U);
+    EXPECT_EQ(simplified.front().index, 0U);
+    EXPECT_EQ(simplified.back().index, 2U);
 }

@@ -3,9 +3,9 @@
  * @brief Unit tests for RandomInteger template class.
  */
 
+#include "basic/RandomInteger.h"
 #include <gtest/gtest.h>
 #include <set>
-#include "basic/RandomInteger.h"
 
 using laby::basic::RandomInteger;
 
@@ -61,7 +61,7 @@ TEST(RandomIntegerTest, ProducesVariety) {
     for (int i = 0; i < 200; ++i) {
         values.insert(rng.get());
     }
-    EXPECT_GT(values.size(), 10u);
+    EXPECT_GT(values.size(), 10U);
 }
 
 TEST(RandomIntegerTest, Int64Type) {

@@ -19,9 +19,11 @@ using namespace laby;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+namespace {
+
 /// Build a pair of opposite nodes and run graph coloring.
 /// Returns the nodes vector after coloring.
-static std::vector<Node> colorTwoOpposites() {
+std::vector<Node> colorTwoOpposites() {
     std::vector<Node> nodes;
     nodes.reserve(2);
     nodes.emplace_back(0);
@@ -29,7 +31,7 @@ static std::vector<Node> colorTwoOpposites() {
 
     // Make them opposites
     nodes[0]._opposite.push_back(&nodes[1]);
-    nodes[1]._opposite.push_back(&nodes[0]);
+    nodes[1]._opposite.push_back(nodes.data());
 
     PathRendering pr;
     // Call chooseNodeState via a wrapper that accesses the private method
@@ -47,14 +49,15 @@ static std::vector<Node> colorTwoOpposites() {
     return nodes;
 }
 
+} // namespace
+
 // ─── Graph Coloring: Two Opposites ──────────────────────────────────────────
 
 TEST(GraphColoringTest, TwoOppositesGetDifferentStates) {
     auto nodes = colorTwoOpposites();
     EXPECT_NE(nodes[0]._state, -1) << "Node 0 should be colored";
     EXPECT_NE(nodes[1]._state, -1) << "Node 1 should be colored";
-    EXPECT_NE(nodes[0]._state, nodes[1]._state)
-        << "Opposite nodes must have different states";
+    EXPECT_NE(nodes[0]._state, nodes[1]._state) << "Opposite nodes must have different states";
 }
 
 TEST(GraphColoringTest, TwoOppositesUseStates0And1) {
@@ -76,9 +79,9 @@ TEST(GraphColoringTest, ThreeOpposites) {
     // All three are mutual opposites
     nodes[0]._opposite.push_back(&nodes[1]);
     nodes[0]._opposite.push_back(&nodes[2]);
-    nodes[1]._opposite.push_back(&nodes[0]);
+    nodes[1]._opposite.push_back(nodes.data());
     nodes[1]._opposite.push_back(&nodes[2]);
-    nodes[2]._opposite.push_back(&nodes[0]);
+    nodes[2]._opposite.push_back(nodes.data());
     nodes[2]._opposite.push_back(&nodes[1]);
 
     // Color greedily
@@ -100,9 +103,10 @@ TEST(GraphColoringTest, ThreeOpposites) {
 // ─── StateSelect: respects occupied states ──────────────────────────────────
 
 TEST(GraphColoringTest, StateSelectSkipsOccupiedStates) {
-    Node opp1(1), opp2(2);
+    Node opp1(1);
+    Node opp2(2);
     opp1.setState(0);
-    opp2.setState(-1);  // unassigned
+    opp2.setState(-1); // unassigned
     std::vector<Node*> opposites = {&opp1, &opp2};
 
     StateSelect ss(opposites);
@@ -116,7 +120,8 @@ TEST(GraphColoringTest, StateSelectSkipsOccupiedStates) {
 
 TEST(GraphColoringTest, AdjacentNodePreference) {
     // Two nodes that are adjacent (not opposite) should prefer alternating states
-    Node n1(0), n2(1);
+    Node n1(0);
+    Node n2(1);
     n1._adjacents.insert(&n2);
     n2._adjacents.insert(&n1);
 
@@ -154,12 +159,12 @@ TEST(GraphColoringTest, FamilyCreatePatchThrowsOnTooManyPatches) {
 
 TEST(GraphColoringTest, NodeVisitedFlagLifecycle) {
     Node n(0);
-    EXPECT_EQ(n._visited, 0);  // unvisited
+    EXPECT_EQ(n._visited, 0); // unvisited
 
-    n._visited = -1;  // BFS-marked
+    n._visited = -1; // BFS-marked
     EXPECT_EQ(n._visited, -1);
 
-    n._visited = 1;  // visited
+    n._visited = 1; // visited
     EXPECT_EQ(n._visited, 1);
 }
 
@@ -167,7 +172,9 @@ TEST(GraphColoringTest, NodeVisitedFlagLifecycle) {
 
 TEST(GraphColoringTest, NodeOverlapSortByState) {
     // NodeOverlap sorts nodes by ascending _state
-    Node n1(0), n2(1), n3(2);
+    Node n1(0);
+    Node n2(1);
+    Node n3(2);
     n1.setState(2);
     n2.setState(0);
     n3.setState(1);

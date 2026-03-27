@@ -6,45 +6,44 @@
  */
 #include "StrokeArrangement.h"
 
-namespace laby {
-namespace alter {
+namespace laby::alter {
 
-TrapezeEdgeInfo::TrapezeEdgeInfo(const Offset_triplet& source, const Offset_triplet& target, const int32_t& direction) :
-        _direction(direction), _source(source), _target(target) {
+TrapezeEdgeInfo::TrapezeEdgeInfo(SourceTriplet source, TargetTriplet target, int32_t direction)
+    : _direction(direction), _source(std::move(source.value)), _target(std::move(target.value)) {}
 
-}
+TrapezeEdgeInfo::TrapezeEdgeInfo() = default;
 
-TrapezeEdgeInfo::TrapezeEdgeInfo() {
-}
+auto TrapezeEdgeInfo::intersection(const Kernel::Line_2& lineA,
+                                   const Kernel::Line_2& lineB) -> Kernel::Point_2 {
 
-const Kernel::Point_2 TrapezeEdgeInfo::intersection(const Kernel::Line_2& l, const Kernel::Line_2& h) {
-
-    auto variant2 = CGAL::intersection(l, h);
+    auto variant2 = CGAL::intersection(lineA, lineB);
     if (variant2) {
-        if (const Kernel::Point_2* p2 = boost::get<Kernel::Point_2>(&*variant2)) {
-            return *p2;
+        if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
+            return *intersectionPoint;
         }
-
     }
-    return Kernel::Point_2(0, 0);
+    return {0, 0};
 }
 
-void TrapezeEdgeInfo::computeGeometry(const Kernel::Point_2& source, const Kernel::Point_2& target, CGAL::Polygon_2<Kernel>& geometry) const {
-    Kernel::Line_2 l(_source.origin, _target.origin);
-    Kernel::Line_2 h1 = l.perpendicular(source);
-    Kernel::Line_2 h2 = l.perpendicular(target);
-    Kernel::Line_2 ab(_source.offset2, _target.offset2);
-    Kernel::Line_2 dc(_source.offset1, _target.offset1);
-    geometry.push_back(intersection(dc, h1));
-    geometry.push_back(intersection(dc, h2));
-    geometry.push_back(intersection(ab, h2));
-    geometry.push_back(intersection(ab, h1));
+void TrapezeEdgeInfo::computeGeometry(const Kernel::Point_2& firstBoundaryPoint,
+                                      const Kernel::Point_2& secondBoundaryPoint,
+                                      CGAL::Polygon_2<Kernel>& geometry) const {
+    Kernel::Line_2 centerLine(_source.origin, _target.origin);
+    Kernel::Line_2 firstPerpendicular = centerLine.perpendicular(firstBoundaryPoint);
+    Kernel::Line_2 secondPerpendicular = centerLine.perpendicular(secondBoundaryPoint);
+    Kernel::Line_2 outerLine(_source.offset2, _target.offset2);
+    Kernel::Line_2 innerLine(_source.offset1, _target.offset1);
+    geometry.push_back(intersection(innerLine, firstPerpendicular));
+    geometry.push_back(intersection(innerLine, secondPerpendicular));
+    geometry.push_back(intersection(outerLine, secondPerpendicular));
+    geometry.push_back(intersection(outerLine, firstPerpendicular));
 }
 
-const CGAL::Polygon_2<Kernel> TrapezeEdgeInfo::getGeometry(const Kernel::Segment_2& seg) const {
+auto TrapezeEdgeInfo::getGeometry(const Kernel::Segment_2& segment) const
+    -> CGAL::Polygon_2<Kernel> {
     CGAL::Polygon_2<Kernel> geometry;
-    const Kernel::Point_2& source = seg.source();
-    const Kernel::Point_2& target = seg.target();
+    const Kernel::Point_2& source = segment.source();
+    const Kernel::Point_2& target = segment.target();
     if (CGAL::compare_distance_to_point(_source.origin, source, target) == CGAL::SMALLER) {
 
         computeGeometry(source, target, geometry);
@@ -54,6 +53,4 @@ const CGAL::Polygon_2<Kernel> TrapezeEdgeInfo::getGeometry(const Kernel::Segment
     return geometry;
 }
 
-}
-/* namespace basic */
-} /* namespace laby */
+} /* namespace laby::alter */

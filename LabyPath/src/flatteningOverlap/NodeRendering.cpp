@@ -9,15 +9,15 @@
 
 #include <CGAL/Arr_overlay_2.h>
 #include <CGAL/Arrangement_2.h>
-#include <CGAL/Arrangement_on_surface_2.h>
-#include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Iterator_transform.h>
-#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cstddef>
-#include <list>
-#include <unordered_map>
+#include <cstdint>
 #include <unordered_set>
+#include <vector>
+
+#include "PolyConvex.h"
+#include "basic/EasyProfilerCompat.h"
 
 namespace laby {
 
@@ -43,9 +43,10 @@ bool NodeOverlap::testSeg(int32_t index, const basic::HalfedgeNode& he) {
 bool NodeOverlap::has_face(basic::Arrangement_2Node& res) {
     using namespace basic;
     for (FaceNode& face : RangeHelper::make(res.faces_begin(), res.faces_end())) {
-        std::unordered_set<int32_t>& polygonsId = face.data();
-        if (polygonsId.size() > 1)
+        const std::unordered_set<int32_t>& polygonsId = face.data();
+        if (polygonsId.size() > 1) {
             return true;
+        }
     }
     return false;
 }
@@ -65,7 +66,7 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
         arrResult.emplace_back(_nodes.at(0)->_setPolygons.arrangement());
 
         for (std::size_t i = 1; i < _nodes.size(); ++i) {
-            Arrangement_2Node& last = arrResult.back();
+            const Arrangement_2Node& last = arrResult.back();
             arrResult.emplace_back();
             CGAL::overlay(last, _nodes.at(i)->_setPolygons.arrangement(), arrResult.back(), overlay_traits);
         }
@@ -90,8 +91,10 @@ void NodeOverlap::render(OrientedRibbon& oribbon, const std::vector<PolyConvex>&
                 std::unordered_set<int32_t>& polygonsId = face.data();
                 if (polygonsId.size() > 1 && !face.is_unbounded()) {
                     auto minIt = std::min_element(polygonsId.begin(), polygonsId.end());
-                    if (minIt == polygonsId.end()) { continue; }  // defensive: set is non-empty (size>1)
-                    int32_t index = *minIt;
+                    if (minIt == polygonsId.end()) {
+                        continue;
+                    } // defensive: set is non-empty (size>1)
+                    const int32_t index = *minIt;
                     for (HalfedgeNode& he : RangeHelper::make(face.outer_ccb())) {
                         if (testSeg(index, he)) {
                             oribbon.addCCW(Kernel::Segment_2(he.source()->point(), he.target()->point()));
@@ -117,8 +120,7 @@ void NodeOverlap::sortNode() {
 void NodeRendering::render(OrientedRibbon& oribbon, std::vector<Node>& nodes, const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
 
-    for (std::size_t i = 0; i < nodes.size(); ++i) {
-        Node& n = nodes.at(i);
+    for (Node& n : nodes) {
         if (n._visited != 1) {
 
             n._visited = 1;

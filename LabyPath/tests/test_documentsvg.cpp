@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "SVGWriter/DocumentSVG.h"
+#include <gtest/gtest.h>
 
 using namespace svg;
 
@@ -72,40 +72,40 @@ TEST(TranslateTest, BottomLeftOriginFlipsY) {
     Layout lay(Dimensions(800, 600), Layout::BottomLeft, 1.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 10.0);
-    EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0);  // 600 - 20
+    EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0); // 600 - 20
 }
 
 TEST(TranslateTest, TopRightOriginFlipsX) {
     Layout lay(Dimensions(800, 600), Layout::TopRight, 1.0);
     Point p(10, 20);
-    EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0);  // 800 - 10
+    EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0); // 800 - 10
     EXPECT_DOUBLE_EQ(translateY(p, lay), 20.0);
 }
 
 TEST(TranslateTest, BottomRightFlipsBoth) {
     Layout lay(Dimensions(800, 600), Layout::BottomRight, 1.0);
     Point p(10, 20);
-    EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0);  // 800 - 10
-    EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0);  // 600 - 20
+    EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0); // 800 - 10
+    EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0); // 600 - 20
 }
 
 TEST(TranslateTest, ScaleApplied) {
     Layout lay(Dimensions(800, 600), Layout::TopLeft, 2.0);
     Point p(10, 20);
-    EXPECT_DOUBLE_EQ(translateX(p, lay), 20.0);  // 10 * 2
-    EXPECT_DOUBLE_EQ(translateY(p, lay), 40.0);  // 20 * 2
+    EXPECT_DOUBLE_EQ(translateX(p, lay), 20.0); // 10 * 2
+    EXPECT_DOUBLE_EQ(translateY(p, lay), 40.0); // 20 * 2
 }
 
 TEST(TranslateTest, OffsetApplied) {
     Layout lay(Dimensions(800, 600), Layout::TopLeft, 1.0, Point(5, 10));
     Point p(10, 20);
-    EXPECT_DOUBLE_EQ(translateX(p, lay), 15.0);  // 5 + 10
-    EXPECT_DOUBLE_EQ(translateY(p, lay), 30.0);  // 10 + 20
+    EXPECT_DOUBLE_EQ(translateX(p, lay), 15.0); // 5 + 10
+    EXPECT_DOUBLE_EQ(translateY(p, lay), 30.0); // 10 + 20
 }
 
 TEST(TranslateTest, TranslateScale) {
     Layout lay(Dimensions(800, 600), Layout::TopLeft, 3.0);
-    EXPECT_DOUBLE_EQ(translateScale(5.0, lay), 15.0);  // 5 * 3
+    EXPECT_DOUBLE_EQ(translateScale(5.0, lay), 15.0); // 5 * 3
 }
 
 // ─── Color Tests ────────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ TEST(SvgShapeTest, CircleToString) {
     EXPECT_NE(svg.find("<circle"), std::string::npos);
     EXPECT_NE(svg.find("cx=\"50\""), std::string::npos);
     EXPECT_NE(svg.find("cy=\"50\""), std::string::npos);
-    EXPECT_NE(svg.find("r=\"10\""), std::string::npos);  // diameter/2
+    EXPECT_NE(svg.find("r=\"10\""), std::string::npos); // diameter/2
 }
 
 TEST(SvgShapeTest, RectangleToString) {
@@ -177,13 +177,13 @@ TEST(SvgShapeTest, TextToString) {
 
 TEST(SvgOptionalTest, ValidOptional) {
     optional<int> opt(42);
-    EXPECT_FALSE(!opt);  // valid
+    EXPECT_FALSE(!opt); // valid
     EXPECT_EQ(*opt.operator->(), 42);
 }
 
 TEST(SvgOptionalTest, InvalidOptional) {
     optional<int> opt;
-    EXPECT_TRUE(!opt);  // invalid
+    EXPECT_TRUE(!opt); // invalid
     EXPECT_THROW(opt.operator->(), std::exception);
 }
 
@@ -216,8 +216,7 @@ TEST(DocumentSVGTest, SaveToFile) {
     // Verify file exists and has content
     std::ifstream ifs(fname);
     EXPECT_TRUE(ifs.good());
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        std::istreambuf_iterator<char>());
+    std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
     EXPECT_NE(content.find("<svg"), std::string::npos);
     std::remove(fname.c_str());
 }
@@ -225,18 +224,18 @@ TEST(DocumentSVGTest, SaveToFile) {
 // ─── Polygon and Polyline Stream Operator Tests ─────────────────────────────
 
 TEST(SvgShapeTest, PolygonStreamOperator) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Polygon poly(Fill(Color::Green));
-    poly << Point(0, 0) << Point(50, 0) << Point(25, 50);
+    svg::Layout lay(svg::Dimensions(100, 100), svg::Layout::TopLeft, 1.0);
+    svg::Polygon poly{svg::Fill(svg::Color::Green)};
+    poly << svg::Point(0, 0) << svg::Point(50, 0) << svg::Point(25, 50);
     std::string svg = poly.toString(lay);
     EXPECT_NE(svg.find("<polygon"), std::string::npos);
     EXPECT_NE(svg.find("points="), std::string::npos);
 }
 
 TEST(SvgShapeTest, PolylineStreamOperator) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Polyline poly(Fill(Color::Transparent), Stroke(1, Color::Black));
-    poly << Point(0, 0) << Point(50, 50) << Point(100, 0);
+    svg::Layout lay(svg::Dimensions(100, 100), svg::Layout::TopLeft, 1.0);
+    svg::Polyline poly{svg::Fill(svg::Color::Transparent), svg::Stroke(1, svg::Color::Black)};
+    poly << svg::Point(0, 0) << svg::Point(50, 50) << svg::Point(100, 0);
     std::string svg = poly.toString(lay);
     EXPECT_NE(svg.find("<polyline"), std::string::npos);
 }

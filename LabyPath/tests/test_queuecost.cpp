@@ -3,9 +3,9 @@
  * @brief Unit tests for QueueCost comparison and ordering.
  */
 
+#include "Anisotrop/QueueCost.h"
 #include <gtest/gtest.h>
 #include <sstream>
-#include "Anisotrop/QueueCost.h"
 
 using laby::aniso::QueueCost;
 
@@ -96,10 +96,10 @@ TEST(QueueCostTest, PrintOutput) {
     std::ostringstream oss;
     c.print(oss);
     std::string output = oss.str();
-    EXPECT_NE(output.find("5"), std::string::npos);
-    EXPECT_NE(output.find("3"), std::string::npos);
+    EXPECT_NE(output.find('5'), std::string::npos);
+    EXPECT_NE(output.find('3'), std::string::npos);
     EXPECT_NE(output.find("100"), std::string::npos);
-    EXPECT_NE(output.find("7"), std::string::npos);
+    EXPECT_NE(output.find('7'), std::string::npos);
 }
 
 TEST(QueueCostTest, MemorySetsIndependent) {
@@ -110,8 +110,8 @@ TEST(QueueCostTest, MemorySetsIndependent) {
     c.memory_target.insert(4);
     c.future_memory_target.insert(5);
 
-    EXPECT_EQ(c.memory_source.size(), 2u);
-    EXPECT_EQ(c.future_memory_source.size(), 1u);
-    EXPECT_EQ(c.memory_target.size(), 1u);
-    EXPECT_EQ(c.future_memory_target.size(), 1u);
+    EXPECT_EQ(c.memory_source.size(), 2U);
+    EXPECT_EQ(c.future_memory_source.size(), 1U);
+    EXPECT_EQ(c.memory_target.size(), 1U);
+    EXPECT_EQ(c.future_memory_target.size(), 1U);
 }

@@ -18,69 +18,76 @@
 #include <iterator>
 #include <unordered_map>
 
+#include "../GridIndex.h"
+#include "../Rendering/GraphicRendering.h"
+#include "../Ribbon.h"
+#include "../SVGParser/Loader.h"
+#include "../Smoothing.h"
 #include "../basic/LinearGradient.h"
 #include "../basic/PairInteger.h"
-#include "../Ribbon.h"
-#include "../Smoothing.h"
 #include "Cell.h"
 #include "Net.h"
 #include "Routing.h"
 #include "SpatialIndex.h"
-#include "../SVGParser/Loader.h"
-#include "../GridIndex.h"
-#include "../Rendering/GraphicRendering.h"
 
 #include "../flatteningOverlap/PathRendering.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
-Placement::Placement(const proto::Placement& config, const proto::Filepaths& filepaths) :
-        _config(config) {
+namespace {
+
+constexpr double kOutputThicknessDivisor = 3.0;
+constexpr double kSimplifyTolerance = 0.1;
+
+} // namespace
+
+Placement::Placement(proto::Placement config, const proto::Filepaths& filepaths)
+    : _config(std::move(config)) {
     svgp::Loader load(filepaths.inputfile());
 
-    std::vector<Ribbon> &ribList = load.ribList();
-    for (std::size_t i = 0; i < ribList.size(); ++i) {
+    std::vector<Ribbon>& ribList = load.ribList();
+    for (Ribbon& rib : ribList) {
         // the skeleton grid info is on stroke color
-        // put it on fill color, in order to make the arrangement with different circular, radial info
-        Ribbon& rib = ribList.at(i);
+        // put it on fill color, in order to make the arrangement with different circular, radial
+        // info
         rib.set_fill_color(rib.strokeColor());
     }
     std::unordered_map<uint32_t, GridIndex> mapOfGrids = GridIndex::getIndexMap(ribList);
 
     std::vector<PolyConvex> polyConvexList;
 
-    for (const auto & pair : mapOfGrids) {
+    for (const auto& pair : mapOfGrids) {
         const GridIndex& gridIndex = pair.second;
-        Arrangement_2 arr = gridIndex.getArr(ribList); // scope of variable : cell only take a reference on it.
-        Cell cell(_config.cell(), arr,gridIndex.limit(ribList));
+        Arrangement_2 arr =
+            gridIndex.getArr(ribList); // scope of variable : cell only take a reference on it.
+        Cell cell(_config.cell(), arr, gridIndex.limit(ribList));
 
-        laby::aniso::Routing routing = create_route(cell);
-        refine_path(cell, routing.polyConvexList(), polyConvexList);
-
+        laby::aniso::Routing routing = createRoute(cell);
+        refinePath(cell, routing.polyConvexList(), polyConvexList);
     }
     Routing::connectMaze(polyConvexList);
     OrientedRibbon oRibbon;
     PathRendering::pathRender(polyConvexList, oRibbon);
 
-    GraphicRendering::printRibbonSvg(load.viewBox(), filepaths.outputfile(), _config.minimal_thickness() / 3., oRibbon.getResult());
-
+    GraphicRendering::printRibbonSvg(load.viewBox(), filepaths.outputfile(),
+                                     _config.minimal_thickness() / kOutputThicknessDivisor,
+                                     oRibbon.getResult());
 }
 
-Routing Placement::create_route(Cell& cell) {
+auto Placement::createRoute(Cell& cell) -> Routing {
 
     Arrangement_2& arr = cell.arr();
 
-    for (Halfedge& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-        he.curve().data().clearAllPath();
+    for (Halfedge& halfedge : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
+        halfedge.curve().data().clearAllPath();
     }
 
     std::vector<Net>& nets = cell.nets();
 
     Routing routing(arr, _config.routing()); // seed
 
-    for (Net& n : nets) {
-        routing.findRoute(n);
+    for (Net& net : nets) {
+        routing.findRoute(net);
     }
 
     std::deque<Pin> queue;
@@ -90,29 +97,32 @@ Routing Placement::create_route(Cell& cell) {
     }
     while (!queue.empty()) {
         bool sourceVertexOK = false;
-        for (std::size_t i = 0; i < std::min(_config.max_routing_attempt(), cell.randomVertex.size()); ++i) {
-            std::vector<Vertex*>::iterator ite_target = cell.selectRandomVertex();
-            Vertex& vertex2 = **ite_target;
+        for (std::size_t i = 0;
+             i < std::min(_config.max_routing_attempt(), cell.randomVertices().size()); ++i) {
+            auto iteTarget = cell.selectRandomVertex();
+            Vertex& vertex2 = **iteTarget;
             if (&vertex2 != &queue.front().vertex()) {
 
-                Pin pin_target { vertex2, std::max(queue.front().thickness() / _config.decrement_factor(), _config.minimal_thickness()) };
-                Net n(queue.front(), pin_target, static_cast<int32_t>(nets.size()));
+                Pin pinTarget{vertex2,
+                              std::max(queue.front().thickness() / _config.decrement_factor(),
+                                       _config.minimal_thickness())};
+                Net netCandidate(Net::SourcePin{queue.front()}, Net::TargetPin{pinTarget},
+                                 static_cast<int32_t>(nets.size()));
 
-                if (routing.findRoute(n)) {
+                if (routing.findRoute(netCandidate)) {
 
-                    nets.emplace_back(n);
-                    std::cout << "commitNewPath" << nets.size() << std::endl;
-                    queue.emplace_back(pin_target);
-                    cell.removeRandomPoint(ite_target);
+                    nets.emplace_back(netCandidate);
+                    std::cout << "commitNewPath" << nets.size() << '\n';
+                    queue.emplace_back(pinTarget);
+                    cell.removeRandomPoint(iteTarget);
                     sourceVertexOK = true;
                     break;
                 }
             }
-
         }
         if (!sourceVertexOK) {
             queue.pop_front();
-            std::cout << "queue size : " << queue.size() << std::endl;
+            std::cout << "queue size : " << queue.size() << '\n';
         }
     }
     statistics(arr);
@@ -121,36 +131,37 @@ Routing Placement::create_route(Cell& cell) {
 
 void Placement::statistics(const Arrangement_2& arr) {
 
-    std::size_t total_congestion = 0;
-    for (const Halfedge& he : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
-        total_congestion += static_cast<std::size_t>(he.curve().data().congestion());
+    std::size_t totalCongestion = 0;
+    for (const Halfedge& halfedge : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
+        totalCongestion += static_cast<std::size_t>(halfedge.curve().data().congestion());
     }
-    std::cout << "seed  " << _config.routing().seed() << " total_congestion " << total_congestion << " number of edge " << arr.number_of_edges() << std::endl;
-
+    std::cout << "seed  " << _config.routing().seed() << " total_congestion " << totalCongestion
+              << " number of edge " << arr.number_of_edges() << '\n';
 }
 
-bool Placement::crossOtherNet(const Vertex& v, int32_t netId) {
-
-    for (const Halfedge& he : RangeHelper::make(v.incident_halfedges())) {
-        if (he.curve().data().congestion() > 0 and he.curve().data().get_net() != netId) {
+auto Placement::crossOtherNet(const Vertex& vertex, int32_t netId) -> bool {
+    // NOLINTNEXTLINE(readability-use-anyofallof)
+    for (const Halfedge& halfedge : RangeHelper::make(vertex.incident_halfedges())) {
+        if (halfedge.curve().data().congestion() > 0 and
+            halfedge.curve().data().getNet() != netId) {
             return true;
-
         }
     }
     return false;
 }
 
-std::vector<PolyVertex> Placement::explodeGraph(const std::vector<PolyConvex>& initialConvex, Cell& cell) {
+auto Placement::explodeGraph(const std::vector<PolyConvex>& initialConvex,
+                             Cell& cell) -> std::vector<PolyVertex> {
     std::vector<PolyVertex> ribbonTemp;
 
     for (Net& net : cell.nets()) {
 
         PolyVertex polytemp(net.id());
-        for (std::size_t i : net.path()) {
-            const PolyConvex& pc = initialConvex.at(i);
-            Vertex& v = *pc._supportHe->source();
-            polytemp.vertexList().emplace_back(&v);
-            if (crossOtherNet(*pc._supportHe->source(), net.id())) {
+        for (std::size_t polyConvexId : net.path()) {
+            const PolyConvex& polyConvex = initialConvex.at(polyConvexId);
+            Vertex& vertex = *polyConvex._supportHe->source();
+            polytemp.vertexList().emplace_back(&vertex);
+            if (crossOtherNet(*polyConvex._supportHe->source(), net.id())) {
                 ribbonTemp.emplace_back(polytemp);
                 polytemp.vertexList().front() = polytemp.vertexList().back();
                 polytemp.vertexList().resize(1);
@@ -163,7 +174,8 @@ std::vector<PolyVertex> Placement::explodeGraph(const std::vector<PolyConvex>& i
     return ribbonTemp;
 }
 
-std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<PolyConvex>& initialConvex, std::vector<PolyConvex>& polyConvexList) {
+auto Placement::refinePath(Cell& cell, const std::vector<PolyConvex>& initialConvex,
+                           std::vector<PolyConvex>& polyConvexList) -> std::vector<PolyConvex> {
     std::vector<PolyVertex> ribbonTemp = explodeGraph(initialConvex, cell);
 
     std::unordered_map<int32_t, Net*> netMap;
@@ -172,46 +184,47 @@ std::vector<PolyConvex> Placement::refine_path(Cell& cell, const std::vector<Pol
     }
 
     Ribbon ribbon;
-    int32_t net_id = -1;
+    int32_t netId = -1;
     for (const PolyVertex& plv : ribbonTemp) {
 
-        Polyline pl = plv.polyline();
+        Polyline polyline = plv.polyline();
 
-        pl.simplify(0.1);
+        polyline.simplify(kSimplifyTolerance);
 
-        pl = Smoothing::getCurveSmoothingChaikin(pl, _config.smoothing_tension(), _config.smoothing_iteration());
+        polyline = Smoothing::getCurveSmoothingChaikin(polyline, _config.smoothing_tension(),
+                                                       _config.smoothing_iteration());
 
-        pl.simplify(0.1);
-        if (pl.id != net_id) {
-            net_id = pl.id;
-            ribbon.lines().emplace_back(net_id);
-            ribbon.lines().back().points.emplace_back(pl.points.front());
+        polyline.simplify(kSimplifyTolerance);
+        if (polyline.id != netId) {
+            netId = polyline.id;
+            ribbon.lines().emplace_back(netId);
+            ribbon.lines().back().points.emplace_back(polyline.points.front());
         }
         std::vector<Point_2>& points = ribbon.lines().back().points;
-        for (std::size_t i = 1; i < pl.points.size(); ++i) {
-            points.emplace_back(pl.points.at(i));
+        for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
+            points.emplace_back(polyline.points.at(pointIndex));
         }
     }
 
-    SpatialIndex si(polyConvexList);
+    SpatialIndex spatialIndex(polyConvexList);
     for (Polyline& poly : ribbon.lines()) {
         Net& net = *netMap.at(poly.id);
         basic::LinearGradient lgrad = net.gradient();
         std::size_t begin = polyConvexList.size();
         for (std::size_t i = 1; i < poly.points.size(); ++i) {
-            polyConvexList.emplace_back(poly.points.at(i - 1), poly.points.at(i), polyConvexList.size(), lgrad);
+            polyConvexList.emplace_back(poly.points.at(i - 1), poly.points.at(i),
+                                        polyConvexList.size(), lgrad);
         }
         PolyConvex::connect(begin, polyConvexList);
         net.target().setPolyConvexIndex(begin);
         net.source().setPolyConvexIndex(polyConvexList.size() - 1);
         for (std::size_t j = begin; j < polyConvexList.size(); ++j) {
-            si.insert(polyConvexList.at(j));
+            spatialIndex.insert(polyConvexList.at(j));
         }
     }
-    Routing::connectTwoPinPath(cell.nets(), si, polyConvexList);
+    Routing::connectTwoPinPath(cell.nets(), spatialIndex, polyConvexList);
 
     return polyConvexList;
 }
 
-} /* namespace aniso */
-} /* namespace laby */
+} // namespace laby::aniso

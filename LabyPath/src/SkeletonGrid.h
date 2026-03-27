@@ -18,25 +18,15 @@
 #include "SVGParser/Loader.h"
 namespace laby {
 
-
-namespace aniso {
-class Cell;
-} /* namespace aniso */
-
 class SkeletonGrid {
 public:
+    const CGAL::Bbox_2& bbox() const { return _bbox; }
 
-    const CGAL::Bbox_2& bbox() const {
-        return _bbox;
-    }
-
-    const std::vector<Segment_info_2>& segResult() const {
-        return _segResult;
-    }
+    const std::vector<Segment_info_2>& segResult() const { return _segResult; }
 
     SkeletonGrid(const proto::SkeletonGrid& config);
     void medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons, const double& distance);
-    void create(const svgp::Loader & vRibbons);
+    void create(const svgp::Loader& vRibbons);
 
 private:
     const proto::SkeletonGrid _config;
@@ -44,7 +34,6 @@ private:
     std::vector<Kernel::Segment_2> _circularList;
     CGAL::Bbox_2 _bbox;
     std::vector<Segment_info_2> _segResult;
-
 };
 
 } /* namespace laby */

@@ -16,13 +16,12 @@
 
 #include "../GeomData.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
 class QueueCost {
-public:
-    int32_t distance = -1;           //Distance from source to current element
-    int32_t via_num = 0;            //Via count from source to current element
+  public:
+    int32_t distance = -1; // Distance from source to current element
+    int32_t via_num = 0;   // Via count from source to current element
     int32_t congestion = 0;
 
     int32_t randomization = 0;
@@ -34,32 +33,27 @@ public:
     auto tie() const {
         return std::tie(congestion, //
 
-                via_num, //
-                distance, //
-                randomization);
-
+                        via_num,  //
+                        distance, //
+                        randomization);
     }
 
-    void print(std::ostream& os) const {
-        os << " congestion " << congestion;
-        os << " via_num " << via_num;
-        os << "distance " << distance;
-        os << " randomization " << randomization;
-
+    void print(std::ostream& outputStream) const {
+        outputStream << " congestion " << congestion;
+        outputStream << " via_num " << via_num;
+        outputStream << "distance " << distance;
+        outputStream << " randomization " << randomization;
     }
 
-    bool operator >(const QueueCost &rhs) const {
+    auto operator>(const QueueCost& rhs) const -> bool {
         return tie() > rhs.tie();
-
     }
 
-    bool operator <(const QueueCost &rhs) const {
+    auto operator<(const QueueCost& rhs) const -> bool {
         return tie() < rhs.tie();
-
     }
 };
 
-} /* namespace aniso */
-} /* namespace laby */
+} // namespace laby::aniso
 
 #endif /* ANISOTROP_QUEUECOST_H_ */

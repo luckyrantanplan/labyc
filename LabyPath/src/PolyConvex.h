@@ -22,11 +22,9 @@
 #include "flatteningOverlap/Node.h"
 #include "GeomData.h"
 
-namespace laby {
-namespace basic {
+namespace laby::basic {
 class LinearGradient;
-} /* namespace basic */
-} /* namespace laby */
+} /* namespace laby::basic */
 
 namespace laby {
 
@@ -49,31 +47,27 @@ namespace laby {
  */
 class PolyConvex {
 public:
-    Linear_polygon _geometry;
-    Linear_polygon _originalTrapeze;
-    std::vector<std::size_t> _adjacents;
-    mutable std::vector<Node*> _nodes;
-    Halfedge* _supportHe = nullptr;
-    std::size_t _id = 0;
-    mutable int32_t _visited = 0;
-    mutable CGAL::Union_find<std::size_t>::handle handle;
-    double _average_thickness = 0;
+    Linear_polygon _geometry;                             // NOLINT(misc-non-private-member-variables-in-classes)
+    Linear_polygon _originalTrapeze;                      // NOLINT(misc-non-private-member-variables-in-classes)
+    std::vector<std::size_t> _adjacents;                  // NOLINT(misc-non-private-member-variables-in-classes)
+    mutable std::vector<Node*> _nodes;                    // NOLINT(misc-non-private-member-variables-in-classes)
+    Halfedge* _supportHe = nullptr;                       // NOLINT(misc-non-private-member-variables-in-classes)
+    std::size_t _id = 0;                                  // NOLINT(misc-non-private-member-variables-in-classes)
+    mutable int32_t _visited = 0;                         // NOLINT(misc-non-private-member-variables-in-classes)
+    mutable CGAL::Union_find<std::size_t>::handle handle; // NOLINT(misc-non-private-member-variables-in-classes)
+    double _average_thickness = 0;                        // NOLINT(misc-non-private-member-variables-in-classes)
 
-    void set_average_thickness(double thickness) {
+    void set_average_thickness(double thickness) { // NOLINT(readability-identifier-naming)
         _average_thickness = thickness;
     }
 
-    double thickness() const {
-        return _average_thickness;
-    }
-    PolyConvex() {
+    double thickness() const { return _average_thickness; }
+    PolyConvex() = default;
 
-    }
-
-    void remove_adjacence(std::size_t i) {
+    void remove_adjacence(std::size_t i) { // NOLINT(readability-identifier-naming)
         auto ite = std::find(_adjacents.begin(), _adjacents.end(), i);
         std::swap(*ite, _adjacents.back());
-        _adjacents.resize(_adjacents.size() - 1u);
+        _adjacents.resize(_adjacents.size() - 1U);
     }
 
     void resetMutable() const {
@@ -90,9 +84,7 @@ public:
         _average_thickness = 0;
     }
 
-    bool empty() const {
-        return _geometry.is_empty();
-    }
+    bool empty() const { return _geometry.is_empty(); }
 
     PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad);
     PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad);
@@ -107,11 +99,9 @@ public:
         os << " id " << _id;
     }
 
-    bool contains(const Node& n) const {
-        return (std::find(_nodes.begin(), _nodes.end(), &n) != _nodes.end());
-    }
+    bool contains(const Node& n) const { return (std::find(_nodes.begin(), _nodes.end(), &n) != _nodes.end()); }
 
-    static bool testConvexPolyIntersect(const Linear_polygon & a, const Linear_polygon& b);
+    static bool testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b);
     static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList, const Point_2& center);
     static void connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList);
     static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList);
@@ -130,7 +120,7 @@ public:
         return _pt;
     }
 
-    bool has_points() const {
+    bool has_points() const { // NOLINT(readability-identifier-naming)
         if (_supportHe != nullptr) {
             return true;
         }
@@ -145,8 +135,7 @@ private:
     CGAL::Point_2<Kernel> _ps;
     CGAL::Point_2<Kernel> _pt;
     bool _has_points = false;
-}
-;
+};
 
 } /* namespace laby */
 

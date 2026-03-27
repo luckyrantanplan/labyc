@@ -15,43 +15,57 @@
 #include "../Ribbon.h"
 #include "Context.h"
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
-class ShapeContext: public BaseContext {
-public:
-    ShapeContext(BaseContext & parent);
+class ShapeContext : public BaseContext {
+  public:
+    explicit ShapeContext(BaseContext& parent);
 
-    void path_move_to(double x, double y, svgpp::tag::coordinate::absolute);
+    // SVG++ discovers these callbacks by exact name.
+    // NOLINTBEGIN(readability-identifier-naming)
+    void path_move_to(double xCoordinate, double yCoordinate,
+                      svgpp::tag::coordinate::absolute coordinateTag);
 
-    void path_line_to(double x, double y, svgpp::tag::coordinate::absolute);
+    void path_line_to(double xCoordinate, double yCoordinate,
+                      svgpp::tag::coordinate::absolute coordinateTag);
 
-    void path_cubic_bezier_to(double x1, double y1, double x2, double y2, double x, double y, svgpp::tag::coordinate::absolute);
+    void path_cubic_bezier_to(double xControl1, double yControl1, double xControl2,
+                              double yControl2, double xCoordinate, double yCoordinate,
+                              svgpp::tag::coordinate::absolute coordinateTag);
 
-    void path_quadratic_bezier_to(double x1, double y1, double x, double y, svgpp::tag::coordinate::absolute);
+    void path_quadratic_bezier_to(double xControl, double yControl, double xCoordinate,
+                                  double yCoordinate,
+                                  svgpp::tag::coordinate::absolute coordinateTag);
 
-    void path_elliptical_arc_to(double rx, double ry, double x_axis_rotation, bool large_arc_flag, bool sweep_flag, double x, double y, svgpp::tag::coordinate::absolute);
+    static void path_elliptical_arc_to(double radiusX, double radiusY, double xAxisRotation,
+                                       bool largeArcFlag, bool sweepFlag, double xCoordinate,
+                                       double yCoordinate,
+                                       svgpp::tag::coordinate::absolute coordinateTag);
 
     void path_close_subpath();
 
     void path_exit();
+    // NOLINTEND(readability-identifier-naming)
 
-    void marker(svgpp::marker_vertex v, double x, double y, double directionality, unsigned marker_index);
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+    void marker(svgpp::marker_vertex vertex, double xCoordinate, double yCoordinate,
+                double directionality, unsigned markerIndex);
 
-private:
+  private:
     struct MarkerPos {
-        svgpp::marker_vertex v;
-        double x, y, directionality;
+        svgpp::marker_vertex vertex;
+        double xCoordinate;
+        double yCoordinate;
+        double directionality;
     };
-    typedef std::vector<MarkerPos> Markers;
-    Markers markers_;
+    using Markers = std::vector<MarkerPos>;
+    Markers _markers;
 
-    Ribbon* _currentRibbon = nullptr;
+    auto currentRibbon() -> Ribbon&;
 
-    color_t getColor(const Paint& paint);
+    auto getColor(const Paint& paint) -> color_t;
 };
 
-} /* namespace svgp */
-} /* namespace laby */
+} /* namespace laby::svgp */
 
 #endif /* SVGPARSER_SHAPECONTEXT_H_ */

@@ -3,8 +3,8 @@
  * @brief Unit tests for NumericRange iteration and NumericHelper
  */
 
-#include <gtest/gtest.h>
 #include "basic/NumericRange.h"
+#include <gtest/gtest.h>
 #include <vector>
 
 namespace laby {
@@ -60,8 +60,7 @@ TEST(NumericRangeTest, GetValue) {
 
 TEST(NumericHelperTest, ReduceAtZero) {
     auto result = NumericHelper::reduce(0, 4, 8);
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value(), 0);
+    EXPECT_EQ(result, std::optional<int32_t>{0});
 }
 
 TEST(NumericHelperTest, ReduceProducesValue) {
@@ -69,8 +68,7 @@ TEST(NumericHelperTest, ReduceProducesValue) {
     // previous = (0*4)/2 = 0, current = (1*4)/2 = 2
     // previous != current, so return current
     auto result = NumericHelper::reduce(1, 2, 4);
-    ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value(), 2);
+    EXPECT_EQ(result, std::optional<int32_t>{2});
 }
 
 TEST(NumericHelperTest, ReduceSkipsValue) {

@@ -47,10 +47,10 @@ Ribbon OrientedRibbon::createOrientedRibbon() const {
     Arrangement_2 arr;
     std::vector<Segment_info_2> listSeg;
     for (const Kernel::Segment_2& seg : _left) {
-        listSeg.push_back(Segment_info_2(seg, EdgeInfo { 1, 0 }));
+        listSeg.push_back(Segment_info_2(seg, EdgeInfo{1, EdgeInfo::Coordinate{0}}));
     }
     for (const Kernel::Segment_2& seg : _right) {
-        listSeg.push_back(Segment_info_2(seg, EdgeInfo { 3, 0 }));
+        listSeg.push_back(Segment_info_2(seg, EdgeInfo{3, EdgeInfo::Coordinate{0}}));
     }
     CGAL::insert(arr, listSeg.begin(), listSeg.end());
     Ribbon result = createRibbonOfEdge(arr);
@@ -66,7 +66,6 @@ Ribbon OrientedRibbon::createOrientedRibbon() const {
     }
 
     return result;
-
 }
 std::vector<Ribbon> OrientedRibbon::getResult() const {
     std::vector<Ribbon> result;
@@ -79,14 +78,17 @@ void OrientedRibbon::setPolylineOrientation(const Halfedge& he, Polyline& poly) 
 
         if (isRight(he.source()->point(), he.target()->point())) {
             poly.id = +1;
-        } else {
+        }
+        else {
             poly.id = -1;
         }
-    } else {
+    }
+    else {
 
         if (isRight(he.source()->point(), he.target()->point())) {
             poly.id = -1;
-        } else {
+        }
+        else {
             poly.id = +1;
         }
     }
@@ -95,7 +97,7 @@ void OrientedRibbon::setPolylineOrientation(const Halfedge& he, Polyline& poly) 
 // copy from Ribbon perhaps we can merge it with the other function
 Ribbon OrientedRibbon::createRibbonOfEdge(const Arrangement_2& arr) {
 
-//init
+    // init
     for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
         const Segment_info_2& curve = eit.curve();
         curve.data().setVisit(-1);
@@ -126,13 +128,11 @@ Ribbon OrientedRibbon::createRibbonOfEdge(const Arrangement_2& arr) {
                         }
                         he.curve().data().setVisit(1);
                     }
-
                 }
             }
         }
-
     }
-//loop (only degree 2 )
+    // loop (only degree 2 )
     for (const Halfedge& eit : RangeHelper::make(arr.edges_begin(), arr.edges_end())) {
 
         if (eit.curve().data().getVisit() != 1) {
@@ -159,7 +159,6 @@ Ribbon OrientedRibbon::createRibbonOfEdge(const Arrangement_2& arr) {
         }
     }
     return ribbon;
-
 }
 
 } /* namespace laby */

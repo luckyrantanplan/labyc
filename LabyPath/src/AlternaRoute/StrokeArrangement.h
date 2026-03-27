@@ -8,77 +8,82 @@
 #ifndef ALTERNAROUTE_STROKEARRANGEMENT_H_
 #define ALTERNAROUTE_STROKEARRANGEMENT_H_
 
-#include <cstdint>
 #include <CGAL/Arr_curve_data_traits_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Polygon_2.h>
 #include <complex>
+#include <cstdint>
 #include <iostream>
 #include <optional>
 #include <unordered_map>
 #include <utility>
-#include <CGAL/Polygon_2.h>
 
-namespace laby {
-namespace alter {
+namespace laby::alter {
 
 class TrapezeEdgeInfo;
 
-class Dummy {
+class Dummy {};
+using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 
-};
-typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+using SegmentTraits2 = CGAL::Arr_segment_traits_2<Kernel>;
 
-typedef CGAL::Arr_segment_traits_2<Kernel> Segment_traits_2;
+using TrapezeTraits2 = CGAL::Arr_curve_data_traits_2<SegmentTraits2, TrapezeEdgeInfo>;
 
-typedef CGAL::Arr_curve_data_traits_2<Segment_traits_2, TrapezeEdgeInfo> TrapezeTraits_2;
+using SegmentTrapezeInfo2 = TrapezeTraits2::X_monotone_curve_2;
 
-typedef TrapezeTraits_2::X_monotone_curve_2 Segment_trapeze_info_2;
+using TrapezeDcel = CGAL::Arr_extended_dcel<TrapezeTraits2, Dummy, Dummy, Dummy>;
 
-typedef CGAL::Arr_extended_dcel<TrapezeTraits_2, Dummy, Dummy, Dummy> TrapezeDcel;
+using ArrTrapeze = CGAL::Arrangement_2<TrapezeTraits2, TrapezeDcel>;
 
-typedef CGAL::Arrangement_2<TrapezeTraits_2, TrapezeDcel> ArrTrapeze;
-
-struct Offset_triplet {
+struct OffsetTriplet {
 
     Kernel::Point_2 origin;
     Kernel::Point_2 offset1;
     Kernel::Point_2 offset2;
 
-    void print(std::ostream& os) const {
-        os << " offset1 " << offset1;
-        os << " origin " << origin;
-        os << "offset2 " << offset2;
-
+    void print(std::ostream& outputStream) const {
+        outputStream << " offset1 " << offset1;
+        outputStream << " origin " << origin;
+        outputStream << "offset2 " << offset2;
     }
 };
 
 class TrapezeEdgeInfo {
-public:
+  public:
+    struct SourceTriplet {
+        OffsetTriplet value;
+    };
+
+    struct TargetTriplet {
+        OffsetTriplet value;
+    };
 
     TrapezeEdgeInfo();
 
-    TrapezeEdgeInfo(const Offset_triplet& source, const Offset_triplet& target, const int32_t& direction);
+    TrapezeEdgeInfo(SourceTriplet source, TargetTriplet target, int32_t direction);
 
-    const CGAL::Polygon_2<Kernel> getGeometry(const Kernel::Segment_2& seg) const;
+    [[nodiscard]] auto
+    getGeometry(const Kernel::Segment_2& segment) const -> CGAL::Polygon_2<Kernel>;
 
-    int32_t direction() const {
+    [[nodiscard]] auto direction() const -> int32_t {
         return _direction;
     }
 
-private:
-    static const Kernel::Point_2 intersection(const Kernel::Line_2& l, const Kernel::Line_2& h);
-    void computeGeometry(const Kernel::Point_2& source, const Kernel::Point_2& target, CGAL::Polygon_2<Kernel>& geometry) const;
+  private:
+    static auto intersection(const Kernel::Line_2& lineA,
+                             const Kernel::Line_2& lineB) -> Kernel::Point_2;
+    void computeGeometry(const Kernel::Point_2& firstBoundaryPoint,
+                         const Kernel::Point_2& secondBoundaryPoint,
+                         CGAL::Polygon_2<Kernel>& geometry) const;
 
     int32_t _direction = 0;
-    Offset_triplet _source;
-    Offset_triplet _target;
-
+    OffsetTriplet _source;
+    OffsetTriplet _target;
 };
 
-} /* namespace alter */
-} /* namespace laby */
+} /* namespace laby::alter */
 
 #endif /* ALTERNAROUTE_STROKEARRANGEMENT_H_ */

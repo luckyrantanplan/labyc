@@ -7,11 +7,17 @@
 
 #include "Cell.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <iostream>
+#include <iterator>
+#include <utility>
+
 #include <CGAL/Arr_extended_dcel.h>
+#include <CGAL/Arrangement_2.h>
 #include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include <CGAL/Arrangement_2.h>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Point_2.h>
@@ -23,59 +29,69 @@
 
 #include "../basic/RangeHelper.h"
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
-Cell::Cell(const proto::Cell& config, Arrangement_2& arr, const Ribbon& limit) : _config(config), _arr{arr}, _random(0, 100.0, _config.seed()) {
+namespace {
+
+constexpr double kFallbackResolution = 1.0;
+constexpr double kSnapDistanceSquared = 2.0;
+constexpr double kOutlineResolution = 3.0;
+constexpr double kMidpointDivisor = 2.0;
+
+} // namespace
+
+Cell::Cell(proto::Cell config, Arrangement_2& arr, const Ribbon& limit)
+    : _config(std::move(config)), _arr(&arr), _random(0, 100.0, _config.seed()) {
     std::vector<Point_2> points = limit.get_Points();
 
-    std::cout << " points.size() " << points.size() << std::endl;
+    std::cout << " points.size() " << points.size() << '\n';
 
-    for (const Polyline& pl : limit.lines()) {
-        for (const Point_2& pt : subdivide(pl)) {
+    for (const Polyline& polyline : limit.lines()) {
+        for (const Point_2& point : subdivide(polyline)) {
 
-            selectNearestPoint(pt);
+            selectNearestPoint(point);
         }
     }
 
-    _random.shuffle(randomVertex);
+    _random.shuffle(_randomVertices);
 
     startNetWithRandomPin();
 
     createRandomPinOnExistingVerticesOnly();
 }
 
-double Cell::resolution() const {
+auto Cell::resolution() const -> double {
     if (_config.resolution() > 0.) {
         return _config.resolution();
     }
-    std::cout << "cell resolution <= 0, fallback to 1.0" << std::endl;
-    return 1.0;
+    std::cout << "cell resolution <= 0, fallback to 1.0" << '\n';
+    return kFallbackResolution;
 }
 
-std::vector<Point_2> Cell::subdivide(const Polyline& pl) {
+auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
     std::vector<Point_2> result;
-    const double subdivision_resolution = resolution();
-    for (std::size_t i = 1; i < pl.points.size(); ++i) {
+    const double subdivisionResolution = resolution();
+    for (std::size_t i = 1; i < polyline.points.size(); ++i) {
 
-        CGAL::Vector_2<Kernel> vec = pl.points.at(i) - pl.points.at(i - 1);
+        CGAL::Vector_2<Kernel> vec = polyline.points.at(i) - polyline.points.at(i - 1);
 
-        double length = sqrt(CGAL::to_double(vec.squared_length()));
+        double length = std::sqrt(CGAL::to_double(vec.squared_length()));
         if (length > 0) {
-            CGAL::Vector_2<Kernel> u = vec / length;
+            CGAL::Vector_2<Kernel> unitVector = vec / length;
 
-            u = u * subdivision_resolution;
+            unitVector = unitVector * subdivisionResolution;
 
-            result.emplace_back(pl.points.at(i - 1));
-            for (int32_t vi = 1; vi < length / subdivision_resolution; ++vi) {
+            result.emplace_back(polyline.points.at(i - 1));
+            for (int32_t vertexIndex = 1; vertexIndex < length / subdivisionResolution;
+                 ++vertexIndex) {
 
-                result.emplace_back(pl.points.at(i - 1) + vi * u);
+                result.emplace_back(polyline.points.at(i - 1) + vertexIndex * unitVector);
             }
-            if (i + 1 == pl.points.size()) {
+            if (i + 1 == polyline.points.size()) {
 
-                if (pl.closed or pl.points.front() == pl.points.back()) {}
-                else {
-                    result.emplace_back(pl.points.at(i));
+                if (polyline.closed or polyline.points.front() == polyline.points.back()) {
+                } else {
+                    result.emplace_back(polyline.points.at(i));
                 }
             }
         }
@@ -85,137 +101,146 @@ std::vector<Point_2> Cell::subdivide(const Polyline& pl) {
 
 void Cell::createOutlinedNet(std::size_t begin, double thickness) {
 
-    for (std::size_t i = begin + 1; i < listVertex.size(); ++i) {
-        _nets.emplace_back(Pin{*listVertex.at(i), thickness}, Pin{*listVertex.at(i - 1), thickness}, _nets.size());
+    for (std::size_t i = begin + 1; i < _listVertex.size(); ++i) {
+        _nets.emplace_back(Net::SourcePin{Pin{*_listVertex.at(i), thickness}},
+                           Net::TargetPin{Pin{*_listVertex.at(i - 1), thickness}},
+                           static_cast<int32_t>(_nets.size()));
     }
-    _nets.emplace_back(Pin{*listVertex.at(begin), thickness}, Pin{*listVertex.back(), thickness}, _nets.size());
+    _nets.emplace_back(Net::SourcePin{Pin{*_listVertex.at(begin), thickness}},
+                       Net::TargetPin{Pin{*_listVertex.back(), thickness}},
+                       static_cast<int32_t>(_nets.size()));
 }
 
-void Cell::createRandomPin(const CGAL::Bbox_2& bbox, const std::size_t maxPin) {
+void Cell::createRandomPin(const CGAL::Bbox_2& bbox, std::size_t maxPin) {
 
-    std::vector<std::complex<double>> points = generator::PoissonPoints::generateRectangle(bbox, maxPin + 1);
+    std::vector<std::complex<double>> points =
+        generator::PoissonPoints::generateRectangle(bbox, maxPin + 1);
 
-    for (const std::complex<double> pt : points) {
-        Point_2 point2(pt.real(), pt.imag());
+    for (const std::complex<double> point : points) {
+        Point_2 point2(point.real(), point.imag());
         selectNearestPoint(point2);
     }
 
-    std::cout << "number of random vertices : " << randomVertex.size() << std::endl;
+    std::cout << "number of random vertices : " << _randomVertices.size() << '\n';
 }
 
 void Cell::createRandomPinOnExistingVerticesOnly() {
     const std::size_t maxPin = _config.maxpin();
-    for (Vertex& v : RangeHelper::make(_arr.vertices_begin(), _arr.vertices_end())) {
-        if (v.degree() > 2) {
-            randomVertex.emplace_back(&v);
+    for (Vertex& vertex : RangeHelper::make(_arr->vertices_begin(), _arr->vertices_end())) {
+        if (vertex.degree() > 2) {
+            _randomVertices.emplace_back(&vertex);
         }
     }
-    _random.shuffle(randomVertex);
-    randomVertex.resize(std::min(randomVertex.size(), maxPin));
-    std::cout << "createRandomPinOnExistingVerticesOnly number of random vertices : " << randomVertex.size() << std::endl;
+    _random.shuffle(_randomVertices);
+    _randomVertices.resize(std::min(_randomVertices.size(), maxPin));
+    std::cout << "createRandomPinOnExistingVerticesOnly number of random vertices : "
+              << _randomVertices.size() << '\n';
 }
 
 void Cell::startNetWithRandomPin() {
     const std::size_t numberOfStartNet = _config.startnet();
-    for (std::size_t i = 0; i < std::min(numberOfStartNet, randomVertex.size()); ++i) {
-        listVertex.emplace_back(randomVertex.at(i));
+    for (std::size_t i = 0; i < std::min(numberOfStartNet, _randomVertices.size()); ++i) {
+        _listVertex.emplace_back(_randomVertices.at(i));
     }
-    _random.shuffle(listVertex);
+    _random.shuffle(_listVertex);
 }
 
 void Cell::selectNearestPoint(const Point_2& point2) {
 
     // TODO change insert_point by locate
 
-    Vertex_handle handle = CGAL::insert_point(_arr, point2);
+    Vertex_handle handle = CGAL::insert_point(*_arr, point2);
 
     if (handle->is_isolated()) {
-        Face_handle fh = handle->face();
-        Vertex& v_nearest = const_cast<Vertex&>(GeomHelper::getNearestVertex(*fh, *handle));
+        Face_handle faceHandle = handle->face();
+        auto& nearestVertex = GeomHelper::getNearestVertex(*faceHandle, *handle);
 
-        if (CGAL::compare_squared_distance(v_nearest.point(), point2, 2.) == CGAL::SMALLER) {
-            v_nearest.data().setType(VertexInfo::PIN);
-            randomVertex.emplace_back(&v_nearest);
+        if (CGAL::compare_squared_distance(nearestVertex.point(), point2, kSnapDistanceSquared) ==
+            CGAL::SMALLER) {
+            nearestVertex.data().setType(VertexInfo::PIN);
+            _randomVertices.emplace_back(&nearestVertex);
         }
-    }
-    else {
-        std::cout << "not isolated " << std::endl;
+    } else {
+        std::cout << "not isolated " << '\n';
     }
 }
 
 void Cell::insertPointAndConnect(const Point_2& point2) {
-    Vertex_handle handle = CGAL::insert_point(_arr, point2);
+    Vertex_handle handle = CGAL::insert_point(*_arr, point2);
     handle->data().setType(VertexInfo::PIN);
-    randomVertex.push_back(handle.ptr());
+    _randomVertices.push_back(handle.ptr());
     if (handle->is_isolated()) {
-        Face_handle fh = handle->face();
-        const Point_2& point = GeomHelper::getNearestVertex(*fh, *handle).point();
-        Segment_2 s{handle->point(), point};
-        Segment_info_2 segInfo(s, EdgeInfo(EdgeInfo::Type::CELL));
-        CGAL::insert(_arr, segInfo);
+        Face_handle faceHandle = handle->face();
+        const Point_2& point = GeomHelper::getNearestVertex(*faceHandle, *handle).point();
+        Segment_2 segment{handle->point(), point};
+        Segment_info_2 segInfo(segment, EdgeInfo(EdgeInfo::Type::CELL));
+        CGAL::insert(*_arr, segInfo);
     }
 }
 
 void Cell::shuffleVertices() {
 
-    _random.shuffle(listVertex);
+    _random.shuffle(_listVertex);
 }
 
-void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, const double quantity, const double thickness, const double raylength) {
+void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
 
     std::vector<Point_2> allvertices;
-    double resolution = 3;
+    double outlineResolution = kOutlineResolution;
     { allvertices.emplace_back(bbox.xmin(), bbox.ymin()); }
-    double step = 1 / resolution;
-    for (double x : NumericRange<double>(bbox.xmin() + step, bbox.xmax() - step, step)) {
-        allvertices.emplace_back(x, bbox.ymin());
+    double step = 1 / outlineResolution;
+    for (double xCoord : NumericRange<double>(bbox.xmin() + step, bbox.xmax() - step, step)) {
+        allvertices.emplace_back(xCoord, bbox.ymin());
     }
-    for (double y : NumericRange<double>(bbox.ymin(), bbox.ymax() - step, step)) {
-        allvertices.emplace_back(bbox.xmax(), y);
+    for (double yCoord : NumericRange<double>(bbox.ymin(), bbox.ymax() - step, step)) {
+        allvertices.emplace_back(bbox.xmax(), yCoord);
     }
-    for (double x : NumericRange<double>(bbox.xmax(), bbox.xmin() + step, -step)) {
-        allvertices.emplace_back(x, bbox.ymax());
+    for (double xCoord : NumericRange<double>(bbox.xmax(), bbox.xmin() + step, -step)) {
+        allvertices.emplace_back(xCoord, bbox.ymax());
     }
-    for (double y : NumericRange<double>(bbox.ymax(), bbox.ymin() + step, -step)) {
-        allvertices.emplace_back(bbox.xmin(), y);
+    for (double yCoord : NumericRange<double>(bbox.ymax(), bbox.ymin() + step, -step)) {
+        allvertices.emplace_back(bbox.xmin(), yCoord);
     }
 
-    std::size_t begin = listVertex.size();
+    std::size_t begin = _listVertex.size();
     for (std::size_t i = 0; i < allvertices.size(); ++i) {
-        if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()), static_cast<int32_t>(quantity)).has_value()) {
-            Vertex_handle handle = CGAL::insert_point(_arr, allvertices.at(i));
+        if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()),
+                                  static_cast<int32_t>(config.quantity))
+                .has_value()) {
+            Vertex_handle handle = CGAL::insert_point(*_arr, allvertices.at(i));
             handle->data().setType(VertexInfo::PIN);
 
-            listVertex.emplace_back(handle.ptr());
+            _listVertex.emplace_back(handle.ptr());
         }
     }
 
     std::complex<double> corner1{bbox.xmin(), bbox.ymin()};
     std::complex<double> corner2{bbox.xmax(), bbox.ymax()};
-    std::complex<double> o = (corner1 + corner2) / 2.;
+    std::complex<double> center = (corner1 + corner2) / kMidpointDivisor;
     std::vector<Segment_info_2> listSeg;
 
-    for (std::size_t i = begin; i < listVertex.size(); ++i) {
-        Vertex* v = listVertex.at(i);
-        std::complex<double> c{CGAL::to_double(v->point().x()), CGAL::to_double(v->point().y())};
+    for (std::size_t i = begin; i < _listVertex.size(); ++i) {
+        Vertex* vertex = _listVertex.at(i);
+        std::complex<double> vertexPoint{CGAL::to_double(vertex->point().x()),
+                                         CGAL::to_double(vertex->point().y())};
 
-        std::complex<double> vect = c - o;
-        vect *= raylength / std::abs(vect);
-        vect += o;
+        std::complex<double> vect = vertexPoint - center;
+        vect *= config.rayLength / std::abs(vect);
+        vect += center;
 
-        listSeg.emplace_back(Segment_2(v->point(), Point_2{vect.real(), vect.imag()}), EdgeInfo{EdgeInfo::Type::CELL});
+        listSeg.emplace_back(Segment_2(vertex->point(), Point_2{vect.real(), vect.imag()}),
+                             EdgeInfo{EdgeInfo::Type::CELL});
     }
 
-    for (std::size_t i = begin + 1; i < listVertex.size(); ++i) {
-        Segment_2 s{listVertex.at(i - 1)->point(), listVertex.at(i)->point()};
-        listSeg.emplace_back(s, EdgeInfo{EdgeInfo::Type::CELL});
+    for (std::size_t i = begin + 1; i < _listVertex.size(); ++i) {
+        Segment_2 outlineSegment{_listVertex.at(i - 1)->point(), _listVertex.at(i)->point()};
+        listSeg.emplace_back(outlineSegment, EdgeInfo{EdgeInfo::Type::CELL});
     }
 
-    Segment_2 s{listVertex.back()->point(), listVertex.at(begin)->point()};
-    listSeg.emplace_back(s, EdgeInfo{EdgeInfo::Type::CELL});
-    CGAL::insert(_arr, listSeg.begin(), listSeg.end());
-    createOutlinedNet(begin, thickness);
+    Segment_2 outlineSegment{_listVertex.back()->point(), _listVertex.at(begin)->point()};
+    listSeg.emplace_back(outlineSegment, EdgeInfo{EdgeInfo::Type::CELL});
+    CGAL::insert(*_arr, listSeg.begin(), listSeg.end());
+    createOutlinedNet(begin, config.thickness);
 }
 
-} /* namespace aniso */
-} /* namespace laby */
+} // namespace laby::aniso

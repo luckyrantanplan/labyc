@@ -8,116 +8,75 @@
 #ifndef BASIC_RANGEHELPER_H_
 #define BASIC_RANGEHELPER_H_
 
+#include <utility>
+
 namespace laby {
 
-template<typename T>
-class HalfedgeRangeIterator {
+template <typename T> class HalfedgeRangeIterator {
 
 public:
+    HalfedgeRangeIterator(bool isStart, T circ) : _start{isStart}, _circulator{std::move(circ)} {}
 
-    HalfedgeRangeIterator(bool isStart, T& circ) :
-            start { isStart }, //
-            circulator { circ } {
-
-    }
     HalfedgeRangeIterator(const HalfedgeRangeIterator&) = default;
 
-    HalfedgeRangeIterator& operator=(const HalfedgeRangeIterator& it) {
-        start = it.start;
-        circulator = it.circulator;
-        return *this;
-    }
+    HalfedgeRangeIterator(HalfedgeRangeIterator&&) noexcept = default;
 
-    bool operator !=(const HalfedgeRangeIterator& it) const {
-        return start != it.start || circulator != it.circulator;
-    }
+    HalfedgeRangeIterator& operator=(const HalfedgeRangeIterator&) = default;
 
-    bool operator ==(const HalfedgeRangeIterator& it) const {
-        return start == it.start && circulator == it.circulator;
-    }
+    HalfedgeRangeIterator& operator=(HalfedgeRangeIterator&&) noexcept = default;
 
-    const typename T::reference operator *() const {
-        return *circulator;
+    ~HalfedgeRangeIterator() = default;
 
-    }
+    bool operator!=(const HalfedgeRangeIterator& it) const { return _start != it._start || _circulator != it._circulator; }
 
-    HalfedgeRangeIterator& operator ++() { //prefix increment
-        start = false;
-        ++circulator;
+    bool operator==(const HalfedgeRangeIterator& it) const { return _start == it._start && _circulator == it._circulator; }
+
+    typename T::reference operator*() { return *_circulator; }
+
+    HalfedgeRangeIterator& operator++() { // prefix increment
+        _start = false;
+        ++_circulator;
 
         return *this;
     }
 
 private:
-    bool start;
-    T& circulator;
+    bool _start;
+    T _circulator;
 };
 
-template<typename T>
-class HalfedgeRange {
+template <typename T> class HalfedgeRange {
 
 public:
+    explicit HalfedgeRange(T circ) : _circulator{circ}, _ending{std::move(circ)} {}
 
-    explicit HalfedgeRange(T&& circ) :
-            circulator { circ }, ending { circ } {
-    }
+    HalfedgeRangeIterator<T> begin() { return HalfedgeRangeIterator<T>{true, _circulator}; }
 
-    explicit HalfedgeRange(const T& circ) :
-            circulator { circ }, ending { circ } {
-    }
-
-    HalfedgeRangeIterator<T> begin() {
-        return HalfedgeRangeIterator<T> { true, circulator };
-    }
-
-    HalfedgeRangeIterator<T> end() {
-        return HalfedgeRangeIterator<T> { false, ending };
-    }
-
-    T circulator;
-    T ending;
-};
-
-template<typename T>
-class RangeIterator {
-public:
-    RangeIterator(T begin, T end) :
-            beginIt { begin }, endIt { end } {
-    }
-
-    T& begin() {
-        return beginIt;
-    }
-
-    T& end() {
-        return endIt;
-    }
+    HalfedgeRangeIterator<T> end() { return HalfedgeRangeIterator<T>{false, _ending}; }
 
 private:
-    T beginIt;
-    T endIt;
+    T _circulator;
+    T _ending;
+};
 
+template <typename T> class RangeIterator {
+public:
+    RangeIterator(T begin, T end) : _beginIt{std::move(begin)}, _endIt{std::move(end)} {}
+
+    T& begin() { return _beginIt; }
+
+    T& end() { return _endIt; }
+
+private:
+    T _beginIt;
+    T _endIt;
 };
 
 class RangeHelper {
 public:
-    template<typename T>
-    static auto make(T& begin, T& end) {
-        return RangeIterator<T>(begin, end);
-    }
-    template<typename T>
-    static auto make(T&& begin, T&& end) {
-        return RangeIterator<T>(begin, end);
-    }
+    template <typename T> static auto make(T begin, T end) { return RangeIterator<T>(std::move(begin), std::move(end)); }
 
-    template<typename T>
-    static HalfedgeRange<T> make(T& circulator) {
-        return HalfedgeRange<T>(circulator);
-    }
-    template<typename T>
-    static HalfedgeRange<T> make(T&& circulator) {
-        return HalfedgeRange<T>(circulator);
-    }
+    template <typename T> static HalfedgeRange<T> make(T circulator) { return HalfedgeRange<T>(std::move(circulator)); }
 };
 
 } /* namespace laby */

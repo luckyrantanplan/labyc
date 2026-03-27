@@ -3,11 +3,11 @@
  * @brief Unit tests for RandomUniDist.
  */
 
-#include <gtest/gtest.h>
-#include <vector>
-#include <set>
-#include <cmath>
 #include "basic/RandomUniDist.h"
+#include <cmath>
+#include <gtest/gtest.h>
+#include <set>
+#include <vector>
 
 using laby::basic::RandomUniDist;
 
@@ -54,15 +54,15 @@ TEST(RandomUniDistTest, SelectInRange) {
     RandomUniDist rng(0.0, 1.0, 42);
     for (int i = 0; i < 100; ++i) {
         auto val = rng.select(0, 10);
-        EXPECT_GE(val, 0u);
-        EXPECT_LT(val, 10u);
+        EXPECT_GE(val, 0U);
+        EXPECT_LT(val, 10U);
     }
 }
 
 TEST(RandomUniDistTest, SelectSingleElement) {
     RandomUniDist rng(0.0, 1.0, 42);
     auto val = rng.select(5, 6);
-    EXPECT_EQ(val, 5u);
+    EXPECT_EQ(val, 5U);
 }
 
 TEST(RandomUniDistTest, ShufflePreservesElements) {

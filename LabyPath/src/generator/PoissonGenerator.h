@@ -24,16 +24,13 @@
 // http://people.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf
 // Implementation based on http://devmag.org.za/2009/05/03/poisson-disk-sampling/
 /* Versions history:
- *		1.1.4 	Oct 19, 2016		POISSON_PROGRESS_INDICATOR can be defined outside of the header file, disabled by default
- *		1.1.3a	Jun  9, 2016		Update constructor for DefaultPRNG
- *		1.1.3		Mar 10, 2016		Header-only library, no global mutable state
- *		1.1.2		Apr  9, 2015		Output a text file with XY coordinates
- *		1.1.1		May 23, 2014		Initialize PRNG seed, fixed uninitialized fields
- *    1.1		May  7, 2014		Support of density maps
- *		1.0		May  6, 2014
+ *		1.1.4 	Oct 19, 2016		POISSON_PROGRESS_INDICATOR can be defined outside of the header
+ *file, disabled by default 1.1.3a	Jun  9, 2016		Update constructor for DefaultPRNG 1.1.3
+ *Mar 10, 2016		Header-only library, no global mutable state 1.1.2		Apr  9, 2015
+ *Output a text file with XY coordinates 1.1.1		May 23, 2014		Initialize PRNG seed, fixed
+ *uninitialized fields 1.1		May  7, 2014		Support of density maps 1.0		May  6, 2014
  */
 
-#include <utility>
 #include <CGAL/Bbox_2.h>
 #include <algorithm>
 #include <cmath>
@@ -41,6 +38,7 @@
 #include <cstddef>
 #include <iostream>
 #include <iterator>
+#include <utility>
 #include <vector>
 
 #include "../basic/RandomUniDist.h"
@@ -49,12 +47,8 @@ namespace laby {
 namespace generator {
 
 struct sPoint {
-    sPoint() :
-            x(0), y(0), m_Valid(false) {
-    }
-    sPoint(double X, double Y) :
-            x(X), y(Y), m_Valid(true) {
-    }
+    sPoint() : x(0), y(0), m_Valid(false) {}
+    sPoint(double X, double Y) : x(X), y(Y), m_Valid(true) {}
     double x;
     double y;
     bool m_Valid;
@@ -71,9 +65,7 @@ struct sPoint {
 };
 
 struct sGridPoint {
-    sGridPoint(int X, int Y) :
-            x(X), y(Y) {
-    }
+    sGridPoint(int X, int Y) : x(X), y(Y) {}
     int x;
     int y;
 };
@@ -81,13 +73,12 @@ struct sGridPoint {
 struct sGrid {
 
     sGridPoint ImageToGrid(const sPoint& P, double CellSize) const {
-        return sGridPoint((int) (P.x / CellSize), (int) (P.y / CellSize));
+        return sGridPoint((int)(P.x / CellSize), (int)(P.y / CellSize));
     }
     double GetSqDistance(const sPoint& P1, const sPoint& P2) const {
         return (P1.x - P2.x) * (P1.x - P2.x) + (P1.y - P2.y) * (P1.y - P2.y);
     }
-    sGrid(int W, int H, double CellSize) :
-            m_W(W), m_H(H), m_CellSize(CellSize) {
+    sGrid(int W, int H, double CellSize) : m_W(W), m_H(H), m_CellSize(CellSize) {
         m_Grid.resize(static_cast<std::size_t>(m_W));
 
         for (auto i = m_Grid.begin(); i != m_Grid.end(); i++) {
@@ -109,7 +100,8 @@ struct sGrid {
             if (i >= 0 && i < m_W) {
                 for (int j = G.y - D; j < G.y + D; ++j) {
                     if (j >= 0 && j < m_H) {
-                        const sPoint& P = m_Grid[static_cast<std::size_t>(i)][static_cast<std::size_t>(j)];
+                        const sPoint& P =
+                            m_Grid[static_cast<std::size_t>(i)][static_cast<std::size_t>(j)];
 
                         if (P.m_Valid && GetSqDistance(P, Point) < sqMinDist) {
                             return true;
@@ -122,18 +114,18 @@ struct sGrid {
         return false;
     }
 
-private:
+  private:
     int m_W;
     int m_H;
     double m_CellSize;
 
-    std::vector<std::vector<sPoint> > m_Grid;
+    std::vector<std::vector<sPoint>> m_Grid;
 };
 
 class PoissonPoints {
-public:
-
-    static sPoint GenerateRandomPointAround(const sPoint& P, const double sqDist, laby::basic::RandomUniDist& Generator) {
+  public:
+    static sPoint GenerateRandomPointAround(const sPoint& P, const double sqDist,
+                                            laby::basic::RandomUniDist& Generator) {
         // start with non-uniform distribution
 
         double sqR1 = (3 * sqDist) * Generator.get() + sqDist;
@@ -159,13 +151,14 @@ public:
      MinDist - minimal distance estimator, use negative value for default
      **/
 
-    static std::vector<sPoint> generate(size_t NumPoints, int NewPointsCount = 30, bool Circle = true, double MinDist = -1.0) {
+    static std::vector<sPoint> generate(size_t NumPoints, int NewPointsCount = 30,
+                                        bool Circle = true, double MinDist = -1.0) {
 
         laby::basic::RandomUniDist randomDouble(0.0, 1.0, 2);
 
         std::cout << " NumPoints " << NumPoints << std::endl;
         if (MinDist < 0.0) {
-            //optimal density in circle packing is about π⁄√12 or 90.69
+            // optimal density in circle packing is about π⁄√12 or 90.69
             MinDist = sqrt(6.3 / (10. * static_cast<double>(NumPoints)));
         }
 
@@ -183,9 +176,12 @@ public:
         sGrid Grid(GridW, GridH, CellSize);
 
         sPoint FirstPoint;
-        do {
+        while (true) {
             FirstPoint = sPoint(randomDouble.get(), randomDouble.get());
-        } while (!(Circle ? FirstPoint.IsInCircle() : FirstPoint.IsInRectangle()));
+            if (Circle ? FirstPoint.IsInCircle() : FirstPoint.IsInRectangle()) {
+                break;
+            }
+        }
 
         // update containers
         ProcessList.push_back(FirstPoint);
@@ -217,9 +213,8 @@ public:
 
             if (no_active) {
                 std::swap(ProcessList.at(Idx), ProcessList.back());
-                ProcessList.resize(ProcessList.size() - 1u);
+                ProcessList.resize(ProcessList.size() - 1U);
             }
-
         }
 
         randomDouble.shuffle(SamplePoints);
@@ -229,7 +224,8 @@ public:
         return SamplePoints;
     }
 
-    static std::vector<std::complex<double>> generateRectangle(const CGAL::Bbox_2& bbox, const size_t number_of_point) {
+    static std::vector<std::complex<double>> generateRectangle(const CGAL::Bbox_2& bbox,
+                                                               const size_t number_of_point) {
 
         double w = bbox.xmax() - bbox.xmin();
         double h = bbox.ymax() - bbox.ymin();
@@ -237,10 +233,11 @@ public:
         double maxLength = std::max(w, h);
         double ratio = maxLength * maxLength / (w * h);
 
-        std::vector<sPoint> Points = generate(static_cast<std::size_t>(ratio * static_cast<double>(number_of_point) + 1), 30, false);
+        std::vector<sPoint> Points = generate(
+            static_cast<std::size_t>(ratio * static_cast<double>(number_of_point) + 1), 30, false);
 
         std::vector<std::complex<double>> result;
-        for (const sPoint & pt : Points) {
+        for (const sPoint& pt : Points) {
             if (pt.x * maxLength < w and pt.y * maxLength < h) {
                 result.emplace_back(pt.x * maxLength + bbox.xmin(), pt.y * maxLength + bbox.ymin());
             }
@@ -248,7 +245,6 @@ public:
 
         return result;
     }
-
 };
 } /* namespace generator */
-} // namespace PoissonGenerator
+} // namespace laby

@@ -15,12 +15,10 @@
 #include <boost/tuple/tuple.hpp>
 #include <map>
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
-typedef double number_t;
+using number_t = double;
 
-} /* namespace svgp */
-} /* namespace laby */
+} /* namespace laby::svgp */
 
 #endif /* SVGPARSER_COMMON_H_ */

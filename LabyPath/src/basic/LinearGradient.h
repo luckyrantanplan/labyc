@@ -12,23 +12,21 @@
 
 #include "../GeomData.h"
 
-namespace laby {
-struct Pin;
-} /* namespace laby */
+namespace laby::aniso {
+class Pin;
+} /* namespace laby::aniso */
 
 namespace laby {
 namespace basic {
 
 class LinearGradient {
 public:
-
     LinearGradient(const Point_2& p1, const double thickness1, const Point_2& p2, const double thickness2);
 
     double thickness(const Point_2& p);
     double f(double t, double _thickness1, double _thickness2);
 
 private:
-
     double _thickness1;
     double _thickness2;
     double _sq_length;

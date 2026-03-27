@@ -8,25 +8,21 @@
 #include "Context.h"
 
 #include <boost/mpl/insert.hpp>
+#include <iostream>
 #include <svgpp/attribute_dispatcher.hpp>
 #include <svgpp/definitions.hpp>
 #include <svgpp/document_traversal.hpp>
 #include <svgpp/policy/marker_events.hpp>
 #include <svgpp/traits/element_groups.hpp>
-#include <iostream>
 #include <vector>
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
-BaseContext::BaseContext() :
-        _vectRibbonRef(_vectRibbon) {
-}
+BaseContext::BaseContext() : _vectRibbonRef(&_vectRibbon) {}
 
-BaseContext::BaseContext(BaseContext & parent) :
-        Stylable(),
-        _vectRibbonRef(parent._vectRibbonRef) {
+BaseContext::BaseContext(BaseContext& parent)
+    : Stylable(parent), _vectRibbonRef(parent._vectRibbonRef) {}
 
-}
-} /* namespace svgp */
-} /* namespace laby */
+BaseContext::BaseContext(const BaseContext& parent)
+    : Stylable(parent), _vectRibbonRef(parent._vectRibbonRef) {}
+} /* namespace laby::svgp */

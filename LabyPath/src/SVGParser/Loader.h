@@ -13,33 +13,29 @@
 
 #include "../Ribbon.h"
 
-namespace laby {
-namespace svgp {
+namespace laby::svgp {
 
 class Loader {
 
-public:
+  public:
+    explicit Loader(const std::string& filename);
 
-    Loader(const std::string& filename);
-
-    const std::vector<Ribbon>& ribList() const {
+    [[nodiscard]] auto ribList() const -> const std::vector<Ribbon>& {
         return _ribList;
     }
-    std::vector<Ribbon>& ribList() {
+    auto ribList() -> std::vector<Ribbon>& {
         return _ribList;
     }
 
-    const CGAL::Bbox_2& viewBox() const {
+    [[nodiscard]] auto viewBox() const -> const CGAL::Bbox_2& {
         return _viewBox;
     }
 
-private:
+  private:
     std::vector<Ribbon> _ribList;
     CGAL::Bbox_2 _viewBox;
-
 };
 
-} /* namespace svgp */
-} /* namespace laby */
+} // namespace laby::svgp
 
 #endif /* SVGPARSER_LOADER_H_ */

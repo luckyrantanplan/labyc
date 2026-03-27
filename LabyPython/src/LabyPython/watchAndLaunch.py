@@ -3,8 +3,6 @@ Created on Jul 27, 2018
 
 @author: florian
 '''
- 
-import os
 from threading import Thread
 import  queue  
         

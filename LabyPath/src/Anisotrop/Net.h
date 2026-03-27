@@ -8,126 +8,125 @@
 #ifndef ANISOTROP_NET_H_
 #define ANISOTROP_NET_H_
 
-
-#include <cstdint>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "../GeomData.h"
 
-
-namespace laby {
-namespace basic {
+namespace laby::basic {
 class LinearGradient;
-} /* namespace basic */
-} /* namespace laby */
+} /* namespace laby::basic */
 
-namespace laby {
-namespace aniso {
+namespace laby::aniso {
 
 class Pin {
-public:
-    Pin(Vertex& vertex, const double& thickness) :
-            _vertex(&vertex), _thickness(thickness) {
-    }
+  public:
+    Pin(Vertex& vertex, double thickness) : _vertex(&vertex), _thickness(thickness) {}
 
-    double thickness() const {
+    [[nodiscard]] auto thickness() const -> double {
         return _thickness;
     }
-    Vertex& vertex() {
+
+    auto vertex() -> Vertex& {
         return *_vertex;
     }
 
-    const Vertex& vertex() const {
+    [[nodiscard]] auto vertex() const -> const Vertex& {
         return *_vertex;
     }
 
-    void setPolyConvexIndex(const std::size_t& polyConvexIndex) {
+    void setPolyConvexIndex(std::size_t polyConvexIndex) {
         _polyConvexIndex = polyConvexIndex;
     }
 
-    std::size_t polyConvexIndex() const {
+    [[nodiscard]] auto polyConvexIndex() const -> std::size_t {
         return _polyConvexIndex;
     }
-private:
-    Vertex* _vertex = nullptr;
-    double _thickness = 0;
-    std::size_t _polyConvexIndex = 0;
 
+  private:
+    Vertex* _vertex = nullptr;
+    double _thickness = 0.0;
+    std::size_t _polyConvexIndex = 0;
 };
 
 class Net {
-public:
+  public:
+    struct SourcePin {
+        Pin value;
+    };
 
-    Net(const Pin& source, const Pin & target, const int32_t& id = 0) : //
-            _source(source), //
-            _target(target), //
-            _id { id } {
-    }
+    struct TargetPin {
+        Pin value;
+    };
+
+    Net(SourcePin source, TargetPin target, int32_t netId = 0)
+        :                        //
+          _source(source.value), //
+          _target(target.value), //
+          _id{netId} {}
 
     //  Net(const Net &) = default;
 
-    void setTarget(Pin& p) {
-        _target = p;
+    void setTarget(Pin& pin) {
+        _target = pin;
     }
 
-    void setSource(Pin& p) {
-        _source = p;
+    void setSource(Pin& pin) {
+        _source = pin;
     }
 
-    const Pin& source() const {
+    [[nodiscard]] auto source() const -> const Pin& {
         return _source;
     }
 
-    const Pin& target() const {
+    [[nodiscard]] auto target() const -> const Pin& {
         return _target;
     }
 
-    Pin& source() {
+    auto source() -> Pin& {
         return _source;
     }
 
-    Pin& target() {
+    auto target() -> Pin& {
         return _target;
     }
 
-    basic::LinearGradient gradient() const;
+    [[nodiscard]] auto gradient() const -> basic::LinearGradient;
 
-    static std::vector<std::complex<double> > extractPins(const std::vector<Net>& nets);
+    [[nodiscard]] static auto
+    extractPins(const std::vector<Net>& nets) -> std::vector<std::complex<double>>;
 
-    const std::vector<size_t>& path() const {
+    [[nodiscard]] auto path() const -> const std::vector<std::size_t>& {
         return _path;
     }
 
-    std::vector<size_t>& path() {
+    auto path() -> std::vector<std::size_t>& {
         return _path;
     }
 
-    int32_t id() const {
+    [[nodiscard]] auto id() const -> int32_t {
         return _id;
     }
 
     void markPlaced() {
         _isPlaced = true;
-
     }
 
-    bool isPlaced() const {
+    [[nodiscard]] auto isPlaced() const -> bool {
         return _isPlaced;
     }
 
-private:
-
+  private:
     Pin _source;
     Pin _target;
     std::vector<std::size_t> _path;
     int32_t _id = 0;
     bool _isPlaced = false;
-}
-;
+};
 
-} /* namespace aniso */
-} /* namespace laby */
+} /* namespace laby::aniso */
 
 #endif /* NET_H_ */
