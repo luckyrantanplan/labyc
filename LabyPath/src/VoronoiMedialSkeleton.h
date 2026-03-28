@@ -77,9 +77,7 @@ struct CroppedVoronoiFromDelaunay {
 
     }
 
-    CroppedVoronoiFromDelaunay()  {
-
-    }
+    CroppedVoronoiFromDelaunay()  = default;
 
     template<class RSL>
     void cropAndExtractSegment(const RSL& rsl) {
@@ -97,11 +95,11 @@ struct CroppedVoronoiFromDelaunay {
 
     void drawDual(const SDG2& sdg);
 
-    [[nodiscard]] static bool samePoints(const SDG2& sdg, const SDG2::Site_2& p, const SDG2::Site_2& q) {
+    [[nodiscard]] static auto samePoints(const SDG2& sdg, const SDG2::Site_2& p, const SDG2::Site_2& q) -> bool {
         return sdg.geom_traits().equal_2_object()(p, q);
     }
 
-    [[nodiscard]] auto isEndpointOfSegment(const SDG2& sdg, const SDG2::Site_2& p, const SDG2::Site_2& s) const -> bool {
+    [[nodiscard]] static auto isEndpointOfSegment(const SDG2& sdg, const SDG2::Site_2& p, const SDG2::Site_2& s) -> bool {
 
         return (samePoints(sdg, p, s.source_site()) || samePoints(sdg, p, s.target_site()));
     }

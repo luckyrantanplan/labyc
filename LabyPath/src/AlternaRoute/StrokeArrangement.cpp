@@ -5,9 +5,9 @@
  *      Author: florian
  */
 #include "StrokeArrangement.h"
+#include <CGAL/Distance_2/Point_2_Point_2.h>
 #include <CGAL/Intersections_2/Line_2_Line_2.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/squared_distance_2.h>
 #include <boost/variant/get.hpp>
 #include <cstdint>
 #include <utility>

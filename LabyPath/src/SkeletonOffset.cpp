@@ -7,8 +7,10 @@
 
 #include "SkeletonOffset.h"
 
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <CGAL/Intersections_2/Line_2_Segment_2.h>
 #include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
 #include <boost/variant/get.hpp>
@@ -19,7 +21,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "GeomData.h"
 #include "agg/agg_arc.h"
+#include "basic/AugmentedPolygonSet.h"
 #include "basic/CircleIntersection.h"
 #include "basic/RangeHelper.h"
 

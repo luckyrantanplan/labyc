@@ -11,6 +11,7 @@
 #include <CGAL/Intersections_2/Segment_2_Segment_2.h>
 #include <CGAL/Segment_2.h>
 #include <cstddef>
+#include <utility>
 #include <vector>
 
 #include "basic/EasyProfilerCompat.h"
@@ -110,10 +111,10 @@ auto PolyConvex::init(const Point_2& sourcePoint, const Point_2& targetPoint,
     _originalTrapeze = _geometry;
     setAverageThickness((sourceThickness + targetThickness) / kAverageThicknessDivisor);
 }
-PolyConvex::PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint,
+PolyConvex::PolyConvex(Point_2  sourcePoint, Point_2  targetPoint,
                        std::size_t polygonId, Linear_polygon geometry)
-    : _geometry(std::move(geometry)), _originalTrapeze(_geometry), _id(polygonId), _ps(sourcePoint),
-      _pt(targetPoint), _has_points(true) {}
+    : _geometry(std::move(geometry)), _originalTrapeze(_geometry), _id(polygonId), _ps(std::move(sourcePoint)),
+      _pt(std::move(targetPoint)), _has_points(true) {}
 
 PolyConvex::PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint,
                        std::size_t polygonId, basic::LinearGradient& gradient)

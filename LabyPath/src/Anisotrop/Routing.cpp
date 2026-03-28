@@ -41,7 +41,7 @@ namespace {
 using PointSet = CGAL::Point_set_2<Kernel>;
 
 auto toInt32ConfigValue(uint32_t value, const char* fieldName) -> int32_t {
-    constexpr uint32_t kMaxInt32Value = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    constexpr auto kMaxInt32Value = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
     if (value > kMaxInt32Value) {
         throw std::out_of_range(fieldName);
     }
