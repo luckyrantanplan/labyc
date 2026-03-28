@@ -7,177 +7,219 @@
 
 #include "SkeletonOffset.h"
 
+#include <CGAL/Intersections_2/Line_2_Segment_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
+#include <boost/variant/get.hpp>
+
+#include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+
 #include "agg/agg_arc.h"
 #include "basic/CircleIntersection.h"
 #include "basic/RangeHelper.h"
 
 namespace laby {
 
-void SkeletonOffset::offset_face(const basic::HalfedgeNode& he, std::vector<Kernel::Segment_2>& result2, const double& offset_distance,
-        std::unordered_map<const basic::SegmentNode*, IntersectType>& vertices_cache) {
+namespace {
 
-    Kernel::Vector_2 vect(he.target()->point() - he.source()->point());
-    Kernel::Vector_2 perp = vect.perpendicular(CGAL::Orientation::LEFT_TURN);
+constexpr double kHalfDistanceDivisor = 2.0;
 
-    if (CGAL::to_double(perp.squared_length()) == 0.) {
-        std::cout << "error length =0" << std::endl;
+} // namespace
 
+auto SkeletonOffset::offsetFace(
+    const basic::HalfedgeNode& halfedge, std::vector<Kernel::Segment_2>& resultSegments,
+    const double& offsetDistance,
+    std::unordered_map<const basic::SegmentNode*, IntersectType>& verticesCache) -> void {
+
+    Kernel::Vector_2 const vector(halfedge.target()->point() - halfedge.source()->point());
+    Kernel::Vector_2 perpendicular = vector.perpendicular(CGAL::LEFT_TURN);
+
+    if (CGAL::to_double(perpendicular.squared_length()) == 0.0) {
+        std::cout << "error length =0\n";
     }
-    perp *= offset_distance / std::sqrt(CGAL::to_double(perp.squared_length()));
-    Kernel::Line_2 line(he.target()->point() + perp, vect);
-    CGAL::Polygon_2<Kernel> poly;
+
+    perpendicular *= offsetDistance / std::sqrt(CGAL::to_double(perpendicular.squared_length()));
+    Kernel::Line_2 const line(halfedge.target()->point() + perpendicular, vector);
     bool winding = false;
-    Kernel::Point_2 last_point;
-    for (const basic::HalfedgeNode& he2 : RangeHelper::make(he.next()->ccb())) {
-        const auto& result = vertices_cache.try_emplace(&he2.curve(), //
-                getLineSegmentIntersect(line, getSegment(he2))).first->second;
-        addToSegmentsList(result, winding, result2, last_point);
+    Kernel::Point_2 lastPoint;
+    for (const basic::HalfedgeNode& currentHalfedge : RangeHelper::make(halfedge.next()->ccb())) {
+        const auto& intersectionPoints =
+            verticesCache
+                .try_emplace(&currentHalfedge.curve(),
+                             getLineSegmentIntersect(line, getSegment(currentHalfedge)))
+                .first->second;
+        addToSegmentsList(intersectionPoints, winding, resultSegments, lastPoint);
     }
 }
 
-Kernel::Segment_2 SkeletonOffset::getSegment(const basic::HalfedgeNode& he2) {
-    return Kernel::Segment_2(he2.source()->point(), he2.target()->point());
+auto SkeletonOffset::getSegment(const basic::HalfedgeNode& halfedge) -> Kernel::Segment_2 {
+    return {halfedge.source()->point(), halfedge.target()->point()};
 }
 
-void SkeletonOffset::create_all_offsets(const double& distance, const basic::Arrangement_2Node& arr3, std::vector<Kernel::Segment_2>& result2) {
-    std::size_t oldsize = result2.size() + 1;
-    for (double offset_distance = distance / 2.; result2.size() != oldsize; offset_distance += distance) {
-        oldsize = result2.size();
-        SkeletonOffset::create_offset(arr3, offset_distance, result2);
+auto SkeletonOffset::createAllOffsets(const double& distance,
+                                      const basic::Arrangement_2Node& arrangement,
+                                      std::vector<Kernel::Segment_2>& resultSegments) -> void {
+    std::size_t previousSize = resultSegments.size() + 1;
+    double offsetDistance = distance / kHalfDistanceDivisor;
+    while (resultSegments.size() != previousSize) {
+        previousSize = resultSegments.size();
+        SkeletonOffset::createOffset(arrangement, offsetDistance, resultSegments);
+        offsetDistance += distance;
     }
 }
 
-std::vector<CGAL::Polygon_with_holes_2<Kernel>> SkeletonOffset::get_polygon_offset(const std::vector<Kernel::Segment_2>& result2) {
+auto SkeletonOffset::getPolygonOffset(const std::vector<Kernel::Segment_2>& resultSegments)
+    -> std::vector<CGAL::Polygon_with_holes_2<Kernel>> {
 
     std::vector<Segment_info_2> segResult;
-    for (const Kernel::Segment_2& seg : result2) {
-        segResult.push_back(Segment_info_2(seg, EdgeInfo { }));
+    segResult.reserve(resultSegments.size());
+    for (const Kernel::Segment_2& segment : resultSegments) {
+        segResult.emplace_back(segment, EdgeInfo{});
     }
+
     Arrangement_2 arr;
     CGAL::insert(arr, segResult.begin(), segResult.end());
 
-    const Face & face_ubounded = *arr.unbounded_face();
+    const Face& unboundedFace = *arr.unbounded_face();
 
-    std::vector<CGAL::Polygon_with_holes_2<Kernel>> poly_hole;
+    std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygonWithHoles;
 
-    std::cout << " get_polygon_offset " << std::endl;
+    std::cout << " get_polygon_offset \n";
 
-    for (auto iter = face_ubounded.inner_ccbs_begin(); iter != face_ubounded.inner_ccbs_end(); ++iter) {
+    for (auto outerIterator = unboundedFace.inner_ccbs_begin();
+         outerIterator != unboundedFace.inner_ccbs_end(); ++outerIterator) {
         CGAL::Polygon_2<Kernel> outer;
-        for (const Halfedge& he : RangeHelper::make((*iter)->twin()->ccb())) {
-            outer.push_back(he.source()->point());
+        for (const Halfedge& halfedge : RangeHelper::make((*outerIterator)->twin()->ccb())) {
+            outer.push_back(halfedge.source()->point());
         }
 
-        std::vector<CGAL::Polygon_2<Kernel> > holesP;
-        const Face& polyFace = *(*iter)->twin()->face();
-        for (auto iterHole = polyFace.inner_ccbs_begin(); iterHole != polyFace.inner_ccbs_end(); ++iterHole) {
-            holesP.emplace_back();
-            for (const Halfedge& he : RangeHelper::make(*iterHole)) {
-                holesP.back().push_back(he.source()->point());
+        std::vector<CGAL::Polygon_2<Kernel>> holes;
+        const Face& polygonFace = *(*outerIterator)->twin()->face();
+        for (auto holeIterator = polygonFace.inner_ccbs_begin();
+             holeIterator != polygonFace.inner_ccbs_end(); ++holeIterator) {
+            holes.emplace_back();
+            for (const Halfedge& halfedge : RangeHelper::make(*holeIterator)) {
+                holes.back().push_back(halfedge.source()->point());
             }
-
         }
-        poly_hole.emplace_back(outer, holesP.begin(), holesP.end());
 
+        polygonWithHoles.emplace_back(outer, holes.begin(), holes.end());
     }
 
-    return poly_hole;
+    return polygonWithHoles;
 }
 
-void SkeletonOffset::create_offset(const basic::Arrangement_2Node& arr3, double offset_distance, std::vector<Kernel::Segment_2>& result2) {
+auto SkeletonOffset::createOffset(const basic::Arrangement_2Node& arrangement,
+                                  double offsetDistance,
+                                  std::vector<Kernel::Segment_2>& resultSegments) -> void {
 
-    if (offset_distance <= 0) {
-        for (const basic::HalfedgeNode& he : RangeHelper::make(arr3.edges_begin(), arr3.edges_end())) {
-            if (basic::edgeHasPolygonId(he, +1)) {
-                result2.emplace_back(he.source()->point(), he.target()->point());
+    if (offsetDistance <= 0.0) {
+        for (const basic::HalfedgeNode& halfedge :
+             RangeHelper::make(arrangement.edges_begin(), arrangement.edges_end())) {
+            if (basic::edgeHasPolygonId(halfedge, +1)) {
+                resultSegments.emplace_back(halfedge.source()->point(), halfedge.target()->point());
             }
         }
         return;
     }
-    std::vector<Kernel::Segment_2> offsetList;
 
-    std::unordered_map<const basic::SegmentNode*, IntersectType> vertices_cache;
+    std::unordered_map<const basic::SegmentNode*, IntersectType> verticesCache;
 
-    for (const basic::HalfedgeNode& he : RangeHelper::make(arr3.edges_begin(), arr3.edges_end())) {
-        // we meet polygon edge
-        if (basic::edgeHasPolygonId(he, +1)) {
-            // we must test if this is a hole
-            if (basic::edgeHasPolygonId(*he.next(), +1)) {
-                offset_face(*he.twin(), result2, offset_distance, vertices_cache);
-                offset_corner(*he.twin(), result2, offset_distance, vertices_cache);
-
+    for (const basic::HalfedgeNode& halfedge :
+         RangeHelper::make(arrangement.edges_begin(), arrangement.edges_end())) {
+        if (basic::edgeHasPolygonId(halfedge, +1)) {
+            if (basic::edgeHasPolygonId(*halfedge.next(), +1)) {
+                offsetFace(*halfedge.twin(), resultSegments, offsetDistance, verticesCache);
+                offsetCorner(*halfedge.twin(), resultSegments, offsetDistance, verticesCache);
             } else {
-                offset_face(he, result2, offset_distance, vertices_cache);
-                offset_corner(he, result2, offset_distance, vertices_cache);
+                offsetFace(halfedge, resultSegments, offsetDistance, verticesCache);
+                offsetCorner(halfedge, resultSegments, offsetDistance, verticesCache);
             }
-
         }
-
     }
 }
-void SkeletonOffset::addToSegmentsList(const IntersectType& result, bool& winding, std::vector<Kernel::Segment_2>& result2, Kernel::Point_2& last_point) {
-    for (const Kernel::Point_2& s : result) {
+
+auto SkeletonOffset::addToSegmentsList(const IntersectType& intersectionPoints, bool& winding,
+                                       std::vector<Kernel::Segment_2>& resultSegments,
+                                       Kernel::Point_2& lastPoint) -> void {
+    for (const Kernel::Point_2& point : intersectionPoints) {
         if (winding) {
-            result2.emplace_back(last_point, s);
+            resultSegments.emplace_back(lastPoint, point);
         }
-        last_point = s;
+        lastPoint = point;
         winding = !winding;
     }
 }
 
-SkeletonOffset::IntersectType SkeletonOffset::getLineSegmentIntersect(const Kernel::Line_2& line, const Kernel::Segment_2& seg) {
+auto SkeletonOffset::getLineSegmentIntersect(
+    const Kernel::Line_2& line, const Kernel::Segment_2& segment) -> SkeletonOffset::IntersectType {
 
     IntersectType result;
-    auto variant = CGAL::intersection(line, seg);
+    auto variant = CGAL::intersection(line, segment);
     if (variant) {
-        if (const Kernel::Point_2* s = boost::get<Kernel::Point_2>(&*variant)) {
-            result.emplace_back(*s);
+        if (const Kernel::Point_2* point = boost::get<Kernel::Point_2>(&*variant)) {
+            result.emplace_back(*point);
         }
     }
     return result;
 }
-void SkeletonOffset::offset_corner(const basic::HalfedgeNode& he, std::vector<Kernel::Segment_2>& result2, const double& offset_distance,
-        std::unordered_map<const basic::SegmentNode*, IntersectType>& vertices_cache) {
 
-    const auto& o = *he.source();
-    if (o.degree() < 4) {
+auto SkeletonOffset::offsetCorner(
+    const basic::HalfedgeNode& halfedge, std::vector<Kernel::Segment_2>& resultSegments,
+    const double& offsetDistance,
+    std::unordered_map<const basic::SegmentNode*, IntersectType>& verticesCache) -> void {
+
+    const auto& originVertex = *halfedge.source();
+    if (originVertex.degree() < 4) {
         return;
     }
-    basic::Arrangement_2Node::Halfedge_around_vertex_const_circulator circ = o.incident_halfedges();
+    basic::Arrangement_2Node::Halfedge_around_vertex_const_circulator circulator =
+        originVertex.incident_halfedges();
 
-    while (!basic::edgeHasPolygonId(*circ, +1)) {
-        ++circ;
+    while (!basic::edgeHasPolygonId(*circulator, +1)) {
+        ++circulator;
     }
 
-    while (basic::edgeHasPolygonId(*circ, +1)) {
-        ++circ;
+    while (basic::edgeHasPolygonId(*circulator, +1)) {
+        ++circulator;
     }
 
-    const basic::HalfedgeNode& he2 = *(circ->next());
+    const basic::HalfedgeNode& cornerHalfedge = *(circulator->next());
     bool winding = false;
-    Kernel::Point_2 last_point;
-    std::vector<Kernel::Segment_2> arc_list;
-    for (const basic::HalfedgeNode& he3 : RangeHelper::make(he2.ccb())) {
+    Kernel::Point_2 lastPoint;
+    std::vector<Kernel::Segment_2> arcList;
+    for (const basic::HalfedgeNode& ringHalfedge : RangeHelper::make(cornerHalfedge.ccb())) {
 
-        const auto& result = vertices_cache.try_emplace(&he3.curve(), //
-            basic::CircleIntersection::prob2(o.point(), offset_distance, he3.source()->point(), he3.target()->point())).first->second;
+        const auto& intersectionPoints =
+            verticesCache
+                .try_emplace(&ringHalfedge.curve(),
+                             basic::CircleIntersection::prob2(originVertex.point(), offsetDistance,
+                                                              ringHalfedge.source()->point(),
+                                                              ringHalfedge.target()->point()))
+                .first->second;
 
-        addToSegmentsList(result, winding, arc_list, last_point);
-
+        addToSegmentsList(intersectionPoints, winding, arcList, lastPoint);
     }
 
-    for (const Kernel::Segment_2& seg : arc_list) {
-        agg::Arc arc(o.point(), offset_distance, seg.source(), seg.target());
+    for (const Kernel::Segment_2& segment : arcList) {
+        agg::Arc const arc(originVertex.point(), offsetDistance, segment.source(),
+                           segment.target());
         if (arc.getPoints().size() > 2) {
-            result2.emplace_back(seg.source(), arc.getPoints().at(1));
+            resultSegments.emplace_back(segment.source(), arc.getPoints().at(1));
             for (std::size_t i = 2; i < arc.getPoints().size() - 1; ++i) {
-                const Kernel::Point_2& pa = arc.getPoints().at(i - 1);
-                const Kernel::Point_2& pb = arc.getPoints().at(i);
-                result2.emplace_back(pa, pb);
+                const Kernel::Point_2& pointA = arc.getPoints().at(i - 1);
+                const Kernel::Point_2& pointB = arc.getPoints().at(i);
+                resultSegments.emplace_back(pointA, pointB);
             }
-            result2.emplace_back(arc.getPoints().at(arc.getPoints().size() - 2), seg.target());
+            resultSegments.emplace_back(arc.getPoints().at(arc.getPoints().size() - 2),
+                                        segment.target());
         } else {
-            result2.emplace_back(seg.source(), seg.target());
+            resultSegments.emplace_back(segment.source(), segment.target());
         }
     }
 }

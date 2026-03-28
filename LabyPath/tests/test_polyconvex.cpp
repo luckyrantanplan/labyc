@@ -6,13 +6,16 @@
 
 #include <gtest/gtest.h>
 
-#include <cstdint>
+#include <algorithm>
+#include <cstddef>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "GeomData.h"
 #include "PolyConvex.h"
-#include "basic/LinearGradient.h"
 #include "basic/PolygonTools.h"
+#include "flatteningOverlap/Node.h"
 
 using namespace laby;
 
@@ -20,14 +23,28 @@ using namespace laby;
 
 namespace {
 
+constexpr double kCoordZero = 0.0;
+constexpr double kCoordOne = 1.0;
+constexpr double kCoordFive = 5.0;
+constexpr double kCoordTen = 10.0;
+constexpr double kCoordTwenty = 20.0;
+constexpr double kCoordHundred = 100.0;
+constexpr std::size_t kPolyConvexIdZero = 0U;
+constexpr std::size_t kPolyConvexIdOne = 1U;
+constexpr std::size_t kPolyConvexIdFortyTwo = 42U;
+constexpr std::size_t kAdjacentValueTen = 10U;
+constexpr std::size_t kAdjacentValueTwenty = 20U;
+constexpr std::size_t kAdjacentValueThirty = 30U;
+constexpr std::size_t kPrintedIdSeven = 7U;
+
 /// Create a simple square polygon from (x,y) to (x+s, y+s).
-Linear_polygon makeSquare(double x, double y, double s) {
-    Linear_polygon poly;
-    poly.push_back(Point_2(x, y));
-    poly.push_back(Point_2(x + s, y));
-    poly.push_back(Point_2(x + s, y + s));
-    poly.push_back(Point_2(x, y + s));
-    return poly;
+auto makeSquare(double xCoordinate, double yCoordinate, double sideLength) -> Linear_polygon {
+    Linear_polygon polygon;
+    polygon.push_back(Point_2(xCoordinate, yCoordinate));
+    polygon.push_back(Point_2(xCoordinate + sideLength, yCoordinate));
+    polygon.push_back(Point_2(xCoordinate + sideLength, yCoordinate + sideLength));
+    polygon.push_back(Point_2(xCoordinate, yCoordinate + sideLength));
+    return polygon;
 }
 
 } // namespace
@@ -35,165 +52,167 @@ Linear_polygon makeSquare(double x, double y, double s) {
 // ─── Default Construction ───────────────────────────────────────────────────
 
 TEST(PolyConvexTest, DefaultConstruction) {
-    PolyConvex pc;
-    EXPECT_TRUE(pc.empty());
-    EXPECT_EQ(pc._id, 0U);
-    EXPECT_EQ(pc._visited, 0);
-    EXPECT_TRUE(pc._adjacents.empty());
-    EXPECT_DOUBLE_EQ(pc.thickness(), 0.0);
+    const PolyConvex polyConvex;
+    EXPECT_TRUE(polyConvex.empty());
+    EXPECT_EQ(polyConvex._id, kPolyConvexIdZero);
+    EXPECT_EQ(polyConvex._visited, 0);
+    EXPECT_TRUE(polyConvex._adjacents.empty());
+    EXPECT_DOUBLE_EQ(polyConvex.thickness(), kCoordZero);
 }
 
 // ─── Construction with Geometry ─────────────────────────────────────────────
 
 TEST(PolyConvexTest, ConstructFromPointsAndGeometry) {
-    Point_2 ps(0, 0);
-    Point_2 pt(10, 0);
-    Linear_polygon geom = makeSquare(0, -1, 10);
+    const Point_2 sourcePoint(kCoordZero, kCoordZero);
+    const Point_2 targetPoint(kCoordTen, kCoordZero);
+    const Linear_polygon geometry = makeSquare(kCoordZero, -kCoordOne, kCoordTen);
 
-    PolyConvex pc(ps, pt, 42, geom);
-    EXPECT_EQ(pc._id, 42U);
-    EXPECT_FALSE(pc.empty());
-    EXPECT_TRUE(pc.has_points());
-    EXPECT_EQ(pc.getSourcePoint(), ps);
-    EXPECT_EQ(pc.getTargetPoint(), pt);
+    const PolyConvex polyConvex(sourcePoint, targetPoint, kPolyConvexIdFortyTwo, geometry);
+    EXPECT_EQ(polyConvex._id, kPolyConvexIdFortyTwo);
+    EXPECT_FALSE(polyConvex.empty());
+    EXPECT_TRUE(polyConvex.hasPoints());
+    EXPECT_EQ(polyConvex.getSourcePoint(), sourcePoint);
+    EXPECT_EQ(polyConvex.getTargetPoint(), targetPoint);
 }
 
 // ─── empty() is const ───────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, EmptyIsConst) {
-    const PolyConvex pc;
-    EXPECT_TRUE(pc.empty()); // Must compile on const object
+    const PolyConvex polyConvex;
+    EXPECT_TRUE(polyConvex.empty());
 }
 
 // ─── Adjacency ──────────────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, ConnectTwoPolygons) {
-    std::vector<PolyConvex> list;
-    list.emplace_back();
-    list.back()._id = 0;
-    list.back()._geometry = makeSquare(0, 0, 5);
-    list.emplace_back();
-    list.back()._id = 1;
-    list.back()._geometry = makeSquare(5, 0, 5);
+    std::vector<PolyConvex> polyConvexList;
+    polyConvexList.emplace_back();
+    polyConvexList.back()._id = kPolyConvexIdZero;
+    polyConvexList.back()._geometry = makeSquare(kCoordZero, kCoordZero, kCoordFive);
+    polyConvexList.emplace_back();
+    polyConvexList.back()._id = kPolyConvexIdOne;
+    polyConvexList.back()._geometry = makeSquare(kCoordFive, kCoordZero, kCoordFive);
 
-    PolyConvex::connect(0, 1, list);
+    PolyConvex::connect(kPolyConvexIdZero, kPolyConvexIdOne, polyConvexList);
 
-    EXPECT_EQ(list[0]._adjacents.size(), 1U);
-    EXPECT_EQ(list[0]._adjacents[0], 1U);
-    EXPECT_EQ(list[1]._adjacents.size(), 1U);
-    EXPECT_EQ(list[1]._adjacents[0], 0U);
+    EXPECT_EQ(polyConvexList[0]._adjacents.size(), 1U);
+    EXPECT_EQ(polyConvexList[0]._adjacents[0], kPolyConvexIdOne);
+    EXPECT_EQ(polyConvexList[1]._adjacents.size(), 1U);
+    EXPECT_EQ(polyConvexList[1]._adjacents[0], kPolyConvexIdZero);
 }
 
 TEST(PolyConvexTest, ConnectChain) {
-    std::vector<PolyConvex> list;
-    for (std::size_t i = 0; i < 4; ++i) {
-        list.emplace_back();
-        list.back()._id = i;
-        list.back()._geometry = makeSquare(static_cast<double>(i) * 5.0, 0, 5);
-        list.back()._originalTrapeze = list.back()._geometry;
+    constexpr std::size_t kChainLength = 4U;
+
+    std::vector<PolyConvex> polyConvexList;
+    for (std::size_t index = 0; index < kChainLength; ++index) {
+        polyConvexList.emplace_back();
+        polyConvexList.back()._id = index;
+        polyConvexList.back()._geometry =
+            makeSquare(static_cast<double>(index) * kCoordFive, kCoordZero, kCoordFive);
+        polyConvexList.back()._originalTrapeze = polyConvexList.back()._geometry;
     }
 
-    PolyConvex::connect(0, list);
+    PolyConvex::connect(kPolyConvexIdZero, polyConvexList);
 
-    // Each interior polygon should have 2 adjacents; endpoints have 1
-    EXPECT_EQ(list[0]._adjacents.size(), 1U);
-    EXPECT_GE(list[1]._adjacents.size(), 1U);
-    EXPECT_GE(list[2]._adjacents.size(), 1U);
-    EXPECT_EQ(list[3]._adjacents.size(), 1U);
+    EXPECT_EQ(polyConvexList[0]._adjacents.size(), 1U);
+    EXPECT_GE(polyConvexList[1]._adjacents.size(), 1U);
+    EXPECT_GE(polyConvexList[2]._adjacents.size(), 1U);
+    EXPECT_EQ(polyConvexList[3]._adjacents.size(), 1U);
 }
 
 TEST(PolyConvexTest, RemoveAdjacence) {
-    PolyConvex pc;
-    pc._adjacents = {10, 20, 30};
-    pc.remove_adjacence(20);
-    EXPECT_EQ(pc._adjacents.size(), 2U);
-    // 20 should no longer be present
-    EXPECT_TRUE(std::find(pc._adjacents.begin(), pc._adjacents.end(), 20) == pc._adjacents.end());
+    PolyConvex polyConvex;
+    polyConvex._adjacents = {kAdjacentValueTen, kAdjacentValueTwenty, kAdjacentValueThirty};
+    polyConvex.removeAdjacence(kAdjacentValueTwenty);
+    EXPECT_EQ(polyConvex._adjacents.size(), 2U);
+    EXPECT_TRUE(std::find(polyConvex._adjacents.begin(), polyConvex._adjacents.end(),
+                          kAdjacentValueTwenty) == polyConvex._adjacents.end());
 }
 
 // ─── Convex Intersection Test ───────────────────────────────────────────────
 
 TEST(PolyConvexTest, OverlappingSquaresIntersect) {
-    Linear_polygon a = makeSquare(0, 0, 10);
-    Linear_polygon b = makeSquare(5, 5, 10); // Overlaps a
+    const Linear_polygon firstSquare = makeSquare(kCoordZero, kCoordZero, kCoordTen);
+    const Linear_polygon secondSquare = makeSquare(kCoordFive, kCoordFive, kCoordTen);
 
-    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(a, b));
+    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(firstSquare, secondSquare));
 }
 
 TEST(PolyConvexTest, DisjointSquaresDoNotIntersect) {
-    Linear_polygon a = makeSquare(0, 0, 5);
-    Linear_polygon b = makeSquare(100, 100, 5);
+    const Linear_polygon firstSquare = makeSquare(kCoordZero, kCoordZero, kCoordFive);
+    const Linear_polygon secondSquare = makeSquare(kCoordHundred, kCoordHundred, kCoordFive);
 
-    EXPECT_FALSE(PolyConvex::testConvexPolyIntersect(a, b));
+    EXPECT_FALSE(PolyConvex::testConvexPolyIntersect(firstSquare, secondSquare));
 }
 
 TEST(PolyConvexTest, ContainedSquareIntersects) {
-    Linear_polygon outer = makeSquare(0, 0, 20);
-    Linear_polygon inner = makeSquare(5, 5, 5);
+    const Linear_polygon outerSquare = makeSquare(kCoordZero, kCoordZero, kCoordTwenty);
+    const Linear_polygon innerSquare = makeSquare(kCoordFive, kCoordFive, kCoordFive);
 
-    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(outer, inner));
-    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(inner, outer));
+    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(outerSquare, innerSquare));
+    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(innerSquare, outerSquare));
 }
 
 TEST(PolyConvexTest, TouchingEdgesIntersect) {
-    Linear_polygon a = makeSquare(0, 0, 10);
-    Linear_polygon b = makeSquare(10, 0, 10); // Shares an edge
+    const Linear_polygon firstSquare = makeSquare(kCoordZero, kCoordZero, kCoordTen);
+    const Linear_polygon secondSquare = makeSquare(kCoordTen, kCoordZero, kCoordTen);
 
-    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(a, b));
+    EXPECT_TRUE(PolyConvex::testConvexPolyIntersect(firstSquare, secondSquare));
 }
 
 // ─── Mutable Reset ──────────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, ResetMutable) {
-    PolyConvex pc;
-    pc._visited = -1;
-    Node n(0);
-    pc._nodes.push_back(&n);
+    PolyConvex polyConvex;
+    polyConvex._visited = -1;
+    Node node(0);
+    polyConvex._nodes.push_back(&node);
 
-    pc.resetMutable();
+    polyConvex.resetMutable();
 
-    EXPECT_EQ(pc._visited, 0);
-    EXPECT_TRUE(pc._nodes.empty());
+    EXPECT_EQ(polyConvex._visited, 0);
+    EXPECT_TRUE(polyConvex._nodes.empty());
 }
 
 // ─── Clear ──────────────────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, Clear) {
-    PolyConvex pc;
-    pc._geometry = makeSquare(0, 0, 10);
-    pc._id = 42;
-    pc.set_average_thickness(5.0);
+    PolyConvex polyConvex;
+    polyConvex._geometry = makeSquare(kCoordZero, kCoordZero, kCoordTen);
+    polyConvex._id = kPolyConvexIdFortyTwo;
+    polyConvex.setAverageThickness(kCoordFive);
 
-    pc.clear();
+    polyConvex.clear();
 
-    EXPECT_TRUE(pc.empty());
-    EXPECT_EQ(pc._id, 0U);
-    EXPECT_DOUBLE_EQ(pc.thickness(), 0.0);
+    EXPECT_TRUE(polyConvex.empty());
+    EXPECT_EQ(polyConvex._id, kPolyConvexIdZero);
+    EXPECT_DOUBLE_EQ(polyConvex.thickness(), kCoordZero);
 }
 
 // ─── Print ──────────────────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, PrintContainsId) {
-    PolyConvex pc;
-    pc._id = 7;
-    pc._geometry = makeSquare(0, 0, 1);
+    PolyConvex polyConvex;
+    polyConvex._id = kPrintedIdSeven;
+    polyConvex._geometry = makeSquare(kCoordZero, kCoordZero, kCoordOne);
 
     std::ostringstream oss;
-    pc.print(oss);
-    std::string out = oss.str();
+    polyConvex.print(oss);
+    const std::string output = oss.str();
 
-    EXPECT_NE(out.find("id"), std::string::npos);
-    EXPECT_NE(out.find('7'), std::string::npos);
+    EXPECT_NE(output.find("id"), std::string::npos);
+    EXPECT_NE(output.find('7'), std::string::npos);
 }
 
 // ─── Node Containment ───────────────────────────────────────────────────────
 
 TEST(PolyConvexTest, ContainsNode) {
-    PolyConvex pc;
-    Node n1(1);
-    Node n2(2);
-    pc._nodes.push_back(&n1);
+    PolyConvex polyConvex;
+    Node firstNode(1);
+    const Node secondNode(2);
+    polyConvex._nodes.push_back(&firstNode);
 
-    EXPECT_TRUE(pc.contains(n1));
-    EXPECT_FALSE(pc.contains(n2));
+    EXPECT_TRUE(polyConvex.contains(firstNode));
+    EXPECT_FALSE(polyConvex.contains(secondNode));
 }

@@ -11,15 +11,14 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
+#include "Common.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
+#include <svgpp/svgpp.hpp>
 #include <utility>
 #include <vector>
-#include <svgpp/svgpp.hpp>
-#include "Common.h"
-
 
 namespace laby::svgp {
 
@@ -42,10 +41,12 @@ enum class LineJoin : std::uint8_t {
 enum class InnerJoin : std::uint8_t { Bevel, Miter, Jag, Round };
 
 using color_t = int;
-using SolidPaint = boost::variant<svgpp::tag::value::none, svgpp::tag::value::currentColor, color_t>;
+using SolidPaint =
+    boost::variant<svgpp::tag::value::none, svgpp::tag::value::currentColor, color_t>;
 class IRIPaint {
-public:
-    explicit IRIPaint(std::string  fragment, boost::optional<SolidPaint> const& fallback = boost::optional<SolidPaint>())
+  public:
+    explicit IRIPaint(std::string fragment,
+                      boost::optional<SolidPaint> const& fallback = boost::optional<SolidPaint>())
         : _fragment(std::move(fragment)), _fallback(fallback) {}
 
     [[nodiscard]] auto fragment() const -> const std::string& {
@@ -56,7 +57,7 @@ public:
         return _fallback;
     }
 
-private:
+  private:
     std::string _fragment;
     boost::optional<SolidPaint> _fallback;
 };
@@ -65,7 +66,7 @@ using Paint = boost::variant<SolidPaint, IRIPaint>;
 using EffectivePaint = boost::variant<svgpp::tag::value::none, color_t>;
 
 class InheritedStyle {
-public:
+  public:
     InheritedStyle() = default;
     InheritedStyle(const InheritedStyle&) = default;
     auto operator=(const InheritedStyle&) -> InheritedStyle& = default;
@@ -209,7 +210,7 @@ public:
         _markerEnd.reset();
     }
 
-private:
+  private:
     static constexpr color_t kBlackColor = 0;
 
     color_t _color = kBlackColor;
@@ -230,7 +231,7 @@ private:
 };
 
 class NoninheritedStyle {
-public:
+  public:
     NoninheritedStyle() = default;
     NoninheritedStyle(const NoninheritedStyle&) = default;
     auto operator=(const NoninheritedStyle&) -> NoninheritedStyle& = default;
@@ -298,7 +299,7 @@ public:
         _overflowClip = overflowClipValue;
     }
 
-private:
+  private:
     number_t _opacity = kDefaultOpacity;
     bool _display = true;
     boost::optional<std::string> _maskFragment;
@@ -308,7 +309,7 @@ private:
 };
 
 class Style : public InheritedStyle, public NoninheritedStyle {
-public:
+  public:
     struct InheritTag {};
 
     Style() = default;
@@ -328,23 +329,22 @@ public:
                 solidPaint = &*iri->fallback();
             } else {
                 throw std::runtime_error("Can't find paint server");
-}
-        }
-        else {
+            }
+        } else {
             solidPaint = boost::get<SolidPaint>(&paint);
-}
+        }
         if (boost::get<svgpp::tag::value::none>(solidPaint) != nullptr) {
             return svgpp::tag::value::none();
-}
+        }
         if (boost::get<svgpp::tag::value::currentColor>(solidPaint) != nullptr) {
             return color();
-}
+        }
         return boost::get<color_t>(*solidPaint);
     }
 };
 
 template <class AttributeTag> class PaintContext {
-public:
+  public:
     PaintContext() = default;
     explicit PaintContext(Paint& paint) : _paint(&paint) {}
     PaintContext(const PaintContext&) = default;
@@ -353,38 +353,66 @@ public:
     auto operator=(PaintContext&&) noexcept -> PaintContext& = default;
     ~PaintContext() = default;
 
-    void set(AttributeTag /*unused*/, svgpp::tag::value::none /*unused*/) { paint() = svgpp::tag::value::none(); }
+    void set(AttributeTag /*unused*/, svgpp::tag::value::none /*unused*/) {
+        paint() = svgpp::tag::value::none();
+    }
 
-    void set(AttributeTag /*unused*/, svgpp::tag::value::currentColor /*unused*/) { paint() = svgpp::tag::value::currentColor(); }
+    void set(AttributeTag /*unused*/, svgpp::tag::value::currentColor /*unused*/) {
+        paint() = svgpp::tag::value::currentColor();
+    }
 
-    void set(AttributeTag /*unused*/, color_t color, svgpp::tag::skip_icc_color  /*unused*/= svgpp::tag::skip_icc_color()) { paint() = color; }
+    void set(AttributeTag /*unused*/, color_t color,
+             svgpp::tag::skip_icc_color /*unused*/ = svgpp::tag::skip_icc_color()) {
+        paint() = color;
+    }
 
-    template <class IRI> void set(AttributeTag /*tag*/, IRI const& /*iri*/) { throw std::runtime_error("Non-local references aren't supported"); }
+    template <class IRI> void set(AttributeTag /*tag*/, IRI const& /*iri*/) {
+        throw std::runtime_error("Non-local references aren't supported");
+    }
 
-    template <class IRI> void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
         paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    template <class IRI> void set(AttributeTag tag, IRI const& /*unused*/, svgpp::tag::value::none val) { set(tag, val); }
-
-    template <class IRI> void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment, svgpp::tag::value::none val) {
-        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
+    template <class IRI>
+    void set(AttributeTag tag, IRI const& /*unused*/, svgpp::tag::value::none val) {
+        set(tag, val);
     }
-
-    template <class IRI> void set(AttributeTag tag, IRI const& /*unused*/, svgpp::tag::value::currentColor val) { set(tag, val); }
-
-    template <class IRI> void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment, svgpp::tag::value::currentColor val) {
-        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
-    }
-
-    template <class IRI> void set(AttributeTag tag, IRI const& /*unused*/, color_t val, svgpp::tag::skip_icc_color  /*unused*/= svgpp::tag::skip_icc_color()) { set(tag, val); }
 
     template <class IRI>
-    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment, color_t val, svgpp::tag::skip_icc_color  /*unused*/= svgpp::tag::skip_icc_color()) {
-        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)), boost::optional<SolidPaint>(val));
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
+             svgpp::tag::value::none val) {
+        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
+                           boost::optional<SolidPaint>(val));
     }
 
-protected:
+    template <class IRI>
+    void set(AttributeTag tag, IRI const& /*unused*/, svgpp::tag::value::currentColor val) {
+        set(tag, val);
+    }
+
+    template <class IRI>
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
+             svgpp::tag::value::currentColor val) {
+        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
+                           boost::optional<SolidPaint>(val));
+    }
+
+    template <class IRI>
+    void set(AttributeTag tag, IRI const& /*unused*/, color_t val,
+             svgpp::tag::skip_icc_color /*unused*/ = svgpp::tag::skip_icc_color()) {
+        set(tag, val);
+    }
+
+    template <class IRI>
+    void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
+             color_t val, svgpp::tag::skip_icc_color /*unused*/ = svgpp::tag::skip_icc_color()) {
+        paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
+                           boost::optional<SolidPaint>(val));
+    }
+
+  protected:
     void bind(Paint& paint) {
         _paint = &paint;
     }
@@ -393,23 +421,24 @@ protected:
         return *_paint;
     }
 
-private:
+  private:
     Paint* _paint;
 };
 
-class Stylable : public PaintContext<svgpp::tag::attribute::stroke>, public PaintContext<svgpp::tag::attribute::fill> {
-public:
+class Stylable : public PaintContext<svgpp::tag::attribute::stroke>,
+                 public PaintContext<svgpp::tag::attribute::fill> {
+  public:
     using stroke_paint = PaintContext<svgpp::tag::attribute::stroke>;
     using fill_paint = PaintContext<svgpp::tag::attribute::fill>;
 
-    Stylable() : PaintContext(), PaintContext() {
+    Stylable() {
         stroke_paint::bind(_style.strokePaintRef());
         fill_paint::bind(_style.fillPaintRef());
     }
 
     Stylable(Stylable const& src)
-                : stroke_paint(src), fill_paint(src), _style(src._style, Style::InheritTag()),
-                    _parentStyle(src._style) {
+        : stroke_paint(src), fill_paint(src), _style(src._style, Style::InheritTag()),
+          _parentStyle(src._style) {
         stroke_paint::bind(_style.strokePaintRef());
         fill_paint::bind(_style.fillPaintRef());
     }
@@ -422,39 +451,79 @@ public:
     using fill_paint::set;
     using stroke_paint::set;
 
-    void set(svgpp::tag::attribute::display /*unused*/, svgpp::tag::value::none /*unused*/) { style().setDisplay(false); }
+    void set(svgpp::tag::attribute::display /*unused*/, svgpp::tag::value::none /*unused*/) {
+        style().setDisplay(false);
+    }
 
-    void set(svgpp::tag::attribute::display /*unused*/, svgpp::tag::value::inherit /*unused*/) { style().setDisplay(_parentStyle.display()); }
+    void set(svgpp::tag::attribute::display /*unused*/, svgpp::tag::value::inherit /*unused*/) {
+        style().setDisplay(_parentStyle.display());
+    }
 
-    template <class ValueTag> void set(svgpp::tag::attribute::display /*unused*/, ValueTag /*unused*/) { style().setDisplay(true); }
+    template <class ValueTag>
+    void set(svgpp::tag::attribute::display /*unused*/, ValueTag /*unused*/) {
+        style().setDisplay(true);
+    }
 
-    void set(svgpp::tag::attribute::color /*unused*/, color_t val) { style().setColor(val); }
+    void set(svgpp::tag::attribute::color /*unused*/, color_t val) {
+        style().setColor(val);
+    }
 
-    void set(svgpp::tag::attribute::stroke_width /*unused*/, number_t val) { style().setStrokeWidth(val); }
+    void set(svgpp::tag::attribute::stroke_width /*unused*/, number_t val) {
+        style().setStrokeWidth(val);
+    }
 
-    void set(svgpp::tag::attribute::stroke_opacity /*unused*/, number_t val) { style().setStrokeOpacity(std::min(number_t(1), std::max(number_t(0), val))); }
+    void set(svgpp::tag::attribute::stroke_opacity /*unused*/, number_t val) {
+        style().setStrokeOpacity(std::min(number_t(1), std::max(number_t(0), val)));
+    }
 
-    void set(svgpp::tag::attribute::fill_opacity /*unused*/, number_t val) { style().setFillOpacity(std::min(number_t(1), std::max(number_t(0), val))); }
+    void set(svgpp::tag::attribute::fill_opacity /*unused*/, number_t val) {
+        style().setFillOpacity(std::min(number_t(1), std::max(number_t(0), val)));
+    }
 
-    void set(svgpp::tag::attribute::opacity /*unused*/, number_t val) { style().setOpacity(std::min(number_t(1), std::max(number_t(0), val))); }
+    void set(svgpp::tag::attribute::opacity /*unused*/, number_t val) {
+        style().setOpacity(std::min(number_t(1), std::max(number_t(0), val)));
+    }
 
-    void set(svgpp::tag::attribute::opacity /*unused*/, svgpp::tag::value::inherit /*unused*/) { style().setOpacity(_parentStyle.opacity()); }
+    void set(svgpp::tag::attribute::opacity /*unused*/, svgpp::tag::value::inherit /*unused*/) {
+        style().setOpacity(_parentStyle.opacity());
+    }
 
-    void set(svgpp::tag::attribute::fill_rule /*unused*/, svgpp::tag::value::nonzero /*unused*/) { style().setUsesNonzeroFillRule(true); }
+    void set(svgpp::tag::attribute::fill_rule /*unused*/, svgpp::tag::value::nonzero /*unused*/) {
+        style().setUsesNonzeroFillRule(true);
+    }
 
-    void set(svgpp::tag::attribute::fill_rule /*unused*/, svgpp::tag::value::evenodd /*unused*/) { style().setUsesNonzeroFillRule(false); }
+    void set(svgpp::tag::attribute::fill_rule /*unused*/, svgpp::tag::value::evenodd /*unused*/) {
+        style().setUsesNonzeroFillRule(false);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linecap /*unused*/, svgpp::tag::value::butt /*unused*/) { style().setLineCap(LineCap::Butt); }
+    void set(svgpp::tag::attribute::stroke_linecap /*unused*/, svgpp::tag::value::butt /*unused*/) {
+        style().setLineCap(LineCap::Butt);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linecap /*unused*/, svgpp::tag::value::round /*unused*/) { style().setLineCap(LineCap::Round); }
+    void set(svgpp::tag::attribute::stroke_linecap /*unused*/,
+             svgpp::tag::value::round /*unused*/) {
+        style().setLineCap(LineCap::Round);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linecap /*unused*/, svgpp::tag::value::square /*unused*/) { style().setLineCap(LineCap::Square); }
+    void set(svgpp::tag::attribute::stroke_linecap /*unused*/,
+             svgpp::tag::value::square /*unused*/) {
+        style().setLineCap(LineCap::Square);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/, svgpp::tag::value::miter /*unused*/) { style().setLineJoin(LineJoin::Miter); }
+    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/,
+             svgpp::tag::value::miter /*unused*/) {
+        style().setLineJoin(LineJoin::Miter);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/, svgpp::tag::value::round /*unused*/) { style().setLineJoin(LineJoin::Round); }
+    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/,
+             svgpp::tag::value::round /*unused*/) {
+        style().setLineJoin(LineJoin::Round);
+    }
 
-    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/, svgpp::tag::value::bevel /*unused*/) { style().setLineJoin(LineJoin::Bevel); }
+    void set(svgpp::tag::attribute::stroke_linejoin /*unused*/,
+             svgpp::tag::value::bevel /*unused*/) {
+        style().setLineJoin(LineJoin::Bevel);
+    }
 
     void set(svgpp::tag::attribute::stroke_miterlimit /*unused*/, number_t val)
 
@@ -462,21 +531,33 @@ public:
         style().setMiterLimit(val);
     }
 
-    void set(svgpp::tag::attribute::stroke_dasharray /*unused*/, svgpp::tag::value::none /*unused*/) { style().clearStrokeDashArray(); }
+    void set(svgpp::tag::attribute::stroke_dasharray /*unused*/,
+             svgpp::tag::value::none /*unused*/) {
+        style().clearStrokeDashArray();
+    }
 
-    template <class Range> void set(svgpp::tag::attribute::stroke_dasharray /*unused*/, Range const& range) {
+    template <class Range>
+    void set(svgpp::tag::attribute::stroke_dasharray /*unused*/, Range const& range) {
         style().strokeDashArray().assign(boost::begin(range), boost::end(range));
     }
 
-    void set(svgpp::tag::attribute::stroke_dashoffset /*unused*/, number_t val) { style().setStrokeDashOffset(val); }
+    void set(svgpp::tag::attribute::stroke_dashoffset /*unused*/, number_t val) {
+        style().setStrokeDashOffset(val);
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::mask /*unused*/, IRI const& /*unused*/) { throw std::runtime_error("Non-local references aren't supported"); }
+    template <class IRI> void set(svgpp::tag::attribute::mask /*unused*/, IRI const& /*unused*/) {
+        throw std::runtime_error("Non-local references aren't supported");
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::mask /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::mask /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setMaskFragment(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::mask /*unused*/, svgpp::tag::value::none /*val*/) { style().clearMaskFragment(); }
+    void set(svgpp::tag::attribute::mask /*unused*/, svgpp::tag::value::none /*val*/) {
+        style().clearMaskFragment();
+    }
 
     void set(svgpp::tag::attribute::mask /*unused*/, svgpp::tag::value::inherit /*val*/) {
         if (_parentStyle.maskFragment()) {
@@ -486,13 +567,20 @@ public:
         }
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::clip_path /*unused*/, IRI const& /*unused*/) { throw std::runtime_error("Non-local references aren't supported"); }
+    template <class IRI>
+    void set(svgpp::tag::attribute::clip_path /*unused*/, IRI const& /*unused*/) {
+        throw std::runtime_error("Non-local references aren't supported");
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::clip_path /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::clip_path /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setClipPathFragment(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::clip_path /*unused*/, svgpp::tag::value::none /*val*/) { style().clearClipPathFragment(); }
+    void set(svgpp::tag::attribute::clip_path /*unused*/, svgpp::tag::value::none /*val*/) {
+        style().clearClipPathFragment();
+    }
 
     void set(svgpp::tag::attribute::clip_path /*unused*/, svgpp::tag::value::inherit /*val*/) {
         if (_parentStyle.clipPathFragment()) {
@@ -502,41 +590,60 @@ public:
         }
     }
 
-    auto style() -> Style& { return _style; }
-    [[nodiscard]] auto style() const -> Style const& { return _style; }
+    auto style() -> Style& {
+        return _style;
+    }
+    [[nodiscard]] auto style() const -> Style const& {
+        return _style;
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_start /*unused*/, IRI const& /*unused*/) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_start /*unused*/, IRI const& /*unused*/) {
         std::cout << "Non-local references aren't supported\n"; // Not error
         style().clearMarkerStart();
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_start /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_start /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setMarkerStart(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::marker_start /*unused*/, svgpp::tag::value::none /*unused*/) { style().clearMarkerStart(); }
+    void set(svgpp::tag::attribute::marker_start /*unused*/, svgpp::tag::value::none /*unused*/) {
+        style().clearMarkerStart();
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_mid /*unused*/, IRI const& /*unused*/) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_mid /*unused*/, IRI const& /*unused*/) {
         std::cout << "Non-local references aren't supported\n"; // Not error
         style().clearMarkerMid();
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_mid /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_mid /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setMarkerMid(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::marker_mid /*unused*/, svgpp::tag::value::none /*unused*/) { style().clearMarkerMid(); }
+    void set(svgpp::tag::attribute::marker_mid /*unused*/, svgpp::tag::value::none /*unused*/) {
+        style().clearMarkerMid();
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_end /*unused*/, IRI const& /*unused*/) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_end /*unused*/, IRI const& /*unused*/) {
         std::cout << "Non-local references aren't supported\n"; // Not error
         style().clearMarkerEnd();
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker_end /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker_end /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setMarkerEnd(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::marker_end /*unused*/, svgpp::tag::value::none /*unused*/) { style().clearMarkerEnd(); }
+    void set(svgpp::tag::attribute::marker_end /*unused*/, svgpp::tag::value::none /*unused*/) {
+        style().clearMarkerEnd();
+    }
 
     template <class IRI> void set(svgpp::tag::attribute::marker /*unused*/, IRI const& /*unused*/) {
         std::cout << "Non-local references aren't supported\n"; // Not error
@@ -545,7 +652,9 @@ public:
         style().clearMarkerEnd();
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::marker /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::marker /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         std::string iri(boost::begin(fragment), boost::end(fragment));
         style().setMarkerStart(iri);
         style().setMarkerMid(iri);
@@ -558,13 +667,19 @@ public:
         style().clearMarkerEnd();
     }
 
-    template <class IRI> void set(svgpp::tag::attribute::filter /*unused*/, IRI const& /*unused*/) { throw std::runtime_error("Non-local references aren't supported"); }
+    template <class IRI> void set(svgpp::tag::attribute::filter /*unused*/, IRI const& /*unused*/) {
+        throw std::runtime_error("Non-local references aren't supported");
+    }
 
-    template <class IRI> void set(svgpp::tag::attribute::filter /*unused*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment) {
+    template <class IRI>
+    void set(svgpp::tag::attribute::filter /*unused*/, svgpp::tag::iri_fragment /*unused*/,
+             IRI const& fragment) {
         style().setFilter(std::string(boost::begin(fragment), boost::end(fragment)));
     }
 
-    void set(svgpp::tag::attribute::filter /*unused*/, svgpp::tag::value::none /*val*/) { style().clearFilter(); }
+    void set(svgpp::tag::attribute::filter /*unused*/, svgpp::tag::value::none /*val*/) {
+        style().clearFilter();
+    }
 
     void set(svgpp::tag::attribute::filter /*unused*/, svgpp::tag::value::inherit /*unused*/) {
         if (_parentStyle.filter()) {
@@ -574,22 +689,31 @@ public:
         }
     }
 
-    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::inherit /*unused*/) { style().setOverflowClip(_parentStyle.overflowClip()); }
+    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::inherit /*unused*/) {
+        style().setOverflowClip(_parentStyle.overflowClip());
+    }
 
-    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::visible /*unused*/) { style().setOverflowClip(false); }
+    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::visible /*unused*/) {
+        style().setOverflowClip(false);
+    }
 
-    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::auto_ /*unused*/) { style().setOverflowClip(false); }
+    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::auto_ /*unused*/) {
+        style().setOverflowClip(false);
+    }
 
-    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::hidden /*unused*/) { style().setOverflowClip(true); }
+    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::hidden /*unused*/) {
+        style().setOverflowClip(true);
+    }
 
-    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::scroll /*unused*/) { style().setOverflowClip(true); }
+    void set(svgpp::tag::attribute::overflow /*unused*/, svgpp::tag::value::scroll /*unused*/) {
+        style().setOverflowClip(true);
+    }
 
-private:
+  private:
     Style _style;
     NoninheritedStyle _parentStyle;
 };
 
 } // namespace laby::svgp
-
 
 #endif /* SVGPARSER_STYLABLE_H_ */

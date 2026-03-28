@@ -36,17 +36,9 @@ class BaseContext : public Stylable {
 
     // SVG++ discovers these hooks by exact name.
 
-    void onExitElement() {}
+    void on_exit_element() {}
 
-    void onExitElement() {
-        onExitElement();
-    }
-
-    void transformMatrix(const boost::array<double, kTransformMatrixSize>& /*matrix*/) {}
-
-    void transformMatrix(const boost::array<double, kTransformMatrixSize>& matrix) {
-        transformMatrix(matrix);
-    }
+    void transform_matrix(const boost::array<double, kTransformMatrixSize>& /*matrix*/) {}
 
     // Viewport Events Policy
     static void setViewport(double viewport_x, double viewport_y, double viewport_width,
@@ -56,7 +48,7 @@ class BaseContext : public Stylable {
                   << " " << viewport_height << '\n';
     }
 
-    static void setViewport(double viewport_x, double viewport_y, double viewport_width,
+    static void set_viewport(double viewport_x, double viewport_y, double viewport_width,
                              double viewport_height) {
         setViewport(viewport_x, viewport_y, viewport_width, viewport_height);
     }
@@ -66,13 +58,13 @@ class BaseContext : public Stylable {
         _viewbox = CGAL::Bbox_2(0, 0, viewbox_width, viewbox_height);
     }
 
-    void setViewboxSize(double viewbox_width, double viewbox_height) {
+    void set_viewbox_size(double viewbox_width, double viewbox_height) {
         setViewboxSize(viewbox_width, viewbox_height);
     }
 
     void disableRendering() {}
 
-    void disableRendering() {
+    void disable_rendering() {
         disableRendering();
     }
 

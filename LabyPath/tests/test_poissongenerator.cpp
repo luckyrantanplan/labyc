@@ -10,71 +10,71 @@
 
 using laby::generator::PoissonPoints;
 using laby::generator::SGrid;
-using laby::generator::sGridPoint;
-using laby::generator::sPoint;
+using laby::generator::SGridPoint;
+using laby::generator::SPoint;
 
 // ── sPoint ─────────────────────────────────────────────────────────────────
 
 TEST(SPointTest, DefaultConstruction) {
-    sPoint const p;
+    SPoint const p;
     EXPECT_DOUBLE_EQ(p.x, 0.0);
     EXPECT_DOUBLE_EQ(p.y, 0.0);
     EXPECT_FALSE(p.m_Valid);
 }
 
 TEST(SPointTest, ParameterizedConstruction) {
-    sPoint const p(0.5, 0.3);
+    SPoint const p(0.5, 0.3);
     EXPECT_DOUBLE_EQ(p.x, 0.5);
     EXPECT_DOUBLE_EQ(p.y, 0.3);
     EXPECT_TRUE(p.m_Valid);
 }
 
 TEST(SPointTest, IsInRectangleInside) {
-    EXPECT_TRUE(sPoint(0.5, 0.5).isInRectangle());
-    EXPECT_TRUE(sPoint(0.0, 0.0).isInRectangle());
-    EXPECT_TRUE(sPoint(1.0, 1.0).isInRectangle());
+    EXPECT_TRUE(SPoint(0.5, 0.5).isInRectangle());
+    EXPECT_TRUE(SPoint(0.0, 0.0).isInRectangle());
+    EXPECT_TRUE(SPoint(1.0, 1.0).isInRectangle());
 }
 
 TEST(SPointTest, IsInRectangleOutside) {
-    EXPECT_FALSE(sPoint(-0.1, 0.5).isInRectangle());
-    EXPECT_FALSE(sPoint(0.5, 1.1).isInRectangle());
-    EXPECT_FALSE(sPoint(1.1, 0.5).isInRectangle());
+    EXPECT_FALSE(SPoint(-0.1, 0.5).isInRectangle());
+    EXPECT_FALSE(SPoint(0.5, 1.1).isInRectangle());
+    EXPECT_FALSE(SPoint(1.1, 0.5).isInRectangle());
 }
 
 TEST(SPointTest, IsInCircleCenter) {
-    EXPECT_TRUE(sPoint(0.5, 0.5).isInCircle());
+    EXPECT_TRUE(SPoint(0.5, 0.5).isInCircle());
 }
 
 TEST(SPointTest, IsInCircleBoundary) {
     // On the boundary: distance from center (0.5, 0.5) to (1.0, 0.5) is 0.5
-    EXPECT_TRUE(sPoint(1.0, 0.5).isInCircle());
+    EXPECT_TRUE(SPoint(1.0, 0.5).isInCircle());
 }
 
 TEST(SPointTest, IsInCircleOutside) {
-    EXPECT_FALSE(sPoint(0.0, 0.0).isInCircle());
-    EXPECT_FALSE(sPoint(1.0, 1.0).isInCircle());
+    EXPECT_FALSE(SPoint(0.0, 0.0).isInCircle());
+    EXPECT_FALSE(SPoint(1.0, 1.0).isInCircle());
 }
 
 // ── SGrid ──────────────────────────────────────────────────────────────────
 
 TEST(SGridTest, ImageToGrid) {
     SGrid const grid(10, 10, 0.1);
-    sPoint const p(0.25, 0.35);
-    sGridPoint const gp = grid.imageToGrid(p, 0.1);
+    SPoint const p(0.25, 0.35);
+    SGridPoint const gp = laby::generator::SGrid::imageToGrid(p, 0.1);
     EXPECT_EQ(gp.x, 2);
     EXPECT_EQ(gp.y, 3);
 }
 
 TEST(SGridTest, GetSqDistance) {
     SGrid const grid(10, 10, 0.1);
-    sPoint const a(0.0, 0.0);
-    sPoint const b(3.0, 4.0);
+    SPoint const a(0.0, 0.0);
+    SPoint const b(3.0, 4.0);
     EXPECT_DOUBLE_EQ(grid.getSqDistance(a, b), 25.0);
 }
 
 TEST(SGridTest, GetSqDistanceSamePoint) {
     SGrid const grid(10, 10, 0.1);
-    sPoint const a(1.0, 1.0);
+    SPoint const a(1.0, 1.0);
     EXPECT_DOUBLE_EQ(grid.getSqDistance(a, a), 0.0);
 }
 
@@ -84,15 +84,15 @@ TEST(SGridTest, InsertAndNeighbourhood) {
     int const h = w;
     SGrid grid(w, h, cellSize);
 
-    sPoint const p(0.5, 0.5);
+    SPoint const p(0.5, 0.5);
     grid.insert(p);
 
     // A nearby point should be in neighbourhood
-    sPoint const nearby(0.51, 0.51);
+    SPoint const nearby(0.51, 0.51);
     EXPECT_TRUE(grid.isInNeighbourhood(nearby, 0.01, cellSize));
 
     // A far point should not be in neighbourhood
-    sPoint const far(0.1, 0.1);
+    SPoint const far(0.1, 0.1);
     EXPECT_FALSE(grid.isInNeighbourhood(far, 0.001, cellSize));
 }
 

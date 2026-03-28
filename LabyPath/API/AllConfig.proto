@@ -37,9 +37,9 @@ message SkeletonGrid {
 
 message RoutingCost {
 	uint32 seed = 1;
-	int32 max_random = 2;
-	int32 distance_unit_cost = 3;
-	int32 via_unit_cost = 4;
+	uint32 max_random = 2;
+	uint32 distance_unit_cost = 3;
+	uint32 via_unit_cost = 4;
 }
 
 message Cell {

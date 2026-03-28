@@ -504,18 +504,18 @@ public:
         startNewSubPath();
     }
     auto operator<<(Point const & point) -> Path & {
-        paths.back().points().push_back(point);
+        _paths.back().points().push_back(point);
         return *this;
     }
 
     void startNewSubPath() {
-        if (paths.empty() || !paths.back().points().empty()) {
-            paths.emplace_back();
+        if (_paths.empty() || !_paths.back().points().empty()) {
+            _paths.emplace_back();
 }
     }
 
     void closeSubPath() {
-        paths.back().setClosed(true);
+        _paths.back().setClosed(true);
     }
 
     [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
@@ -524,7 +524,7 @@ public:
         ss << elemStart("path");
 
         ss << "d=\"";
-        for (const auto & subpath : paths) {
+        for (const auto & subpath : _paths) {
             if (subpath.empty()) {
                 continue;
 }
@@ -545,7 +545,7 @@ public:
     }
 
     void offset(const laby::Kernel::Vector_2 & off) override {
-        for (auto& subpath : paths) {
+        for (auto& subpath : _paths) {
             for (auto& point : subpath.points()) {
                 point = point + off;
 
@@ -553,7 +553,7 @@ public:
 }
     }
 private:
-    std::vector<laby::Polyline> paths;
+    std::vector<laby::Polyline> _paths;
 };
 
 class Polyline: public Shape {

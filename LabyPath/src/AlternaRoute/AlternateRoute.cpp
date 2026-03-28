@@ -281,7 +281,7 @@ auto AlternateRoute::voronoiArr(const Arrangement_2& arrangement, int32_t direct
                                 viewBox.ymax() + 1);
     VoronoiMedialSkeleton const vor(ribContourFramed, frameBox);
 
-    std::cout << "vor.get_vor_segments().size() " << vor.get_vor_segments().size() << '\n';
+    std::cout << "vor.getVorSegments().size() " << vor.getVorSegments().size() << '\n';
 
     Arrangement_2 arrDir = vor.getSimpleArr(ribContour, ribLimit);
 

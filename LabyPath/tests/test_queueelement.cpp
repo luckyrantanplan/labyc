@@ -1,6 +1,8 @@
 #include "Anisotrop/QueueElement.h"
 #include "GeomData.h"
 
+#include <cstdint>
+#include <CGAL/number_utils.h>
 #include <gtest/gtest.h>
 
 using namespace laby;
@@ -56,7 +58,7 @@ TEST_F(QueueElementFixture, ClearResetsState) {
 
 TEST_F(QueueElementFixture, NotInQueueByDefault) {
     Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement queueElement(vertex);
+    QueueElement const queueElement(vertex);
     EXPECT_FALSE(queueElement.isInQueue());
 }
 

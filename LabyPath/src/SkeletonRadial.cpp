@@ -7,29 +7,37 @@
 
 #include "SkeletonRadial.h"
 
-#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
+#include <CGAL/Intersections_2/Line_2_Segment_2.h>
+#include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
+#include <boost/variant/get.hpp>
 
-#include "basic/KernelConverter.h"
 #include "basic/RangeHelper.h"
 #include <CGAL/box_intersection_d.h>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace laby {
 
-void SkeletonRadial::registerFace(
+auto SkeletonRadial::registerFace(
     const basic::HalfedgeNode& he,
-    std::unordered_map<const basic::FaceNode*, FaceHelper>& vertices_cache) const {
+    std::unordered_map<const basic::FaceNode*, FaceHelper>& vertices_cache) const -> void {
     {
         FaceHelper& faceHelper =
             vertices_cache.try_emplace(&*he.face(), FaceHelper()).first->second;
         faceHelper._perp =
             (he.curve().target() - he.curve().source()).perpendicular(CGAL::LEFT_TURN);
-        if (faceHelper._type != FaceHelper::UNKNOW) {
-            std::cout << "face lateral already exists with " << faceHelper._type << std::endl;
+        if (faceHelper._type != FaceHelper::Type::Unknown) {
+            std::cout << "face lateral already exists with " << static_cast<int>(faceHelper._type)
+                      << '\n';
         }
-        faceHelper._type = FaceHelper::LATERAL;
+        faceHelper._type = FaceHelper::Type::Lateral;
     }
     const auto& o = *he.source();
     if (o.degree() < 4) {
@@ -54,17 +62,17 @@ void SkeletonRadial::registerFace(
     FaceHelper& faceHelper =
         vertices_cache.try_emplace(&*heSecond.face(), FaceHelper()).first->second;
 
-    if (faceHelper._type != FaceHelper::UNKNOW) {
-        std::cout << "face corner already exists with " << faceHelper._type << std::endl;
+    if (faceHelper._type != FaceHelper::Type::Unknown) {
+        std::cout << "face corner already exists with " << static_cast<int>(faceHelper._type)
+                  << '\n';
     }
 
-    faceHelper._type = FaceHelper::CORNER;
+    faceHelper._type = FaceHelper::Type::Corner;
     faceHelper._o = o.point();
 }
 
-SkeletonRadial::Incidence
-SkeletonRadial::traverse_corner(const Incidence& incidence, const FaceHelper& faceHelper,
-                                std::vector<Kernel::Point_2>& result) const {
+auto SkeletonRadial::traverseCorner(const Incidence& incidence, const FaceHelper& faceHelper,
+                                    std::vector<Kernel::Point_2>& result) const -> Incidence {
 
     Kernel::Line_2 line = Kernel::Line_2(incidence._test, faceHelper._o);
 
@@ -74,7 +82,7 @@ SkeletonRadial::traverse_corner(const Incidence& incidence, const FaceHelper& fa
             if (const Kernel::Point_2* p2 = boost::get<Kernel::Point_2>(&*variant2)) {
                 if (CGAL::squared_distance(*p2, faceHelper._o) > 0. and //
                     CGAL::squared_distance(*p2, incidence._test) > 0) {
-                    if (filter_new_vertex(result, *p2)) {
+                    if (filterNewVertex(result, *p2)) {
                         result.emplace_back(*p2);
                         return Incidence(*p2, *he2.twin());
                     }
@@ -89,10 +97,9 @@ SkeletonRadial::traverse_corner(const Incidence& incidence, const FaceHelper& fa
     return Incidence();
 }
 
-SkeletonRadial::Incidence SkeletonRadial::traverse_ray(const basic::HalfedgeNode& hedge,
-                                                       const Kernel::Point_2& test, //
-                                                       const Kernel::Vector_2& dir,
-                                                       std::vector<Kernel::Point_2>& result) const {
+auto SkeletonRadial::traverseRay(const basic::HalfedgeNode& hedge, const Kernel::Point_2& test,
+                                 const Kernel::Vector_2& dir,
+                                 std::vector<Kernel::Point_2>& result) const -> Incidence {
 
     Kernel::Line_2 line(test, dir);
     for (const basic::HalfedgeNode& he : RangeHelper::make(hedge.next()->ccb())) {
@@ -100,7 +107,7 @@ SkeletonRadial::Incidence SkeletonRadial::traverse_ray(const basic::HalfedgeNode
         if (variant) {
             if (const Kernel::Point_2* s = boost::get<Kernel::Point_2>(&*variant)) {
                 if (*s != test) {
-                    if (filter_new_vertex(result, *s)) {
+                    if (filterNewVertex(result, *s)) {
                         result.emplace_back(*s);
                         return Incidence(*s, *he.twin());
                     } else {
@@ -120,10 +127,10 @@ SkeletonRadial::Incidence SkeletonRadial::traverse_ray(const basic::HalfedgeNode
     return Incidence();
 }
 
-SkeletonRadial::Incidence SkeletonRadial::traverse_face(
+auto SkeletonRadial::traverseFace(
     const Incidence& incidence,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, //
-    std::vector<Kernel::Point_2>& result) const {
+    std::vector<Kernel::Point_2>& result) const -> SkeletonRadial::Incidence {
     auto ite = faceCache.find(&*incidence._hedge->face());
 
     if (ite == faceCache.end()) {
@@ -131,21 +138,22 @@ SkeletonRadial::Incidence SkeletonRadial::traverse_face(
     }
     const FaceHelper& faceHelper = ite->second;
     switch (faceHelper._type) {
-    case FaceHelper::LATERAL: {
+    case FaceHelper::Type::Lateral: {
         // to be calculated at the beginning, at the creation of FaceHelper
 
-        return traverse_ray(*incidence._hedge, incidence._test, faceHelper._perp, result);
+        return traverseRay(*incidence._hedge, incidence._test, faceHelper._perp, result);
 
         break;
     }
-    case FaceHelper::CORNER: {
+    case FaceHelper::Type::Corner: {
         Kernel::Line_2 line;
+        static_cast<void>(line);
 
-        return traverse_corner(incidence, faceHelper, result);
+        return traverseCorner(incidence, faceHelper, result);
 
         break;
     }
-    case FaceHelper::UNKNOW: {
+    case FaceHelper::Type::Unknown: {
         std::cout << "Unknow faced " << std::endl;
         break;
     }
@@ -153,8 +161,8 @@ SkeletonRadial::Incidence SkeletonRadial::traverse_face(
     return Incidence();
 }
 
-bool SkeletonRadial::filter_new_vertex(const std::vector<Kernel::Point_2>& result,
-                                       const Kernel::Point_2& vertex) const {
+auto SkeletonRadial::filterNewVertex(const std::vector<Kernel::Point_2>& result,
+                                     const Kernel::Point_2& vertex) const -> bool {
     if (result.size() < 2) {
         return true;
     }
@@ -187,7 +195,7 @@ bool SkeletonRadial::filter_new_vertex(const std::vector<Kernel::Point_2>& resul
     return true;
 }
 
-double SkeletonRadial::polyline_length(const std::vector<Kernel::Point_2>& result) const {
+auto SkeletonRadial::polylineLength(const std::vector<Kernel::Point_2>& result) const -> double {
     double length = 0;
     for (size_t i = 1; i < result.size(); ++i) {
 
@@ -196,9 +204,9 @@ double SkeletonRadial::polyline_length(const std::vector<Kernel::Point_2>& resul
     return length;
 }
 
-void SkeletonRadial::fill_corner(
+auto SkeletonRadial::fillCorner(
     const basic::Arrangement_2Node& arr3,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) {
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
     std::vector<Kernel::Point_2> pointVect;
     for (const auto& line : _radial_list.lines()) {
         for (const auto& p : line.points()) {
@@ -214,13 +222,13 @@ void SkeletonRadial::fill_corner(
         auto ite = faceCache.find(&faceNode);
         if (ite != faceCache.end()) {
             const FaceHelper& faceHelper = ite->second;
-            if (faceHelper._type == FaceHelper::CORNER) {
+            if (faceHelper._type == FaceHelper::Type::Corner) {
                 for (const basic::HalfedgeNode& he : RangeHelper::make(faceNode.outer_ccb())) {
 
                     if (faceHelper._o != he.source()->point() and
                         faceHelper._o != he.target()->point()) {
 
-                        iterate_corner(he, sep, pt_set, faceCache);
+                        iterateCorner(he, sep, pt_set, faceCache);
                     }
                 }
             }
@@ -228,9 +236,9 @@ void SkeletonRadial::fill_corner(
     }
 }
 
-void SkeletonRadial::fill_radial_list(std::vector<Kernel::Point_2>& result,
-                                      CGAL::Point_set_2<Kernel>& pt_set) {
-    if (result.size() < 2 || polyline_length(result) < (_config.min_length_polyline)) {
+auto SkeletonRadial::fillRadialList(std::vector<Kernel::Point_2>& result,
+                                    CGAL::Point_set_2<Kernel>& pt_set) -> void {
+    if (result.size() < 2 || polylineLength(result) < (_config.min_length_polyline)) {
         // do nothing
     } else {
         pt_set.insert(result.front());
@@ -239,10 +247,10 @@ void SkeletonRadial::fill_radial_list(std::vector<Kernel::Point_2>& result,
     }
 }
 
-std::vector<Kernel::Point_2> SkeletonRadial::start_traverse_corner(
+auto SkeletonRadial::startTraverseCorner(
     const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
-    CGAL::Point_set_2<Kernel>& pt_set) {
+    CGAL::Point_set_2<Kernel>& pt_set) -> std::vector<Kernel::Point_2> {
 
     std::vector<Kernel::Point_2> result;
     auto vertex_handle = pt_set.nearest_neighbor(test);
@@ -258,7 +266,7 @@ std::vector<Kernel::Point_2> SkeletonRadial::start_traverse_corner(
         int32_t limit = _config.max_polyline_element;
         while (!incid.isEmpty && limit > 0) {
 
-            incid = traverse_face(incid, faceCache, result);
+            incid = traverseFace(incid, faceCache, result);
             --limit;
         }
         if (limit == 0) {
@@ -268,10 +276,10 @@ std::vector<Kernel::Point_2> SkeletonRadial::start_traverse_corner(
     return result;
 }
 
-void SkeletonRadial::start_traverse_edge(
+auto SkeletonRadial::startTraverseEdge(
     const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
-    CGAL::Point_set_2<Kernel>& pt_set) {
+    CGAL::Point_set_2<Kernel>& pt_set) -> void {
     auto vertex_handle = pt_set.nearest_neighbor(test);
     CGAL::Comparison_result compare = CGAL::LARGER;
     if (vertex_handle == nullptr) {
@@ -285,20 +293,19 @@ void SkeletonRadial::start_traverse_edge(
         result.emplace_back(test);
         int32_t limit = _config.max_polyline_element;
         while (!incid.isEmpty && limit > 0) {
-            incid = traverse_face(incid, faceCache, result);
+            incid = traverseFace(incid, faceCache, result);
             --limit;
         }
         if (limit == 0) {
             std::cout << "limit exceeded" << std::endl;
         }
-        fill_radial_list(result, pt_set);
+        fillRadialList(result, pt_set);
     }
 }
 
-void SkeletonRadial::iterate_edge(
+auto SkeletonRadial::iterateEdge(
     const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) {
-    Kernel::Vector_2 vect(0, 0);
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
     const Kernel::Point_2& origin = hedge.source()->point();
     const Kernel::Segment_2& curve = hedge.curve();
 
@@ -309,14 +316,13 @@ void SkeletonRadial::iterate_edge(
         const Kernel::Point_2 test = CGAL::barycenter(
             origin, sign * (i / (2. * weight)) + (1. / 2.), hedge.target()->point());
         sign *= -1;
-        start_traverse_edge(test, sep, hedge, faceCache, pt_set);
+        startTraverseEdge(test, sep, hedge, faceCache, pt_set);
     }
 }
 
-void SkeletonRadial::iterate_corner(
+auto SkeletonRadial::iterateCorner(
     const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) {
-    Kernel::Vector_2 vect(0, 0);
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
     const Kernel::Point_2& origin = hedge.source()->point();
     const Kernel::Segment_2& curve = hedge.curve();
 
@@ -328,16 +334,16 @@ void SkeletonRadial::iterate_corner(
             origin, sign * (i / (2. * weight)) + (1. / 2.), hedge.target()->point());
         sign *= -1;
         std::vector<Kernel::Point_2> result =
-            start_traverse_corner(test, sep, hedge, faceCache, pt_set);
+            startTraverseCorner(test, sep, hedge, faceCache, pt_set);
         std::vector<Kernel::Point_2> result2 =
-            start_traverse_corner(test, sep, *hedge.twin(), faceCache, pt_set);
+            startTraverseCorner(test, sep, *hedge.twin(), faceCache, pt_set);
         std::reverse(result.begin(), result.end());
         if (!result.empty()) {
             result.resize(result.size() - 1);
         }
         result.insert(result.end(), result2.begin(), result2.end());
 
-        if (result.size() < 2 || polyline_length(result) < (_config.min_length_polyline)) {
+        if (result.size() < 2 || polylineLength(result) < (_config.min_length_polyline)) {
             // do nothing
         } else {
             pt_set.insert(test);
@@ -361,10 +367,10 @@ void SkeletonRadial::cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2&
     }
 }
 
-void SkeletonRadial::polygon_contour(
+auto SkeletonRadial::polygonContour(
     const basic::Arrangement_2Node& arr3,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
-    CGAL::Point_set_2<Kernel>& pt_set) {
+    CGAL::Point_set_2<Kernel>& pt_set) -> void {
 
     std::vector<const basic::HalfedgeNode*> heList;
     heList.reserve(arr3.number_of_edges());
@@ -378,24 +384,24 @@ void SkeletonRadial::polygon_contour(
         if (basic::edgeHasPolygonId(*he, +1)) {
             // we must test if this is a hole
             if (basic::edgeHasPolygonId(*he->next(), +1)) {
-                iterate_edge(*he->twin(), _config.sep, pt_set, faceCache);
+                iterateEdge(*he->twin(), _config.sep, pt_set, faceCache);
             } else {
-                iterate_edge(*he, _config.sep, pt_set, faceCache);
+                iterateEdge(*he, _config.sep, pt_set, faceCache);
             }
         }
     }
 }
-const std::vector<Kernel::Segment_2> SkeletonRadial::radialList() const {
+auto SkeletonRadial::radialList() const -> std::vector<Kernel::Segment_2> {
 
     if (_radial_list.lines().empty()) {
-        return std::vector<Kernel::Segment_2>();
+        return {};
     }
     return _radial_list.giveSpace(laby::GiveSpaceConfig{_config.sep, 3, _config.sep * 2.})
         .getSegments();
 }
 
-CGAL::Point_set_2<Kernel>
-SkeletonRadial::get_point_intersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) const {
+auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) const
+    -> CGAL::Point_set_2<Kernel> {
     typedef std::vector<Kernel::Segment_2> Segment_2Vect;
     typedef Segment_2Vect::const_iterator Iterator;
     typedef CGAL::Box_intersection_d::Box_with_handle_d<double, 2, Iterator> Box;
@@ -443,8 +449,8 @@ SkeletonRadial::get_point_intersect(const CGAL::Polygon_with_holes_2<Kernel>& po
     return pt_set;
 }
 
-void SkeletonRadial::create_radial(const basic::Arrangement_2Node& arr3,
-                                   const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) {
+auto SkeletonRadial::createRadial(const basic::Arrangement_2Node& arr3,
+                                  const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) -> void {
 
     std::unordered_map<const basic::FaceNode*, FaceHelper> faceCache;
 
@@ -459,9 +465,9 @@ void SkeletonRadial::create_radial(const basic::Arrangement_2Node& arr3,
             }
         }
     }
-    CGAL::Point_set_2<Kernel> pt_set = get_point_intersect(poly_hole);
-    polygon_contour(arr3, faceCache, pt_set);
-    fill_corner(arr3, faceCache);
+    CGAL::Point_set_2<Kernel> pt_set = getPointIntersect(poly_hole);
+    polygonContour(arr3, faceCache, pt_set);
+    fillCorner(arr3, faceCache);
 }
 
 } /* namespace laby */

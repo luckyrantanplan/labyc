@@ -7,14 +7,14 @@
 
 #include "PolyConvex.h"
 
+#include "GeomData.h"
 #include <CGAL/Intersections_2/Segment_2_Segment_2.h>
 #include <CGAL/Segment_2.h>
-#include "GeomData.h"
 #include <cstddef>
 #include <vector>
 
-#include <utility>
 #include "basic/EasyProfilerCompat.h"
+#include <utility>
 
 #include "basic/LinearGradient.h"
 #include "basic/PolygonTools.h"
@@ -22,27 +22,37 @@
 
 namespace laby {
 
-auto PolyConvex::testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) -> bool {
+namespace {
+
+constexpr double kAverageThicknessDivisor = 2.0;
+
+} // namespace
+
+auto PolyConvex::testConvexPolyIntersect(const Linear_polygon& polygon,
+                                         const Linear_polygon& otherPolygon) -> bool {
     EASY_FUNCTION();
 
-    for (const CGAL::Segment_2<Kernel>& ea : RangeHelper::make(a.edges_begin(), a.edges_end())) {
-        for (const CGAL::Segment_2<Kernel>& eb : RangeHelper::make(b.edges_begin(), b.edges_end())) {
-            if (CGAL::do_intersect(ea, eb)) {
+    for (const CGAL::Segment_2<Kernel>& edge :
+         RangeHelper::make(polygon.edges_begin(), polygon.edges_end())) {
+        for (const CGAL::Segment_2<Kernel>& otherEdge :
+             RangeHelper::make(otherPolygon.edges_begin(), otherPolygon.edges_end())) {
+            if (CGAL::do_intersect(edge, otherEdge)) {
                 return true;
             }
         }
     }
 
-    if (a.has_on_bounded_side(b.vertex(0))) {
+    if (polygon.has_on_bounded_side(otherPolygon.vertex(0))) {
         return true;
     }
-    if (b.has_on_bounded_side(a.vertex(0))) {
+    if (otherPolygon.has_on_bounded_side(polygon.vertex(0))) {
         return true;
     }
     return false;
 }
 
-void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList, const Point_2& center) {
+auto PolyConvex::connect(std::size_t first, std::size_t second,
+                         std::vector<PolyConvex>& polyConvexList, const Point_2& center) -> void {
     // we push in the vector, before to take reference on it (otherwise we get memory corruption)
     polyConvexList.emplace_back();
 
@@ -54,7 +64,8 @@ void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<Poly
 
     PolyConvex& triangle = polyConvexList.back();
     triangle._id = polyConvexList.size() - 1;
-    triangle._geometry = PolygonTools::createJoinTriangle(pc1._originalTrapeze, pc2._originalTrapeze, center);
+    triangle._geometry =
+        PolygonTools::createJoinTriangle(pc1._originalTrapeze, pc2._originalTrapeze, center);
 
     triangle._adjacents.push_back(pc2._id);
     triangle._adjacents.push_back(pc1._id);
@@ -62,7 +73,8 @@ void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<Poly
     pc2._adjacents.push_back(triangle._id);
 }
 
-void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList) {
+auto PolyConvex::connect(std::size_t first, std::size_t second,
+                         std::vector<PolyConvex>& polyConvexList) -> void {
     PolyConvex& pc1 = polyConvexList.at(first);
     PolyConvex& pc2 = polyConvexList.at(second);
 
@@ -70,7 +82,7 @@ void PolyConvex::connect(std::size_t first, std::size_t second, std::vector<Poly
     pc2._adjacents.push_back(pc1._id);
 }
 
-void PolyConvex::connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList) {
+auto PolyConvex::connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList) -> void {
 
     for (std::size_t i = begin + 1; i < polyConvexList.size(); ++i) {
         PolyConvex& pc1 = polyConvexList.at(i - 1);
@@ -83,29 +95,30 @@ void PolyConvex::connect(std::size_t begin, std::vector<PolyConvex>& polyConvexL
     }
 }
 
-PolyConvex::PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad) : _supportHe(&he), _id(id) {
+PolyConvex::PolyConvex(Halfedge& halfedge, std::size_t polygonId, basic::LinearGradient& gradient)
+    : _supportHe(&halfedge), _id(polygonId) {
     EASY_FUNCTION();
-    init(he.source()->point(), he.target()->point(), lgrad);
+    init(halfedge.source()->point(), halfedge.target()->point(), gradient);
 }
 
-void PolyConvex::init(const Point_2& ps, const Point_2& pt, basic::LinearGradient& lgrad) {
-    double const t1 = lgrad.thickness(ps);
-    double const t2 = lgrad.thickness(pt);
-    _geometry = PolygonTools::makeTrapeze(ps, pt, t1, t2);
+auto PolyConvex::init(const Point_2& sourcePoint, const Point_2& targetPoint,
+                      basic::LinearGradient& gradient) -> void {
+    const double sourceThickness = gradient.thickness(sourcePoint);
+    const double targetThickness = gradient.thickness(targetPoint);
+    _geometry =
+        PolygonTools::makeTrapeze(sourcePoint, targetPoint, sourceThickness, targetThickness);
     _originalTrapeze = _geometry;
-    setAverageThickness((t1 + t2) / 2.);
+    setAverageThickness((sourceThickness + targetThickness) / kAverageThicknessDivisor);
 }
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, Linear_polygon  geometry) : _geometry(std::move(geometry)), _originalTrapeze(_geometry), _id(id), _ps(ps), _pt(pt), _has_points(true) {
-    
-    
-    
-    
-}
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad) : _id(id), _ps(ps), _pt(pt), _has_points(true) {
+PolyConvex::PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint,
+                       std::size_t polygonId, Linear_polygon geometry)
+    : _geometry(std::move(geometry)), _originalTrapeze(_geometry), _id(polygonId), _ps(sourcePoint),
+      _pt(targetPoint), _has_points(true) {}
+
+PolyConvex::PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint,
+                       std::size_t polygonId, basic::LinearGradient& gradient)
+    : _id(polygonId), _ps(sourcePoint), _pt(targetPoint), _has_points(true) {
     EASY_FUNCTION();
-    init(ps, pt, lgrad);
-    
-    
-    
+    init(sourcePoint, targetPoint, gradient);
 }
 } /* namespace laby */

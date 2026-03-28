@@ -55,8 +55,7 @@
 
 namespace laby {
 
-class Node {
-  public:
+struct Node {
     /// Nodes from nearby non-overlapping families (soft alternating-state constraint).
     std::unordered_set<Node*> _adjacents;
 

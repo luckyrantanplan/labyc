@@ -7,10 +7,10 @@
 
 #include "Routing.h"
 
-#include "GeomData.h"
-#include "Anisotrop/QueueElement.h"
-#include "Anisotrop/QueueCost.h"
 #include "Anisotrop/Net.h"
+#include "Anisotrop/QueueCost.h"
+#include "Anisotrop/QueueElement.h"
+#include "GeomData.h"
 #include "basic/EasyProfilerCompat.h"
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Point_set_2.h>
@@ -20,6 +20,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
+#include <stdexcept>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -37,6 +39,14 @@ namespace laby::aniso {
 namespace {
 
 using PointSet = CGAL::Point_set_2<Kernel>;
+
+auto toInt32ConfigValue(uint32_t value, const char* fieldName) -> int32_t {
+    constexpr uint32_t kMaxInt32Value = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    if (value > kMaxInt32Value) {
+        throw std::out_of_range(fieldName);
+    }
+    return static_cast<int32_t>(value);
+}
 
 struct QueueUpdateState {
     int32_t direction = 0;
@@ -74,7 +84,7 @@ auto buildQueuedCost(const QueueElement& queueElement) -> QueueCost {
 
 void applyDegreeCost(QueueCost& cost, std::size_t degree, const proto::RoutingCost& config) {
     if (degree > 2U) {
-        cost.distance() += config.distance_unit_cost();
+        cost.distance() += toInt32ConfigValue(config.distance_unit_cost(), "distance_unit_cost");
     }
 }
 
@@ -126,7 +136,7 @@ void buildMazePointConnectivity(
     std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t>>& vertexPolyConvexMap,
     std::vector<const PointSet::Vertex*>& orderedVertices, PointConnectivityStats& stats) {
     for (const PolyConvex& polyConvex : polyConvexList) {
-        if (!polyConvex.has_points()) {
+        if (!polyConvex.hasPoints()) {
             ++stats.noPointCount;
             continue;
         }
@@ -186,7 +196,7 @@ Routing::Routing(Arrangement_2& arr, proto::RoutingCost config)
     : _config(std::move(config)), //
       _arr(&arr),                 //
       _spatialIndex(_convexList), //
-      _random{0, _config.max_random(), _config.seed()} {
+      _random{0, toInt32ConfigValue(_config.max_random(), "max_random"), _config.seed()} {
     EASY_FUNCTION();
     _convexList.reserve(_arr->number_of_edges());
 
@@ -373,8 +383,8 @@ void Routing::createMaze() {
         const CGAL::Union_find<std::size_t>::handle& handle2 = pc2.handle;
         if (unionFind.same_set(handle1, handle2)) {
             std::cout << "could cut between " << pair.first() << " and " << pair.second() << '\n';
-            pc1.remove_adjacence(pc2._id);
-            pc2.remove_adjacence(pc1._id);
+            pc1.removeAdjacence(pc2._id);
+            pc2.removeAdjacence(pc1._id);
 
             pc2._geometry.clear();
         } else {
@@ -480,7 +490,7 @@ auto Routing::findRoute(Net& net) -> bool {
                 applyTargetMemoryPenalty(cost);
             }
             if (needsViaCost(topQueueElement, newDirection)) {
-                cost.distance() += _config.via_unit_cost();
+                cost.distance() += toInt32ConfigValue(_config.via_unit_cost(), "via_unit_cost");
             }
 
             const int32_t newId = halfedge.source()->data().id(); // vertex id

@@ -8,19 +8,19 @@
 #ifndef POLYCONVEX_H_
 #define POLYCONVEX_H_
 
-#include <utility>
-#include <cstdint>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Union_find.h>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
+#include <utility>
 #include <vector>
 
+#include "GeomData.h"
 #include "basic/PolygonTools.h"
 #include "flatteningOverlap/Node.h"
-#include "GeomData.h"
 
 namespace laby::basic {
 class LinearGradient;
@@ -45,92 +45,106 @@ namespace laby {
  * - **_supportHe**: Optional pointer to the arrangement halfedge that
  *   generated this polygon (nullptr for maze-connected polygons).
  */
-class PolyConvex {
-public:
-    Linear_polygon _geometry;                             
-    Linear_polygon _originalTrapeze;                      
-    std::vector<std::size_t> _adjacents;                  
-    mutable std::vector<Node*> _nodes;                    
-    Halfedge* _supportHe = nullptr;                       
-    std::size_t _id = 0;                                  
-    mutable int32_t _visited = 0;                         
-    mutable CGAL::Union_find<std::size_t>::handle handle; 
-    double _average_thickness = 0;                        
+struct PolyConvex {
+    Linear_polygon _geometry{};
+    Linear_polygon _originalTrapeze{};
+    std::vector<std::size_t> _adjacents{};
+    mutable std::vector<Node*> _nodes{};
+    Halfedge* _supportHe = nullptr;
+    std::size_t _id = 0;
+    mutable int32_t _visited = 0;
+    mutable CGAL::Union_find<std::size_t>::handle handle{};
+    double _average_thickness = 0.0;
 
-    void setAverageThickness(double thickness) { 
+    auto setAverageThickness(double thickness) -> void {
         _average_thickness = thickness;
     }
 
-    auto thickness() const -> double { return _average_thickness; }
+    [[nodiscard]] auto thickness() const -> double {
+        return _average_thickness;
+    }
     PolyConvex() = default;
 
-    void removeAdjacence(std::size_t i) { 
-        auto ite = std::find(_adjacents.begin(), _adjacents.end(), i);
-        std::swap(*ite, _adjacents.back());
+    auto removeAdjacence(std::size_t adjacencyId) -> void {
+        auto iterator = std::find(_adjacents.begin(), _adjacents.end(), adjacencyId);
+        if (iterator == _adjacents.end()) {
+            return;
+        }
+        std::swap(*iterator, _adjacents.back());
         _adjacents.resize(_adjacents.size() - 1U);
     }
 
-    void resetMutable() const {
+    auto resetMutable() const -> void {
         handle = CGAL::Union_find<std::size_t>::handle();
 
         _visited = 0;
         _nodes.clear();
     }
 
-    void clear() {
+    auto clear() -> void {
         _supportHe = nullptr;
         _geometry.clear();
         _id = 0;
-        _average_thickness = 0;
+        _average_thickness = 0.0;
     }
 
-    auto empty() const -> bool { return _geometry.is_empty(); }
-
-    PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad);
-    PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad);
-    PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, Linear_polygon  geometry);
-
-    void print(std::ostream& os) const {
-
-        os << " _geometry " << _geometry;
-        os << " _adjacents " << _adjacents;
-        os << " ps " << _ps;
-        os << " pt " << _pt;
-        os << " id " << _id;
+    [[nodiscard]] auto empty() const -> bool {
+        return _geometry.is_empty();
     }
 
-    auto contains(const Node& n) const -> bool { return (std::find(_nodes.begin(), _nodes.end(), &n) != _nodes.end()); }
+    PolyConvex(Halfedge& halfedge, std::size_t polygonId, basic::LinearGradient& gradient);
+    PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint, std::size_t polygonId,
+               basic::LinearGradient& gradient);
+    PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint, std::size_t polygonId,
+               Linear_polygon geometry);
 
-    static auto testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) -> bool;
-    static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList, const Point_2& center);
-    static void connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList);
-    static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList);
+    auto print(std::ostream& outputStream) const -> void {
+        outputStream << " _geometry " << _geometry;
+        outputStream << " _adjacents " << _adjacents;
+        outputStream << " ps " << _ps;
+        outputStream << " pt " << _pt;
+        outputStream << " id " << _id;
+    }
 
-    auto getSourcePoint() const -> const CGAL::Point_2<Kernel>& {
+    [[nodiscard]] auto contains(const Node& node) const -> bool {
+        return std::find(_nodes.begin(), _nodes.end(), &node) != _nodes.end();
+    }
+
+    static auto testConvexPolyIntersect(const Linear_polygon& polygon,
+                                        const Linear_polygon& otherPolygon) -> bool;
+    static auto connect(std::size_t first, std::size_t second,
+                        std::vector<PolyConvex>& polyConvexList, const Point_2& center) -> void;
+    static auto connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList) -> void;
+    static auto connect(std::size_t first, std::size_t second,
+                        std::vector<PolyConvex>& polyConvexList) -> void;
+
+    [[nodiscard]] auto getSourcePoint() const -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->source()->point();
         }
         return _ps;
     }
 
-    auto getTargetPoint() const -> const CGAL::Point_2<Kernel>& {
+    [[nodiscard]] auto getTargetPoint() const -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->target()->point();
         }
         return _pt;
     }
 
-    auto hasPoints() const -> bool { 
+    [[nodiscard]] auto hasPoints() const -> bool {
         if (_supportHe != nullptr) {
             return true;
         }
         return _has_points;
     }
 
-private:
-    void init(const Point_2& ps, const Point_2& pt, basic::LinearGradient& lgrad);
+  private:
+    auto init(const Point_2& sourcePoint, const Point_2& targetPoint,
+              basic::LinearGradient& gradient) -> void;
 
-    // Needed for connect_maze (since we do not have the original arrangement for support; perhaps we should split PolyConvex class)
+    // Needed for connect_maze (since we do not have the original arrangement for support; perhaps
+    // we should split PolyConvex class)
 
     CGAL::Point_2<Kernel> _ps;
     CGAL::Point_2<Kernel> _pt;

@@ -1045,31 +1045,31 @@ class RoutingCost final :
   void _internal_set_seed(uint32_t value);
   public:
 
-  // int32 max_random = 2;
+  // uint32 max_random = 2;
   void clear_max_random();
-  int32_t max_random() const;
-  void set_max_random(int32_t value);
+  uint32_t max_random() const;
+  void set_max_random(uint32_t value);
   private:
-  int32_t _internal_max_random() const;
-  void _internal_set_max_random(int32_t value);
+  uint32_t _internal_max_random() const;
+  void _internal_set_max_random(uint32_t value);
   public:
 
-  // int32 distance_unit_cost = 3;
+  // uint32 distance_unit_cost = 3;
   void clear_distance_unit_cost();
-  int32_t distance_unit_cost() const;
-  void set_distance_unit_cost(int32_t value);
+  uint32_t distance_unit_cost() const;
+  void set_distance_unit_cost(uint32_t value);
   private:
-  int32_t _internal_distance_unit_cost() const;
-  void _internal_set_distance_unit_cost(int32_t value);
+  uint32_t _internal_distance_unit_cost() const;
+  void _internal_set_distance_unit_cost(uint32_t value);
   public:
 
-  // int32 via_unit_cost = 4;
+  // uint32 via_unit_cost = 4;
   void clear_via_unit_cost();
-  int32_t via_unit_cost() const;
-  void set_via_unit_cost(int32_t value);
+  uint32_t via_unit_cost() const;
+  void set_via_unit_cost(uint32_t value);
   private:
-  int32_t _internal_via_unit_cost() const;
-  void _internal_set_via_unit_cost(int32_t value);
+  uint32_t _internal_via_unit_cost() const;
+  void _internal_set_via_unit_cost(uint32_t value);
   public:
 
   // @@protoc_insertion_point(class_scope:proto.RoutingCost)
@@ -1081,9 +1081,9 @@ class RoutingCost final :
   typedef void DestructorSkippable_;
   struct Impl_ {
     uint32_t seed_;
-    int32_t max_random_;
-    int32_t distance_unit_cost_;
-    int32_t via_unit_cost_;
+    uint32_t max_random_;
+    uint32_t distance_unit_cost_;
+    uint32_t via_unit_cost_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -2816,62 +2816,62 @@ inline void RoutingCost::set_seed(uint32_t value) {
   // @@protoc_insertion_point(field_set:proto.RoutingCost.seed)
 }
 
-// int32 max_random = 2;
+// uint32 max_random = 2;
 inline void RoutingCost::clear_max_random() {
-  _impl_.max_random_ = 0;
+  _impl_.max_random_ = 0u;
 }
-inline int32_t RoutingCost::_internal_max_random() const {
+inline uint32_t RoutingCost::_internal_max_random() const {
   return _impl_.max_random_;
 }
-inline int32_t RoutingCost::max_random() const {
+inline uint32_t RoutingCost::max_random() const {
   // @@protoc_insertion_point(field_get:proto.RoutingCost.max_random)
   return _internal_max_random();
 }
-inline void RoutingCost::_internal_set_max_random(int32_t value) {
+inline void RoutingCost::_internal_set_max_random(uint32_t value) {
   
   _impl_.max_random_ = value;
 }
-inline void RoutingCost::set_max_random(int32_t value) {
+inline void RoutingCost::set_max_random(uint32_t value) {
   _internal_set_max_random(value);
   // @@protoc_insertion_point(field_set:proto.RoutingCost.max_random)
 }
 
-// int32 distance_unit_cost = 3;
+// uint32 distance_unit_cost = 3;
 inline void RoutingCost::clear_distance_unit_cost() {
-  _impl_.distance_unit_cost_ = 0;
+  _impl_.distance_unit_cost_ = 0u;
 }
-inline int32_t RoutingCost::_internal_distance_unit_cost() const {
+inline uint32_t RoutingCost::_internal_distance_unit_cost() const {
   return _impl_.distance_unit_cost_;
 }
-inline int32_t RoutingCost::distance_unit_cost() const {
+inline uint32_t RoutingCost::distance_unit_cost() const {
   // @@protoc_insertion_point(field_get:proto.RoutingCost.distance_unit_cost)
   return _internal_distance_unit_cost();
 }
-inline void RoutingCost::_internal_set_distance_unit_cost(int32_t value) {
+inline void RoutingCost::_internal_set_distance_unit_cost(uint32_t value) {
   
   _impl_.distance_unit_cost_ = value;
 }
-inline void RoutingCost::set_distance_unit_cost(int32_t value) {
+inline void RoutingCost::set_distance_unit_cost(uint32_t value) {
   _internal_set_distance_unit_cost(value);
   // @@protoc_insertion_point(field_set:proto.RoutingCost.distance_unit_cost)
 }
 
-// int32 via_unit_cost = 4;
+// uint32 via_unit_cost = 4;
 inline void RoutingCost::clear_via_unit_cost() {
-  _impl_.via_unit_cost_ = 0;
+  _impl_.via_unit_cost_ = 0u;
 }
-inline int32_t RoutingCost::_internal_via_unit_cost() const {
+inline uint32_t RoutingCost::_internal_via_unit_cost() const {
   return _impl_.via_unit_cost_;
 }
-inline int32_t RoutingCost::via_unit_cost() const {
+inline uint32_t RoutingCost::via_unit_cost() const {
   // @@protoc_insertion_point(field_get:proto.RoutingCost.via_unit_cost)
   return _internal_via_unit_cost();
 }
-inline void RoutingCost::_internal_set_via_unit_cost(int32_t value) {
+inline void RoutingCost::_internal_set_via_unit_cost(uint32_t value) {
   
   _impl_.via_unit_cost_ = value;
 }
-inline void RoutingCost::set_via_unit_cost(int32_t value) {
+inline void RoutingCost::set_via_unit_cost(uint32_t value) {
   _internal_set_via_unit_cost(value);
   // @@protoc_insertion_point(field_set:proto.RoutingCost.via_unit_cost)
 }
