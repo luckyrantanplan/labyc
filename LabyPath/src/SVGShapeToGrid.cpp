@@ -175,12 +175,12 @@ auto SVGShapeToGrid::createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>
 auto SVGShapeToGrid::addToSegments(const Ribbon& ribb) -> std::vector<Segment_2> {
     std::vector<Segment_2> result;
     for (const Polyline& pl : ribb.lines()) {
-        if (!pl.points.empty()) {
+        if (!pl.points().empty()) {
 
-            Point_2 cPrevious = pl.points.at(0);
-            for (uint32_t i = 1; i < pl.points.size(); ++i) {
+            Point_2 cPrevious = pl.points().at(0);
+            for (uint32_t i = 1; i < pl.points().size(); ++i) {
 
-                const Point_2& c = pl.points.at(i);
+                const Point_2& c = pl.points().at(i);
                 if (cPrevious != c) {
                     result.emplace_back(cPrevious, c);
                     cPrevious = c;

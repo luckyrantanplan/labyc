@@ -43,7 +43,7 @@ public:
     [[nodiscard]] auto polyline() const -> Polyline {
         Polyline pl(_number);
         for (Vertex* v : _vertexList) {
-            pl.points.emplace_back(v->point());
+            pl.points().emplace_back(v->point());
         }
         return pl;
     }

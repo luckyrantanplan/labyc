@@ -33,16 +33,16 @@ auto PenStroke::LineConstruct::getMedianList() const -> const Polyline& {
 }
 
 void PenStroke::LineConstruct::setClosed() {
-    _anti.closed = true;
-    _anti.points.emplace_back(_anti.points.front());
+    _anti.setClosed(true);
+    _anti.points().emplace_back(_anti.points().front());
     _sym.emplace_back(_sym.front());
 }
 auto PenStroke::LineConstruct::isClosed() const -> bool {
-    return _anti.closed;
+    return _anti.isClosed();
 }
 
 auto PenStroke::LineConstruct::getMedian(const std::size_t pointIndex) const -> const Point_2& {
-    return _anti.points.at(pointIndex);
+    return _anti.points().at(pointIndex);
 }
 
 auto PenStroke::LineConstruct::getBorder(const std::size_t pointIndex) const -> const double& {
@@ -70,7 +70,7 @@ auto PenStroke::smooth(const Point_2& point, const Point_2& origin) const -> dou
 }
 
 void PenStroke::LineConstruct::addPoint(const Point_2& point, const double borderValue) {
-    _anti.points.emplace_back(point);
+    _anti.points().emplace_back(point);
     _sym.emplace_back(borderValue);
 }
 
@@ -128,14 +128,14 @@ auto PenStroke::createPenStroke(const proto::PenStroke& config,
 
 void PenStroke::drawRibbonStroke(svg::Path& path, const Ribbon& ribbon) {
     for (const Polyline& polyline : ribbon.lines()) {
-        if (polyline.points.size() > 1UL) {
+        if (polyline.points().size() > 1UL) {
 
-            moveTo(path, polyline.points.at(0));
+            moveTo(path, polyline.points().at(0));
 
-            for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
-                lineTo(path, polyline.points.at(pointIndex));
+            for (std::size_t pointIndex = 1; pointIndex < polyline.points().size(); ++pointIndex) {
+                lineTo(path, polyline.points().at(pointIndex));
             }
-            if (polyline.closed) {
+            if (polyline.isClosed()) {
                 path.closeSubPath();
             }
         }
@@ -147,9 +147,9 @@ auto PenStroke::getSegmentFromMedian(const std::unordered_set<std::size_t>& refe
     std::vector<Segment_info_2> segmentList;
     for (const std::size_t medianLineIndex : referenceMedianLineSet) {
         const Polyline& medianPolyline = _medrib.at(medianLineIndex).getMedianList();
-        for (std::size_t pointIndex = 1; pointIndex < medianPolyline.points.size(); ++pointIndex) {
-            segmentList.emplace_back(Kernel::Segment_2(medianPolyline.points.at(pointIndex - 1),
-                                                       medianPolyline.points.at(pointIndex)),
+        for (std::size_t pointIndex = 1; pointIndex < medianPolyline.points().size(); ++pointIndex) {
+            segmentList.emplace_back(Kernel::Segment_2(medianPolyline.points().at(pointIndex - 1),
+                                                       medianPolyline.points().at(pointIndex)),
                                      EdgeInfo{1, EdgeInfo::Coordinate{0}});
         }
     }
@@ -168,12 +168,12 @@ auto PenStroke::fillFace(const std::vector<Segment_info_2>& segmentList) -> Ribb
             ribbon.lines().emplace_back();
             Polyline& polyline = ribbon.lines().back();
 
-            polyline.points.emplace_back((*holeIterator)->source()->point());
+            polyline.points().emplace_back((*holeIterator)->source()->point());
 
             for (const Halfedge& halfedge : RangeHelper::make(*holeIterator)) {
-                polyline.points.emplace_back(halfedge.target()->point());
+                polyline.points().emplace_back(halfedge.target()->point());
             }
-            polyline.closed = true;
+            polyline.setClosed(true);
         }
     }
 
@@ -260,7 +260,7 @@ void PenStroke::drawOutline(svg::Path& path) const {
 
         std::vector<PolyConvex> polyConvexVector;
         // we populate polyConvex
-        const std::size_t pointCount = medianLine.getMedianList().points.size();
+        const std::size_t pointCount = medianLine.getMedianList().points().size();
         const std::size_t beginIndex = polyConvexVector.size();
         for (std::size_t pointIndex = 1; pointIndex < pointCount; ++pointIndex) {
             const std::size_t polyConvexIndex = polyConvexVector.size();
@@ -304,19 +304,19 @@ void PenStroke::drawOutline(svg::Path& path) const {
 
 void PenStroke::createStroke(const Polyline& polyline) {
 
-    if (polyline.points.size() <= 1UL) {
-        std::cout << "warning : polyline with size: " << polyline.points.size() << '\n';
+    if (polyline.points().size() <= 1UL) {
+        std::cout << "warning : polyline with size: " << polyline.points().size() << '\n';
         return;
     }
-    const Point_2& origin = polyline.points.front();
-    const Point_2& destination = polyline.points.back();
+    const Point_2& origin = polyline.points().front();
+    const Point_2& destination = polyline.points().back();
 
     _medrib.emplace_back();
     LineConstruct& medianLine = _medrib.back();
-    for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
+    for (std::size_t pointIndex = 1; pointIndex < polyline.points().size(); ++pointIndex) {
 
         CGAL::Vector_2<Kernel> segmentVector =
-            polyline.points.at(pointIndex) - polyline.points.at(pointIndex - 1);
+            polyline.points().at(pointIndex) - polyline.points().at(pointIndex - 1);
 
         const double length = sqrt(CGAL::to_double(segmentVector.squared_length()));
         if (length > 0) {
@@ -324,22 +324,24 @@ void PenStroke::createStroke(const Polyline& polyline) {
             const CGAL::Vector_2<Kernel> normalVector = unitVector.perpendicular(CGAL::LEFT_TURN);
             unitVector = unitVector * _config.resolution();
 
-            addPoint(medianLine, polyline.points.at(pointIndex - 1), origin, destination, +1,
+            addPoint(medianLine, polyline.points().at(pointIndex - 1), origin, destination, +1,
                      normalVector);
             for (int32_t vertexIndex = 1; vertexIndex < length / _config.resolution();
                  ++vertexIndex) {
                 addPoint(medianLine,
-                         barycentre(polyline.points.at(pointIndex - 1), vertexIndex, unitVector),
+                         barycentre(polyline.points().at(pointIndex - 1), vertexIndex,
+                                    unitVector),
                          origin, destination, +1, normalVector);
             }
-            if (pointIndex + 1 == polyline.points.size()) {
+            if (pointIndex + 1 == polyline.points().size()) {
 
-                if (polyline.closed or polyline.points.front() == polyline.points.back()) {
+                if (polyline.isClosed() or
+                    polyline.points().front() == polyline.points().back()) {
 
                     medianLine.setClosed();
                 } else {
-                    addPoint(medianLine, polyline.points.at(pointIndex), origin, destination, +1,
-                             normalVector);
+                    addPoint(medianLine, polyline.points().at(pointIndex), origin, destination,
+                             +1, normalVector);
                 }
             }
         }

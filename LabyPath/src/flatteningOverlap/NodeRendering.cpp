@@ -126,7 +126,7 @@ auto NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& /*polyConvexList
     using namespace basic;
     int32_t polygonIndex = 0;
 
-    for (Node* node : _nodes) {
+    for (Node* node : nodes()) {
         Arrangement_2Node& arrangement = node->_setPolygons.arrangement();
         for (FaceNode& face :
              RangeHelper::make(arrangement.faces_begin(), arrangement.faces_end())) {
@@ -144,11 +144,11 @@ auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
 
     addIdToPolygon(polyConvexList);
 
-    if (_nodes.empty()) {
+    if (nodes().empty()) {
         return;
     }
 
-    basic::Arrangement_2Node overlayArrangement = buildOverlayArrangement(_nodes);
+    basic::Arrangement_2Node overlayArrangement = buildOverlayArrangement(nodes());
     if (!arrangementHasSharedFace(overlayArrangement)) {
         renderSharedEdges(orientedRibbon, overlayArrangement);
         return;
@@ -158,7 +158,7 @@ auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
 }
 
 auto NodeOverlap::sortNode() -> void {
-    std::sort(_nodes.begin(), _nodes.end(), [](const Node* leftNode, const Node* rightNode) {
+    std::sort(nodes().begin(), nodes().end(), [](const Node* leftNode, const Node* rightNode) {
         return leftNode->_state < rightNode->_state;
     });
 }
@@ -172,10 +172,10 @@ auto NodeRendering::render(OrientedRibbon& orientedRibbon, std::vector<Node>& no
 
             node._visited = 1;
             NodeOverlap nodeOverlap;
-            nodeOverlap._nodes.push_back(&node);
+            nodeOverlap.nodes().push_back(&node);
             for (Node* oppositeNode : node._opposite) {
                 oppositeNode->_visited = 1;
-                nodeOverlap._nodes.push_back(oppositeNode);
+                nodeOverlap.nodes().push_back(oppositeNode);
             }
 
             nodeOverlap.render(orientedRibbon, polyConvexList);

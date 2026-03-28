@@ -16,7 +16,7 @@ namespace laby {
 
 auto Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tension, uint32_t nrOfIterations) -> Polyline {
     //checks
-    if (line.points.size() < 3) {
+    if (line.points().size() < 3) {
         return line;
     }
 
@@ -35,24 +35,26 @@ auto Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tension, u
     return nl;
 }
 auto Smoothing::getSmootherChaikin(const Polyline& line, double cuttingDist) -> Polyline {
-    Polyline nl(line.id);
-    nl.closed = line.closed;
-    if (line.points.at(0) != line.points.back() or !line.closed) {
-        nl.points.emplace_back(line.points.at(0));
+    Polyline nl(line.id());
+    nl.setClosed(line.isClosed());
+    if (line.points().at(0) != line.points().back() or !line.isClosed()) {
+        nl.points().emplace_back(line.points().at(0));
         chaikinPointCompute(line, cuttingDist, nl);
         //'always add the last point
-        nl.points.emplace_back(line.points.back());
+        nl.points().emplace_back(line.points().back());
     } else {
         chaikinPointCompute(line, cuttingDist, nl);
-        nl.points.emplace_back(nl.points.at(0));
+        nl.points().emplace_back(nl.points().at(0));
     }
     return nl;
 }
 
 void Smoothing::chaikinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl) {
-    for (std::size_t i = 1; i < line.points.size(); ++i) {
-        nl.points.emplace_back(CGAL::barycenter(line.points.at(i - 1), 1 - cuttingDist, line.points.at(i)));
-        nl.points.emplace_back(CGAL::barycenter(line.points.at(i - 1), cuttingDist, line.points.at(i)));
+    for (std::size_t i = 1; i < line.points().size(); ++i) {
+        nl.points().emplace_back(
+            CGAL::barycenter(line.points().at(i - 1), 1 - cuttingDist, line.points().at(i)));
+        nl.points().emplace_back(
+            CGAL::barycenter(line.points().at(i - 1), cuttingDist, line.points().at(i)));
     }
 }
 } /* namespace laby */

@@ -22,30 +22,54 @@
 
 namespace laby {
 
-struct Polyline {
+class Polyline {
+
+public:
 
     Polyline() = default;
 
-    Polyline(const int32_t polyId, const std::vector<Point_2>& pts) : id{polyId}, points{pts} {}
+    Polyline(const int32_t polyId, const std::vector<Point_2>& pts) : _id{polyId}, _points{pts} {}
 
-    explicit Polyline(const int32_t polyId) : id{polyId} {}
+    explicit Polyline(const int32_t polyId) : _id{polyId} {}
 
-    explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) : points{poly.container()}, closed{true} {}
+    explicit Polyline(const CGAL::Polygon_2<Kernel>& poly)
+        : _points{poly.container()}, _closed{true} {}
 
-    [[nodiscard]] auto empty() const -> bool { return points.empty(); }
+    [[nodiscard]] auto empty() const -> bool { return _points.empty(); }
+
+    [[nodiscard]] auto id() const -> int32_t { return _id; }
+
+    auto setId(const int32_t polylineId) -> void { _id = polylineId; }
+
+    [[nodiscard]] auto points() const -> const std::vector<Point_2>& { return _points; }
+
+    auto points() -> std::vector<Point_2>& { return _points; }
+
+    [[nodiscard]] auto isClosed() const -> bool { return _closed; }
+
+    auto setClosed(const bool isClosed) -> void { _closed = isClosed; }
+
+    [[nodiscard]] auto minPoint() const -> const Point_2& { return _minPoint; }
 
     void reverse();
 
-    void print(std::ostream& os) const { os << " id " << id << " points " << points; }
+    void print(std::ostream& outputStream) const {
+        outputStream << " id " << _id << " points " << _points;
+    }
 
     void computeMinLexi() {
-        min_point = *std::min_element(points.begin(), points.end(), [](const Point_2& a, const Point_2& b) { return a < b; });
+        _minPoint = *std::min_element(_points.begin(), _points.end(),
+                                      [](const Point_2& leftPoint,
+                                         const Point_2& rightPoint) {
+                                          return leftPoint < rightPoint;
+                                      });
     }
 
     [[nodiscard]] auto totalLength() const -> double {
         double sqdist = 0;
-        for (std::size_t i = 1; i < points.size(); ++i) {
-            sqdist += sqrt(CGAL::to_double((points.at(i) - points.at(i - 1)).squared_length()));
+        for (std::size_t i = 1; i < _points.size(); ++i) {
+            sqdist +=
+                sqrt(CGAL::to_double((_points.at(i) - _points.at(i - 1)).squared_length()));
         }
         return sqdist;
     }
@@ -54,10 +78,11 @@ struct Polyline {
 
     void simplify(double distance);
 
-    int32_t id = 0;              
-    std::vector<Point_2> points; 
-    bool closed = false;         
-    Point_2 min_point;           
+private:
+    int32_t _id = 0;
+    std::vector<Point_2> _points;
+    bool _closed = false;
+    Point_2 _minPoint;
 };
 
 } /* namespace laby */

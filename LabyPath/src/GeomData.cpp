@@ -13,13 +13,14 @@
 
 namespace laby {
 
-auto EdgeInfo::getNextHalfedge(int32_t visited, const Vertex& v) const -> const Halfedge* {
+auto EdgeInfo::getNextHalfedge(int32_t visited, const Vertex& vertex) const
+    -> const Halfedge* {
 
-    for (const Halfedge& he : RangeHelper::make(v.incident_halfedges())) {
-        const laby::EdgeInfo& data = he.curve().data();
+    for (const Halfedge& halfedge : RangeHelper::make(vertex.incident_halfedges())) {
+        const laby::EdgeInfo& data = halfedge.curve().data();
         if (data == *this && data.getVisit() != visited) {
-            he.curve().data().setVisit(visited);
-            return &he;
+            halfedge.curve().data().setVisit(visited);
+            return &halfedge;
         }
     }
     return nullptr;

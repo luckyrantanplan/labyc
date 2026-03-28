@@ -7,6 +7,12 @@
 
 #include "UseContext.h"
 
+#include <boost/mpl/insert.hpp>
+
+#include <svgpp/attribute_dispatcher.hpp>
+#include <svgpp/document_traversal.hpp>
+#include <svgpp/traits/element_groups.hpp>
+
 namespace laby::svgp {
 
 void UseContext::on_exit_element() { 

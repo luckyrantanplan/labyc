@@ -37,11 +37,11 @@ int BezierTest::test(int argc, char *argv[]) {
     }
     exit(0);
     Polyline pl;
-    pl.points.emplace_back(600, 600);
-    pl.points.emplace_back(600, 200);
-    pl.points.emplace_back(20, 200);
-    pl.points.emplace_back(500, 500);
-    pl.points.emplace_back(400, 600);
+    pl.points().emplace_back(600, 600);
+    pl.points().emplace_back(600, 200);
+    pl.points().emplace_back(20, 200);
+    pl.points().emplace_back(500, 500);
+    pl.points().emplace_back(400, 600);
 
     Fenetre::Config confFenetre;
 

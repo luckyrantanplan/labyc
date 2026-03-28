@@ -33,11 +33,12 @@ auto isRight(const Kernel::Point_2& firstPoint, const Kernel::Point_2& secondPoi
 
 auto setPolylineOrientation(const Halfedge& halfedge, Polyline& polyline) -> void {
     if (halfedge.curve().data().direction() == 1) {
-        polyline.id = isRight(halfedge.source()->point(), halfedge.target()->point()) ? +1 : -1;
+        polyline.setId(isRight(halfedge.source()->point(), halfedge.target()->point()) ? +1 :
+                                                                                         -1);
         return;
     }
 
-    polyline.id = isRight(halfedge.source()->point(), halfedge.target()->point()) ? -1 : +1;
+    polyline.setId(isRight(halfedge.source()->point(), halfedge.target()->point()) ? -1 : +1);
 }
 
 void resetEdgeVisits(const Arrangement_2& arrangement) {
@@ -53,7 +54,7 @@ void appendBranchPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
     Polyline& polyline = ribbon.lines().back();
 
     for (const Halfedge& halfedge : RangeHelper::make(startHalfedge.twin()->ccb())) {
-        polyline.points.emplace_back(halfedge.source()->point());
+        polyline.points().emplace_back(halfedge.source()->point());
         setPolylineOrientation(halfedge, polyline);
 
         if (halfedge.curve().data().getVisit() == 1) {
@@ -62,7 +63,7 @@ void appendBranchPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
 
         if (halfedge.target()->degree() != 2) {
             halfedge.curve().data().setVisit(1);
-            polyline.points.emplace_back(halfedge.target()->point());
+            polyline.points().emplace_back(halfedge.target()->point());
             break;
         }
         halfedge.curve().data().setVisit(1);
@@ -89,7 +90,7 @@ void appendLoopPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
 
     for (const Halfedge& halfedge : RangeHelper::make(startHalfedge.twin()->ccb())) {
         setPolylineOrientation(halfedge, polyline);
-        polyline.points.emplace_back(halfedge.source()->point());
+        polyline.points().emplace_back(halfedge.source()->point());
         if (halfedge.curve().data().getVisit() == 1) {
             isClosed = false;
             break;
@@ -98,8 +99,8 @@ void appendLoopPolyline(const Halfedge& startHalfedge, Ribbon& ribbon) {
     }
 
     if (isClosed) {
-        polyline.points.emplace_back(startHalfedge.target()->point());
-        polyline.closed = true;
+        polyline.points().emplace_back(startHalfedge.target()->point());
+        polyline.setClosed(true);
     }
 }
 
@@ -116,9 +117,9 @@ void normalizeRibbonOrientation(Ribbon& ribbon) {
     for (Polyline& polyline : ribbon.lines()) {
         polyline.removeConsecutiveDuplicatePoints();
 
-        if (polyline.id == 1) {
-            std::reverse(polyline.points.begin(), polyline.points.end());
-            polyline.id = -1;
+        if (polyline.id() == 1) {
+            std::reverse(polyline.points().begin(), polyline.points().end());
+            polyline.setId(-1);
         }
     }
 }

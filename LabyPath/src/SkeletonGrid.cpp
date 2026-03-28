@@ -11,6 +11,7 @@
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <svgpp/factory/integer_color.hpp>
 #include <iostream>
+#include <utility>
 
 #include "basic/AugmentedPolygonSet.h"
 #include "basic/Color.h"
@@ -23,16 +24,17 @@
 
 namespace laby {
 
-SkeletonGrid::SkeletonGrid(const proto::SkeletonGrid& config) : _config(config) {
+SkeletonGrid::SkeletonGrid(proto::SkeletonGrid config) : _config(std::move(config)) {
 
-    svgp::Loader load(config.inputfile());
+    svgp::Loader load(_config.inputfile());
     for (Ribbon& rib : load.ribList()) {
-        rib.simplify(config.simplificationoforiginalsvg());
+        rib.simplify(_config.simplificationoforiginalsvg());
     }
 
     create(load);
 }
-void SkeletonGrid::create(const svgp::Loader& load) {
+
+auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     std::vector<Ribbon> result;
     result.reserve(load.ribList().size());
 
@@ -81,7 +83,9 @@ void SkeletonGrid::create(const svgp::Loader& load) {
     GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(), _config.min_sep() / 3., result);
 }
 
-void SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons, const double& distance) {
+auto SkeletonGrid::medialGraph(
+    const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
+    const double& distance) -> void {
     _circularList.clear();
     _radialList.clear();
     std::vector<Kernel::Segment_2> result2;

@@ -88,8 +88,22 @@ class BaseContext : public Stylable {
         return _viewbox;
     }
 
+  protected:
+    auto setRibbonRef(std::vector<Ribbon>* ribbonRef) -> void {
+        _vectRibbonRef = ribbonRef;
+    }
+
+    [[nodiscard]] auto ribbonRef() const -> std::vector<Ribbon>* {
+        return _vectRibbonRef;
+    }
+
+    [[nodiscard]] auto ribbonStorage() -> std::vector<Ribbon>& {
+        return _vectRibbon;
+    }
+
+  private:
     std::vector<Ribbon> _vectRibbon;
-    std::vector<Ribbon>* _vectRibbonRef;
+    std::vector<Ribbon>* _vectRibbonRef = nullptr;
     CGAL::Bbox_2 _viewbox;
 };
 

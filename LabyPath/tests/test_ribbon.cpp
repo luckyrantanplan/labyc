@@ -25,12 +25,12 @@ TEST(RibbonTest, ConstructWithFillColor) {
 
 TEST(RibbonTest, ConstructWithLines) {
     Polyline pl1(1);
-    pl1.points.emplace_back(0, 0);
-    pl1.points.emplace_back(10, 0);
+    pl1.points().emplace_back(0, 0);
+    pl1.points().emplace_back(10, 0);
 
     Polyline pl2(2);
-    pl2.points.emplace_back(0, 10);
-    pl2.points.emplace_back(10, 10);
+    pl2.points().emplace_back(0, 10);
+    pl2.points().emplace_back(10, 10);
 
     Ribbon r(1, {pl1, pl2});
     EXPECT_EQ(r.lines().size(), 2U);
@@ -58,19 +58,19 @@ TEST(RibbonTest, StrokeWidthGetSet) {
 TEST(RibbonTest, MutableLinesAccess) {
     Ribbon r;
     Polyline pl(1);
-    pl.points.emplace_back(0, 0);
-    pl.points.emplace_back(5, 5);
+    pl.points().emplace_back(0, 0);
+    pl.points().emplace_back(5, 5);
 
     r.lines().push_back(pl);
     EXPECT_EQ(r.lines().size(), 1U);
-    EXPECT_EQ(r.lines()[0].id, 1);
+    EXPECT_EQ(r.lines()[0].id(), 1);
 }
 
 TEST(RibbonTest, GetSegments) {
     Polyline pl;
-    pl.points.emplace_back(0, 0);
-    pl.points.emplace_back(10, 0);
-    pl.points.emplace_back(10, 10);
+    pl.points().emplace_back(0, 0);
+    pl.points().emplace_back(10, 0);
+    pl.points().emplace_back(10, 10);
 
     Ribbon const r(0, {pl});
     auto segs = r.getSegments();
@@ -79,10 +79,10 @@ TEST(RibbonTest, GetSegments) {
 
 TEST(RibbonTest, CreateArrSkipsDegenerateSegments) {
     Polyline pl;
-    pl.id = 7;
-    pl.points.emplace_back(0, 0);
-    pl.points.emplace_back(0, 0);
-    pl.points.emplace_back(10, 0);
+    pl.setId(7);
+    pl.points().emplace_back(0, 0);
+    pl.points().emplace_back(0, 0);
+    pl.points().emplace_back(10, 0);
 
     Ribbon const r(0, {pl});
 
@@ -94,8 +94,8 @@ TEST(RibbonTest, CreateArrSkipsDegenerateSegments) {
 
 TEST(RibbonTest, GetPoints) {
     Polyline pl;
-    pl.points.emplace_back(0, 0);
-    pl.points.emplace_back(5, 5);
+    pl.points().emplace_back(0, 0);
+    pl.points().emplace_back(5, 5);
 
     Ribbon const r(0, {pl});
     auto pts = r.getPoints();

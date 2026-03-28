@@ -80,9 +80,10 @@ auto Cell::resolution() const -> double {
 auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
     std::vector<Point_2> result;
     const double subdivisionResolution = resolution();
-    for (std::size_t i = 1; i < polyline.points.size(); ++i) {
+    for (std::size_t i = 1; i < polyline.points().size(); ++i) {
 
-        CGAL::Vector_2<Kernel> const vec = polyline.points.at(i) - polyline.points.at(i - 1);
+        CGAL::Vector_2<Kernel> const vec =
+            polyline.points().at(i) - polyline.points().at(i - 1);
 
         double const length = std::sqrt(CGAL::to_double(vec.squared_length()));
         if (length > 0) {
@@ -90,17 +91,18 @@ auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
 
             unitVector = unitVector * subdivisionResolution;
 
-            result.emplace_back(polyline.points.at(i - 1));
+            result.emplace_back(polyline.points().at(i - 1));
             for (int32_t vertexIndex = 1; vertexIndex < length / subdivisionResolution;
                  ++vertexIndex) {
 
-                result.emplace_back(polyline.points.at(i - 1) + vertexIndex * unitVector);
+                result.emplace_back(polyline.points().at(i - 1) + vertexIndex * unitVector);
             }
-            if (i + 1 == polyline.points.size()) {
+            if (i + 1 == polyline.points().size()) {
 
-                if (polyline.closed or polyline.points.front() == polyline.points.back()) {
+                if (polyline.isClosed() or
+                    polyline.points().front() == polyline.points().back()) {
                 } else {
-                    result.emplace_back(polyline.points.at(i));
+                    result.emplace_back(polyline.points().at(i));
                 }
             }
         }

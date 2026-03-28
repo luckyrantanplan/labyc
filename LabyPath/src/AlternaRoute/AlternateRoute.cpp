@@ -267,15 +267,15 @@ auto AlternateRoute::voronoiArr(const Arrangement_2& arrangement, int32_t direct
     Polyline& framePolyline = ribContourFramed.lines().back();
     const double viewBoxLengthX = viewBox.xmax() - viewBox.xmin();
     const double viewBoxLengthY = viewBox.ymax() - viewBox.ymin();
-    framePolyline.points.emplace_back(viewBox.xmin() - viewBoxLengthX,
-                                      viewBox.ymin() - viewBoxLengthY);
-    framePolyline.points.emplace_back(viewBox.xmax() + viewBoxLengthX,
-                                      viewBox.ymin() - viewBoxLengthY);
-    framePolyline.points.emplace_back(viewBox.xmax() + viewBoxLengthX,
-                                      viewBox.ymax() + viewBoxLengthY);
-    framePolyline.points.emplace_back(viewBox.xmin() - viewBoxLengthX,
-                                      viewBox.ymax() + viewBoxLengthY);
-    framePolyline.closed = true;
+    framePolyline.points().emplace_back(viewBox.xmin() - viewBoxLengthX,
+                                        viewBox.ymin() - viewBoxLengthY);
+    framePolyline.points().emplace_back(viewBox.xmax() + viewBoxLengthX,
+                                        viewBox.ymin() - viewBoxLengthY);
+    framePolyline.points().emplace_back(viewBox.xmax() + viewBoxLengthX,
+                                        viewBox.ymax() + viewBoxLengthY);
+    framePolyline.points().emplace_back(viewBox.xmin() - viewBoxLengthX,
+                                        viewBox.ymax() + viewBoxLengthY);
+    framePolyline.setClosed(true);
 
     CGAL::Bbox_2 const frameBox(viewBox.xmin() - 1, viewBox.ymin() - 1, viewBox.xmax() + 1,
                                 viewBox.ymax() + 1);

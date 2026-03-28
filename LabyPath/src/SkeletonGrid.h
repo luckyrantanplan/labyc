@@ -20,16 +20,19 @@ namespace laby {
 
 class SkeletonGrid {
 public:
-    const CGAL::Bbox_2& bbox() const { return _bbox; }
+    [[nodiscard]] auto bbox() const -> const CGAL::Bbox_2& { return _bbox; }
 
-    const std::vector<Segment_info_2>& segResult() const { return _segResult; }
+    [[nodiscard]] auto segResult() const -> const std::vector<Segment_info_2>& {
+        return _segResult;
+    }
 
-    SkeletonGrid(const proto::SkeletonGrid& config);
-    void medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons, const double& distance);
-    void create(const svgp::Loader& vRibbons);
+    explicit SkeletonGrid(proto::SkeletonGrid config);
+    auto medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
+                     const double& distance) -> void;
+    auto create(const svgp::Loader& ribbons) -> void;
 
 private:
-    const proto::SkeletonGrid _config;
+    proto::SkeletonGrid _config;
     std::vector<Kernel::Segment_2> _radialList;
     std::vector<Kernel::Segment_2> _circularList;
     CGAL::Bbox_2 _bbox;

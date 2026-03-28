@@ -13,7 +13,6 @@
 #include "SkeletonGrid.h"
 #include "protoc/AllConfig.pb.h"
 #include <fstream>
-#include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
 #include <iostream>
 #include <sstream>
@@ -32,7 +31,7 @@ auto MessageIO::parseMessage(const std::vector<std::string_view>& arguments) -> 
         return 1;
     }
     std::cout << arguments.at(1) << '\n';
-    std::string filename(arguments.at(1));
+    const std::string filename(arguments.at(1));
     std::cout << filename << '\n';
 
     std::fstream inputFileStream;
@@ -53,17 +52,17 @@ auto MessageIO::parseMessage(const std::vector<std::string_view>& arguments) -> 
 
         if (routingconf.has_placement()) {
             const proto::Placement& placementConfig = routingconf.placement();
-            aniso::Placement placement(placementConfig, routingconf.filepaths());
+            const aniso::Placement placement(placementConfig, routingconf.filepaths());
         }
         if (routingconf.has_alternaterouting()) {
             const proto::AlternateRouting& alternateConfig = routingconf.alternaterouting();
-            AlternateRoute route(alternateConfig, routingconf.filepaths());
+            const AlternateRoute route(alternateConfig, routingconf.filepaths());
         }
     }
 
     if (message.has_ggraphicrendering()) {
         const proto::GraphicRendering& renderconf = message.ggraphicrendering();
-        GraphicRendering graphicRendering(renderconf);
+        const GraphicRendering graphicRendering(renderconf);
     }
     return 0;
 }

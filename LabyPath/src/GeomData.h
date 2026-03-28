@@ -34,21 +34,23 @@
 namespace laby {
 
 // handy for printing datas
-template <class T> auto operator<<(std::ostream& os, const T& t) -> decltype(t.print(os), os) {
-    t.print(os);
-    return os;
+template <class T>
+auto operator<<(std::ostream& outputStream, const T& value)
+    -> decltype(value.print(outputStream), outputStream) {
+    value.print(outputStream);
+    return outputStream;
 }
 
-template <typename T> auto operator<<(std::ostream& out, const std::vector<T>& v) -> std::ostream& {
-    if (!v.empty()) {
-        out << '[';
-        std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
-        out << "END]";
+template <typename T>
+auto operator<<(std::ostream& outputStream, const std::vector<T>& values) -> std::ostream& {
+    if (!values.empty()) {
+        outputStream << '[';
+        std::copy(values.begin(), values.end(), std::ostream_iterator<T>(outputStream, ", "));
+        outputStream << "END]";
+    } else {
+        outputStream << "[EMPTY]";
     }
-    else {
-        out << "[EMPTY]";
-    }
-    return out;
+    return outputStream;
 }
 
 class EdgeInfo;
@@ -99,7 +101,7 @@ public:
 
     EdgeInfo(int32_t direction, Coordinate coordinate) : _direction{direction}, _coordinate{coordinate.value} {}
 
-    explicit EdgeInfo(Type itype) : _direction{itype} {}
+    explicit EdgeInfo(Type edgeType) : _direction{edgeType} {}
 
     EdgeInfo() = default;
 
@@ -110,9 +112,9 @@ public:
     auto hasNet(const int32_t serialId) const -> bool { return _path.count(serialId) != 0; }
 
     void addPath(const int32_t serialId) {
-        auto it = _path.emplace(serialId, 1);
-        if (!it.second) {
-            ++it.first->second;
+        auto insertResult = _path.emplace(serialId, 1);
+        if (!insertResult.second) {
+            ++insertResult.first->second;
         }
     }
 
@@ -122,18 +124,20 @@ public:
 
     void setVisit(int32_t value = -1) const { _visit = value; }
 
-    auto operator==(const EdgeInfo& it) const -> bool { return _direction == it._direction; }
+    auto operator==(const EdgeInfo& other) const -> bool {
+        return _direction == other._direction;
+    }
 
     auto thickness() const -> double { return _thickness; }
 
     void setThickness(double thickness = 1) { _thickness = thickness; }
 
-    auto getNextHalfedge(int32_t visited, const Vertex& v) const -> const Halfedge*;
+    auto getNextHalfedge(int32_t visited, const Vertex& vertex) const -> const Halfedge*;
 
-    void print(std::ostream& os) const {
-        os << " path ";
+    void print(std::ostream& outputStream) const {
+        outputStream << " path ";
         for (const auto& [net_id, count] : _path) {
-            os << " " << net_id << "->" << count;
+            outputStream << " " << net_id << "->" << count;
         }
     }
 
@@ -162,9 +166,9 @@ public:
 
     auto getVisit() const -> int32_t { return _visit; }
 
-    void setVisit(int32_t ivisit, Halfedge* he) {
-        _visit = ivisit;
-        _halfedge = he;
+    void setVisit(int32_t visitValue, Halfedge* halfedge) {
+        _visit = visitValue;
+        _halfedge = halfedge;
     }
 
     void setGlobalCoordinate(const std::complex<int32_t>& global) { _global = {global}; }
@@ -175,14 +179,15 @@ public:
 
     void setDetail(const std::optional<std::complex<int32_t>>& detail) { _detail = detail; }
 
-    void print(std::ostream& os) const {
+    void print(std::ostream& outputStream) const {
         const std::complex<double> defaultCoord{-1., -1.};
-        os << " global " << getGlobalCoordinate().value_or(defaultCoord) << " detail " << getDetail().value_or(defaultCoord);
+        outputStream << " global " << getGlobalCoordinate().value_or(defaultCoord)
+                     << " detail " << getDetail().value_or(defaultCoord);
     }
 
     auto id() const -> int32_t { return _id; }
 
-    void setId(const int32_t id) { _id = id; }
+    void setId(const int32_t vertexId) { _id = vertexId; }
 
 private:
     Halfedge* _halfedge = nullptr;
@@ -197,52 +202,57 @@ private:
 
 class GeomHelper {
 public:
-    template <typename T> static void getNearest(const Vertex& handle, const Vertex*& vertMin, RangeIterator<T> range) {
-
+    template <typename T>
+    static void getNearest(const Vertex& handle, const Vertex*& nearestVertex,
+                           RangeIterator<T> range) {
         for (auto ccb : range) {
+            for (auto halfedge : RangeHelper::make(ccb)) {
+                const Vertex& targetVertex = *halfedge.target();
 
-            for (auto he : RangeHelper::make(ccb)) {
-
-                const Vertex& v = *he.target();
-
-                if (vertMin == nullptr || CGAL::has_smaller_distance_to_point(handle.point(), v.point(), vertMin->point())) {
-                    vertMin = &v;
+                if (nearestVertex == nullptr ||
+                    CGAL::has_smaller_distance_to_point(handle.point(), targetVertex.point(),
+                                                        nearestVertex->point())) {
+                    nearestVertex = &targetVertex;
                 }
             }
         }
     }
 
-    static auto getNearestVertex(const Face& fh, const Vertex& handle) -> const Vertex& {
-        const Vertex* vertMin = nullptr;
+    static auto getNearestVertex(const Face& face, const Vertex& handle) -> const Vertex& {
+        const Vertex* nearestVertex = nullptr;
 
-        getNearest(handle, vertMin, RangeHelper::make(fh.inner_ccbs_begin(), fh.inner_ccbs_end()));
+        getNearest(handle, nearestVertex,
+                   RangeHelper::make(face.inner_ccbs_begin(), face.inner_ccbs_end()));
 
-        getNearest(handle, vertMin, RangeHelper::make(fh.outer_ccbs_begin(), fh.outer_ccbs_end()));
-        return *vertMin;
+        getNearest(handle, nearestVertex,
+                   RangeHelper::make(face.outer_ccbs_begin(), face.outer_ccbs_end()));
+        return *nearestVertex;
     }
 
-    template <typename T> static void getNearest(const Vertex& handle, Vertex*& vertMin, RangeIterator<T> range) {
-
+    template <typename T>
+    static void getNearest(const Vertex& handle, Vertex*& nearestVertex, RangeIterator<T> range) {
         for (auto ccb : range) {
+            for (auto halfedge : RangeHelper::make(ccb)) {
+                Vertex& targetVertex = *halfedge.target();
 
-            for (auto he : RangeHelper::make(ccb)) {
-
-                Vertex& v = *he.target();
-
-                if (vertMin == nullptr || CGAL::has_smaller_distance_to_point(handle.point(), v.point(), vertMin->point())) {
-                    vertMin = &v;
+                if (nearestVertex == nullptr ||
+                    CGAL::has_smaller_distance_to_point(handle.point(), targetVertex.point(),
+                                                        nearestVertex->point())) {
+                    nearestVertex = &targetVertex;
                 }
             }
         }
     }
 
-    static auto getNearestVertex(Face& fh, const Vertex& handle) -> Vertex& {
-        Vertex* vertMin = nullptr;
+    static auto getNearestVertex(Face& face, const Vertex& handle) -> Vertex& {
+        Vertex* nearestVertex = nullptr;
 
-        getNearest(handle, vertMin, RangeHelper::make(fh.inner_ccbs_begin(), fh.inner_ccbs_end()));
+        getNearest(handle, nearestVertex,
+                   RangeHelper::make(face.inner_ccbs_begin(), face.inner_ccbs_end()));
 
-        getNearest(handle, vertMin, RangeHelper::make(fh.outer_ccbs_begin(), fh.outer_ccbs_end()));
-        return *vertMin;
+        getNearest(handle, nearestVertex,
+                   RangeHelper::make(face.outer_ccbs_begin(), face.outer_ccbs_end()));
+        return *nearestVertex;
     }
 };
 
@@ -255,7 +265,9 @@ public:
 
     explicit GlobalEdge(Endpoints endpoints) : _a{endpoints.start}, _b{endpoints.end} {}
 
-    void print(std::ostream& os) const { os << " a " << _a << " b " << _b; }
+    void print(std::ostream& outputStream) const {
+        outputStream << " a " << _a << " b " << _b;
+    }
 
     [[nodiscard]] auto a() const -> const std::complex<int32_t>& { return _a; }
 

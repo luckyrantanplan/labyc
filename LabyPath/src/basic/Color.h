@@ -16,40 +16,47 @@ namespace laby::basic {
 
 class Color {
 public:
-    static constexpr double colorComponentMax = 0x000000FF;
-    static constexpr uint32_t mask = 0x000000FF;
+    static constexpr uint32_t kChannelMask = 0x000000FFU;
+    static constexpr double kColorComponentMax = static_cast<double>(kChannelMask);
 
-    static auto getChannel(const uint32_t color, const int offset) -> uint32_t {
-        return (color >> offset) & 0x000000FF;
+    static auto getChannel(const uint32_t color, const uint32_t bitOffset) -> uint32_t {
+        return (color >> bitOffset) & kChannelMask;
     }
 
     static auto getRedNormalized(const uint32_t color) -> double {
-        return getRed(color) / colorComponentMax;
+        return getRed(color) / kColorComponentMax;
     }
 
     static auto getGreenNormalized(const uint32_t color) -> double {
-        return getGreen(color) / colorComponentMax;
+        return getGreen(color) / kColorComponentMax;
     }
 
     static auto getBlueNormalized(const uint32_t color) -> double {
-        return getBlue(color) / colorComponentMax;
+        return getBlue(color) / kColorComponentMax;
     }
 
     static auto getRed(const uint32_t color) -> uint32_t {
-        return getChannel(color, svgpp::factory::color::rgb8_policy::r_offset);
+        return getChannel(color,
+                          static_cast<uint32_t>(svgpp::factory::color::rgb8_policy::r_offset));
     }
 
     static auto getGreen(const uint32_t color) -> uint32_t {
-        return getChannel(color, svgpp::factory::color::rgb8_policy::g_offset);
+        return getChannel(color,
+                          static_cast<uint32_t>(svgpp::factory::color::rgb8_policy::g_offset));
     }
 
     static auto getBlue(const uint32_t color) -> uint32_t {
-        return getChannel(color, svgpp::factory::color::rgb8_policy::b_offset);
+        return getChannel(color,
+                          static_cast<uint32_t>(svgpp::factory::color::rgb8_policy::b_offset));
     }
 
-    static auto create(const uint32_t r, const uint32_t g, const uint32_t b) -> uint32_t {
+    static auto create(const uint32_t red, const uint32_t green, const uint32_t blue)
+        -> uint32_t {
         using svgpp::factory::color::rgb8_policy;
-        return rgb8_policy::preset_bits | (r << rgb8_policy::r_offset) | (g << rgb8_policy::g_offset) | (b << rgb8_policy::b_offset);
+        return static_cast<uint32_t>(rgb8_policy::preset_bits) |
+               (red << static_cast<uint32_t>(rgb8_policy::r_offset)) |
+               (green << static_cast<uint32_t>(rgb8_policy::g_offset)) |
+               (blue << static_cast<uint32_t>(rgb8_policy::b_offset));
     }
 
     static auto setRed(const uint32_t color, const uint32_t red) -> uint32_t {

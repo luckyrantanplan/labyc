@@ -30,81 +30,81 @@ TEST(SvgUtilTest, EmptyElemEnd) {
 // ─── Dimensions Tests ───────────────────────────────────────────────────────
 
 TEST(DimensionsTest, WidthAndHeight) {
-    Dimensions d(800, 600);
-    EXPECT_DOUBLE_EQ(d.width, 800);
-    EXPECT_DOUBLE_EQ(d.height, 600);
+    Dimensions d(Dimensions::Size{800, 600});
+    EXPECT_DOUBLE_EQ(d.width(), 800);
+    EXPECT_DOUBLE_EQ(d.height(), 600);
 }
 
 TEST(DimensionsTest, SingleValue) {
     Dimensions d(100);
-    EXPECT_DOUBLE_EQ(d.width, 100);
-    EXPECT_DOUBLE_EQ(d.height, 100);
+    EXPECT_DOUBLE_EQ(d.width(), 100);
+    EXPECT_DOUBLE_EQ(d.height(), 100);
 }
 
 // ─── Layout Tests ───────────────────────────────────────────────────────────
 
 TEST(LayoutTest, DefaultLayout) {
     Layout lay;
-    EXPECT_DOUBLE_EQ(lay.dimensions.width, 400);
-    EXPECT_DOUBLE_EQ(lay.dimensions.height, 300);
-    EXPECT_DOUBLE_EQ(lay.scale, 1.0);
-    EXPECT_EQ(lay.origin, Layout::BottomLeft);
+    EXPECT_DOUBLE_EQ(lay.dimensions().width(), 400);
+    EXPECT_DOUBLE_EQ(lay.dimensions().height(), 300);
+    EXPECT_DOUBLE_EQ(lay.scale(), 1.0);
+    EXPECT_EQ(lay.origin(), Layout::Origin::BottomLeft);
 }
 
 TEST(LayoutTest, CustomLayout) {
-    Layout lay(Dimensions(1000, 500), Layout::TopLeft, 2.0);
-    EXPECT_DOUBLE_EQ(lay.dimensions.width, 1000);
-    EXPECT_DOUBLE_EQ(lay.dimensions.height, 500);
-    EXPECT_DOUBLE_EQ(lay.scale, 2.0);
-    EXPECT_EQ(lay.origin, Layout::TopLeft);
+    Layout lay(Dimensions(Dimensions::Size{1000, 500}), Layout::Origin::TopLeft, 2.0);
+    EXPECT_DOUBLE_EQ(lay.dimensions().width(), 1000);
+    EXPECT_DOUBLE_EQ(lay.dimensions().height(), 500);
+    EXPECT_DOUBLE_EQ(lay.scale(), 2.0);
+    EXPECT_EQ(lay.origin(), Layout::Origin::TopLeft);
 }
 
 // ─── Coordinate Translation Tests ───────────────────────────────────────────
 
 TEST(TranslateTest, TopLeftOrigin) {
-    Layout lay(Dimensions(800, 600), Layout::TopLeft, 1.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::TopLeft, 1.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 10.0);
     EXPECT_DOUBLE_EQ(translateY(p, lay), 20.0);
 }
 
 TEST(TranslateTest, BottomLeftOriginFlipsY) {
-    Layout lay(Dimensions(800, 600), Layout::BottomLeft, 1.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::BottomLeft, 1.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 10.0);
     EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0); // 600 - 20
 }
 
 TEST(TranslateTest, TopRightOriginFlipsX) {
-    Layout lay(Dimensions(800, 600), Layout::TopRight, 1.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::TopRight, 1.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0); // 800 - 10
     EXPECT_DOUBLE_EQ(translateY(p, lay), 20.0);
 }
 
 TEST(TranslateTest, BottomRightFlipsBoth) {
-    Layout lay(Dimensions(800, 600), Layout::BottomRight, 1.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::BottomRight, 1.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 790.0); // 800 - 10
     EXPECT_DOUBLE_EQ(translateY(p, lay), 580.0); // 600 - 20
 }
 
 TEST(TranslateTest, ScaleApplied) {
-    Layout lay(Dimensions(800, 600), Layout::TopLeft, 2.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::TopLeft, 2.0);
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 20.0); // 10 * 2
     EXPECT_DOUBLE_EQ(translateY(p, lay), 40.0); // 20 * 2
 }
 
 TEST(TranslateTest, OffsetApplied) {
-    Layout lay(Dimensions(800, 600), Layout::TopLeft, 1.0, Point(5, 10));
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::TopLeft, 1.0, Point(5, 10));
     Point p(10, 20);
     EXPECT_DOUBLE_EQ(translateX(p, lay), 15.0); // 5 + 10
     EXPECT_DOUBLE_EQ(translateY(p, lay), 30.0); // 10 + 20
 }
 
 TEST(TranslateTest, TranslateScale) {
-    Layout lay(Dimensions(800, 600), Layout::TopLeft, 3.0);
+    Layout lay(Dimensions(Dimensions::Size{800, 600}), Layout::Origin::TopLeft, 3.0);
     EXPECT_DOUBLE_EQ(translateScale(5.0, lay), 15.0); // 5 * 3
 }
 
@@ -112,33 +112,33 @@ TEST(TranslateTest, TranslateScale) {
 
 TEST(SvgColorTest, RGBColor) {
     Layout lay;
-    Color c(255, 128, 0);
+    Color c(Color::Rgb{255, 128, 0});
     EXPECT_EQ(c.toString(lay), "rgb(255,128,0)");
 }
 
 TEST(SvgColorTest, TransparentColor) {
     Layout lay;
-    Color c(Color::Transparent);
+    Color c(Color::Defaults::Transparent);
     EXPECT_EQ(c.toString(lay), "none");
 }
 
 TEST(SvgColorTest, NamedColorRed) {
     Layout lay;
-    Color c(Color::Red);
+    Color c(Color::Defaults::Red);
     EXPECT_EQ(c.toString(lay), "rgb(255,0,0)");
 }
 
 TEST(SvgColorTest, NamedColorBlack) {
     Layout lay;
-    Color c(Color::Black);
+    Color c(Color::Defaults::Black);
     EXPECT_EQ(c.toString(lay), "rgb(0,0,0)");
 }
 
 // ─── Shape toString Tests ───────────────────────────────────────────────────
 
 TEST(SvgShapeTest, CircleToString) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Circle circle(Point(50, 50), 20, Fill(Color::Red));
+    Layout lay(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft, 1.0);
+    Circle circle(Point(50, 50), 20, Fill(Color::Defaults::Red));
     std::string svg = circle.toString(lay);
     EXPECT_NE(svg.find("<circle"), std::string::npos);
     EXPECT_NE(svg.find("cx=\"50\""), std::string::npos);
@@ -147,8 +147,8 @@ TEST(SvgShapeTest, CircleToString) {
 }
 
 TEST(SvgShapeTest, RectangleToString) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Rectangle rect(Point(10, 20), 30, 40, Fill(Color::Blue));
+    Layout lay(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft, 1.0);
+    Rectangle rect(Point(10, 20), 30, 40, Fill(Color::Defaults::Blue));
     std::string svg = rect.toString(lay);
     EXPECT_NE(svg.find("<rect"), std::string::npos);
     EXPECT_NE(svg.find("width=\"30\""), std::string::npos);
@@ -156,8 +156,8 @@ TEST(SvgShapeTest, RectangleToString) {
 }
 
 TEST(SvgShapeTest, LineToString) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Line line(Point(0, 0), Point(100, 100), Stroke(2, Color(Color::Black)));
+    Layout lay(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft, 1.0);
+    Line line(Point(0, 0), Point(100, 100), Stroke(2, Color(Color::Defaults::Black)));
     std::string svg = line.toString(lay);
     EXPECT_NE(svg.find("<line"), std::string::npos);
     EXPECT_NE(svg.find("x1=\"0\""), std::string::npos);
@@ -165,8 +165,8 @@ TEST(SvgShapeTest, LineToString) {
 }
 
 TEST(SvgShapeTest, TextToString) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Text text(Point(10, 20), "Hello", Fill(Color::Black));
+    Layout lay(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft, 1.0);
+    Text text(Point(10, 20), "Hello", Fill(Color::Defaults::Black));
     std::string svg = text.toString(lay);
     EXPECT_NE(svg.find("<text"), std::string::npos);
     EXPECT_NE(svg.find("Hello"), std::string::npos);
@@ -190,7 +190,7 @@ TEST(SvgOptionalTest, InvalidOptional) {
 // ─── DocumentSVG Tests ──────────────────────────────────────────────────────
 
 TEST(DocumentSVGTest, ToStringContainsSvgRoot) {
-    DocumentSVG doc("/tmp/test_doc.svg", Layout(Dimensions(200, 100)));
+    DocumentSVG doc("/tmp/test_doc.svg", Layout(Dimensions(Dimensions::Size{200, 100})));
     std::string svg = doc.toString();
     EXPECT_NE(svg.find("<?xml"), std::string::npos);
     EXPECT_NE(svg.find("<svg"), std::string::npos);
@@ -200,8 +200,8 @@ TEST(DocumentSVGTest, ToStringContainsSvgRoot) {
 }
 
 TEST(DocumentSVGTest, AddShapeToDocument) {
-    DocumentSVG doc("/tmp/test_shapes.svg", Layout(Dimensions(100, 100), Layout::TopLeft));
-    doc << Circle(Point(50, 50), 10, Fill(Color::Red));
+    DocumentSVG doc("/tmp/test_shapes.svg", Layout(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft));
+    doc << Circle(Point(50, 50), 10, Fill(Color::Defaults::Red));
     std::string svg = doc.toString();
     EXPECT_NE(svg.find("<circle"), std::string::npos);
 }
@@ -209,8 +209,8 @@ TEST(DocumentSVGTest, AddShapeToDocument) {
 TEST(DocumentSVGTest, SaveToFile) {
     std::string fname = "/tmp/test_save_doc.svg";
     {
-        DocumentSVG doc(fname, Layout(Dimensions(100, 100)));
-        doc << Circle(Point(50, 50), 10, Fill(Color::Red));
+        DocumentSVG doc(fname, Layout(Dimensions(Dimensions::Size{100, 100})));
+        doc << Circle(Point(50, 50), 10, Fill(Color::Defaults::Red));
         EXPECT_TRUE(doc.save());
     }
     // Verify file exists and has content
@@ -224,8 +224,8 @@ TEST(DocumentSVGTest, SaveToFile) {
 // ─── Polygon and Polyline Stream Operator Tests ─────────────────────────────
 
 TEST(SvgShapeTest, PolygonStreamOperator) {
-    svg::Layout lay(svg::Dimensions(100, 100), svg::Layout::TopLeft, 1.0);
-    svg::Polygon poly{svg::Fill(svg::Color::Green)};
+    svg::Layout lay(svg::Dimensions(svg::Dimensions::Size{100, 100}), svg::Layout::Origin::TopLeft, 1.0);
+    svg::Polygon poly{svg::Fill(svg::Color::Defaults::Green)};
     poly << svg::Point(0, 0) << svg::Point(50, 0) << svg::Point(25, 50);
     std::string svg = poly.toString(lay);
     EXPECT_NE(svg.find("<polygon"), std::string::npos);
@@ -233,8 +233,8 @@ TEST(SvgShapeTest, PolygonStreamOperator) {
 }
 
 TEST(SvgShapeTest, PolylineStreamOperator) {
-    svg::Layout lay(svg::Dimensions(100, 100), svg::Layout::TopLeft, 1.0);
-    svg::Polyline poly{svg::Fill(svg::Color::Transparent), svg::Stroke(1, svg::Color(svg::Color::Black))};
+    svg::Layout lay(svg::Dimensions(svg::Dimensions::Size{100, 100}), svg::Layout::Origin::TopLeft, 1.0);
+    svg::Polyline poly{svg::Fill(svg::Color::Defaults::Transparent), svg::Stroke(1, svg::Color(svg::Color::Defaults::Black))};
     poly << svg::Point(0, 0) << svg::Point(50, 50) << svg::Point(100, 0);
     std::string svg = poly.toString(lay);
     EXPECT_NE(svg.find("<polyline"), std::string::npos);
@@ -244,20 +244,20 @@ TEST(SvgShapeTest, PolylineStreamOperator) {
 
 TEST(FillStrokeTest, FillTransparent) {
     Layout lay;
-    Fill f(Color::Transparent);
+    Fill f(Color::Defaults::Transparent);
     std::string s = f.toString(lay);
     EXPECT_NE(s.find("none"), std::string::npos);
 }
 
 TEST(FillStrokeTest, StrokeNegativeWidthEmpty) {
     Layout lay;
-    Stroke s(-1, Color(Color::Black));
+    Stroke s(-1, Color(Color::Defaults::Black));
     EXPECT_TRUE(s.toString(lay).empty());
 }
 
 TEST(FillStrokeTest, StrokePositiveWidth) {
-    Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Stroke s(2.0, Color(Color::Red));
+    Layout lay(Dimensions(Dimensions::Size{100, 100}), Layout::Origin::TopLeft, 1.0);
+    Stroke s(2.0, Color(Color::Defaults::Red));
     std::string result = s.toString(lay);
     EXPECT_NE(result.find("stroke-width"), std::string::npos);
     EXPECT_NE(result.find("rgb(255,0,0)"), std::string::npos);
@@ -265,7 +265,7 @@ TEST(FillStrokeTest, StrokePositiveWidth) {
 
 TEST(FillStrokeTest, NonScalingStroke) {
     Layout lay;
-    Stroke s(1.0, Color(Color::Black), true);
+    Stroke s(1.0, Color(Color::Defaults::Black), true);
     std::string result = s.toString(lay);
     EXPECT_NE(result.find("non-scaling-stroke"), std::string::npos);
 }

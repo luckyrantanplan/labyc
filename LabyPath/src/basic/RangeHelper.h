@@ -27,9 +27,13 @@ public:
 
     ~HalfedgeRangeIterator() = default;
 
-    auto operator!=(const HalfedgeRangeIterator& it) const -> bool { return _start != it._start || _circulator != it._circulator; }
+    auto operator!=(const HalfedgeRangeIterator& other) const -> bool {
+        return _start != other._start || _circulator != other._circulator;
+    }
 
-    auto operator==(const HalfedgeRangeIterator& it) const -> bool { return _start == it._start && _circulator == it._circulator; }
+    auto operator==(const HalfedgeRangeIterator& other) const -> bool {
+        return _start == other._start && _circulator == other._circulator;
+    }
 
     auto operator*() -> typename T::reference { return *_circulator; }
 

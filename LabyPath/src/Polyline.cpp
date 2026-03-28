@@ -19,32 +19,32 @@
 namespace laby {
 
 void Polyline::reverse() {
-    std::reverse(points.begin(), points.end());
+    std::reverse(_points.begin(), _points.end());
 }
 
 void Polyline::removeConsecutiveDuplicatePoints(double epsilon) {
-    if (points.size() < 2) {
+    if (_points.size() < 2) {
         return;
     }
 
     std::vector<Point_2> result;
-    result.reserve(points.size());
-    result.emplace_back(points.front());
+    result.reserve(_points.size());
+    result.emplace_back(_points.front());
     const double sqEpsilon = epsilon * epsilon;
-    for (std::size_t i = 1; i < points.size(); ++i) {
-        if (CGAL::to_double((points.at(i) - result.back()).squared_length()) > sqEpsilon) {
-            result.emplace_back(points.at(i));
+    for (std::size_t i = 1; i < _points.size(); ++i) {
+        if (CGAL::to_double((_points.at(i) - result.back()).squared_length()) > sqEpsilon) {
+            result.emplace_back(_points.at(i));
         }
     }
-    points = std::move(result);
+    _points = std::move(result);
 }
 
 void Polyline::simplify(double distance) {
 
-    if (points.size() > 2) {
+    if (_points.size() > 2) {
         SimplifyLines::LineStringIndexed lineString;
-        for (std::size_t i = 0; i < points.size(); ++i) {
-            const Point_2& point = points.at(i);
+        for (std::size_t i = 0; i < _points.size(); ++i) {
+            const Point_2& point = _points.at(i);
             lineString.emplace_back(IndexedPoint::fromCoordinates(
                 {CGAL::to_double(point.x()), CGAL::to_double(point.y())}, i));
         }
@@ -55,9 +55,9 @@ void Polyline::simplify(double distance) {
             result.reserve(simpleLine.size());
             for (const IndexedPoint& offset : simpleLine) {
 
-                result.emplace_back(points.at(offset.index()));
+                result.emplace_back(_points.at(offset.index()));
             }
-            points = result;
+            _points = result;
         }
     }
 }

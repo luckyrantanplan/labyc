@@ -8,16 +8,19 @@
 #include "GraphicRendering.h"
 
 #include <CGAL/Bbox_2.h>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <svgpp/factory/integer_color.hpp>
 
-#include "../GeomData.h"
-#include "../OrientedRibbon.h"
+#include "PenStroke.h"
+#include "../Polyline.h"
+#include "../Ribbon.h"
 #include "../SVGParser/Loader.h"
+#include "../SVGWriter/DocumentSVG.h"
 #include "../Smoothing.h"
 #include "../basic/Color.h"
+#include "../protoc/AllConfig.pb.h"
 
 namespace laby {
 
@@ -30,15 +33,15 @@ constexpr int32_t kDebugFaceBlue = 10;
 
 GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std::move(config)) {
 
-    svgp::Loader load(_config.inputfile());
+    const svgp::Loader load(_config.inputfile());
 
     _box = CGAL::Bbox_2(0, 0, load.viewBox().xmax(), load.viewBox().ymax());
-    svg::Dimensions dimensions(_box.xmax(), _box.ymax());
-    svg::DocumentSVG docSvg(_config.outputfile(), svg::Layout(dimensions, svg::Layout::TopLeft));
+    const svg::Dimensions dimensions(svg::Dimensions::Size{_box.xmax(), _box.ymax()});
+    svg::DocumentSVG docSvg(_config.outputfile(), svg::Layout(dimensions, svg::Layout::Origin::TopLeft));
 
     PenStroke gpt = PenStroke::createPenStroke(_config.penconfig(), _box);
 
-    Ribbon& ribbon = load.ribList().at(0);
+    Ribbon ribbon = load.ribList().at(0);
     for (Polyline& line : ribbon.lines()) {
         line.removeConsecutiveDuplicatePoints(kSvgCollapseEpsilon);
     }
@@ -52,7 +55,7 @@ GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std
 
     for (std::size_t i = 0; i < ribbon.lines().size(); ++i) {
         Polyline& polyline = ribbon.lines().at(i);
-        polyline.id = static_cast<int32_t>(i);
+        polyline.setId(static_cast<int32_t>(i));
     }
 
     Arrangement_2 arr = ribbon.createArr();
@@ -76,16 +79,17 @@ GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std
     std::cout << "faceList " << faceList.size() << " arr " << arr.number_of_faces() << '\n';
 
     for (const Face* face : faceList) {
-        svg::Path path(svg::Fill(svg::Color(kDebugFaceRed, kDebugFaceGreen, kDebugFaceBlue)));
+        svg::Path path(svg::Fill(svg::Color(svg::Color::Rgb{kDebugFaceRed, kDebugFaceGreen, kDebugFaceBlue})));
         gpt.drawFace(path, *face);
         docSvg << path;
     }
 
     using laby::basic::Color;
     const auto fillColorValue = static_cast<uint32_t>(ribbon.fillColor());
-    svg::Path path(svg::Fill(svg::Color(static_cast<int32_t>(Color::getRed(fillColorValue)),
-                                        static_cast<int32_t>(Color::getGreen(fillColorValue)),
-                                        static_cast<int32_t>(Color::getBlue(fillColorValue)))));
+    svg::Path path(svg::Fill(svg::Color(svg::Color::Rgb{
+        static_cast<int32_t>(Color::getRed(fillColorValue)),
+        static_cast<int32_t>(Color::getGreen(fillColorValue)),
+        static_cast<int32_t>(Color::getBlue(fillColorValue))})));
 
     gpt.drawOutline(path);
     docSvg << path;
@@ -98,8 +102,8 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
                                       const std::vector<Ribbon>& ribbonList) {
 
     // if std::io error problem, check if output directory exists !!
-    svg::Dimensions dimensions(bbox.xmax(), bbox.ymax());
-    svg::DocumentSVG docSvg(filename, svg::Layout(dimensions, svg::Layout::TopLeft));
+    const svg::Dimensions dimensions(svg::Dimensions::Size{bbox.xmax(), bbox.ymax()});
+    svg::DocumentSVG docSvg(filename, svg::Layout(dimensions, svg::Layout::Origin::TopLeft));
 
     for (const Ribbon& ribbon : ribbonList) {
         Ribbon cleanRibbon = ribbon;
@@ -110,9 +114,10 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
         using laby::basic::Color;
         const auto fillColorValue = static_cast<uint32_t>(cleanRibbon.fillColor());
         svg::Stroke stroke(thickness,
-                           svg::Color(static_cast<int32_t>(Color::getRed(fillColorValue)),
-                                      static_cast<int32_t>(Color::getGreen(fillColorValue)),
-                                      static_cast<int32_t>(Color::getBlue(fillColorValue))));
+                           svg::Color(svg::Color::Rgb{
+                               static_cast<int32_t>(Color::getRed(fillColorValue)),
+                               static_cast<int32_t>(Color::getGreen(fillColorValue)),
+                               static_cast<int32_t>(Color::getBlue(fillColorValue))}));
 
         svg::Path path(svg::Fill(), stroke);
 

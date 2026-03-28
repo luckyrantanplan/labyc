@@ -19,11 +19,11 @@
 namespace laby::svgp {
 
 ShapeContext::ShapeContext(BaseContext& parent) : BaseContext(parent) {
-    _vectRibbonRef->emplace_back();
+    getRibbon().emplace_back();
 }
 
 auto ShapeContext::currentRibbon() -> Ribbon& {
-    return _vectRibbonRef->back();
+    return getRibbon().back();
 }
 
 // SVG++ discovers these callbacks by exact name.
@@ -32,17 +32,18 @@ void ShapeContext::path_move_to(double xCoordinate, double yCoordinate,
                                 svgpp::tag::coordinate::absolute coordinateTag) {
     static_cast<void>(coordinateTag);
 
-    if (currentRibbon().lines().empty() or !currentRibbon().lines().back().points.empty()) {
+    if (currentRibbon().lines().empty() or
+        !currentRibbon().lines().back().points().empty()) {
         currentRibbon().lines().emplace_back();
     }
 
-    currentRibbon().lines().back().points.emplace_back(xCoordinate, yCoordinate);
+    currentRibbon().lines().back().points().emplace_back(xCoordinate, yCoordinate);
 }
 
 void ShapeContext::path_line_to(double xCoordinate, double yCoordinate,
                                 svgpp::tag::coordinate::absolute coordinateTag) {
     static_cast<void>(coordinateTag);
-    currentRibbon().lines().back().points.emplace_back(xCoordinate, yCoordinate);
+    currentRibbon().lines().back().points().emplace_back(xCoordinate, yCoordinate);
 }
 
 void ShapeContext::path_cubic_bezier_to(double xControl1, double yControl1, double xControl2,
@@ -51,12 +52,12 @@ void ShapeContext::path_cubic_bezier_to(double xControl1, double yControl1, doub
     static_cast<void>(coordinateTag);
 
     {
-        Point_2& ref = currentRibbon().lines().back().points.back();
+        Point_2& ref = currentRibbon().lines().back().points().back();
         agg::Curve4 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), xControl1, yControl1,
                           xControl2, yControl2, xCoordinate, yCoordinate);
 
         const auto& vect = curve.getPoints();
-        auto& ribbonLine = currentRibbon().lines().back().points;
+        auto& ribbonLine = currentRibbon().lines().back().points();
         // remove last item
         ribbonLine.insert(ribbonLine.end(), ++vect.begin(), vect.end());
     }
@@ -67,12 +68,12 @@ void ShapeContext::path_quadratic_bezier_to(double xControl, double yControl, do
                                             svgpp::tag::coordinate::absolute coordinateTag) {
     static_cast<void>(coordinateTag);
 
-    Point_2& ref = currentRibbon().lines().back().points.back();
+    Point_2& ref = currentRibbon().lines().back().points().back();
     agg::Curve3 curve(CGAL::to_double(ref.x()), CGAL::to_double(ref.y()), xControl, yControl,
                       xCoordinate, yCoordinate);
 
     const auto& vect = curve.getPoints();
-    auto& ribbonLine = currentRibbon().lines().back().points;
+    auto& ribbonLine = currentRibbon().lines().back().points();
     // remove last item
     ribbonLine.insert(ribbonLine.end(), ++vect.begin(), vect.end());
 }
@@ -87,8 +88,8 @@ void ShapeContext::path_elliptical_arc_to(double /*radiusX*/, double /*radiusY*/
 }
 
 void ShapeContext::path_close_subpath() {
-    currentRibbon().lines().back().closed = true;
-    std::vector<Point_2>& points = currentRibbon().lines().back().points;
+    currentRibbon().lines().back().setClosed(true);
+    std::vector<Point_2>& points = currentRibbon().lines().back().points();
     if (points.back() != points.front()) {
         points.emplace_back(points.front());
     }
@@ -106,9 +107,9 @@ auto ShapeContext::getColor(const Paint& paint) -> color_t {
 }
 
 void ShapeContext::path_exit() {
-    currentRibbon().setFillColor(getColor(style().fill_paint_));
-    currentRibbon().setStrokeColor(getColor(style().stroke_paint_));
-    currentRibbon().setStrokeWidth(style().stroke_width_);
+    currentRibbon().setFillColor(getColor(style().fillPaint()));
+    currentRibbon().setStrokeColor(getColor(style().strokePaint()));
+    currentRibbon().setStrokeWidth(style().strokeWidth());
 }
 
 

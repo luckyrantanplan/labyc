@@ -142,7 +142,7 @@ void VoronoiMedialSkeleton::addSimplePolygon(const CGAL::Polygon_2<Kernel>& oute
 }
 
 void VoronoiMedialSkeleton::addPolyline(const Polyline& pl, std::vector<Gt::Point_2>& points, std::vector<std::pair<std::size_t, std::size_t>>& indices) {
-    const std::vector<Point_2>& pts = pl.points;
+    const std::vector<Point_2>& pts = pl.points();
 
     if (pts.size() < 2) {
         return;
@@ -164,7 +164,7 @@ void VoronoiMedialSkeleton::addPolyline(const Polyline& pl, std::vector<Gt::Poin
         points.push_back(site.target_of_supporting_site());
         ++k;
     }
-    if (pl.closed) {
+    if (pl.isClosed()) {
         indices.push_back(std::make_pair(k, save_k));
     }
 }
@@ -235,7 +235,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::B
     std::vector<std::pair<std::size_t, std::size_t>> indices;
     for (const Polyline& pl : ribbon.lines()) {
         addPolyline(pl, points, indices);
-        pointsK.insert(pointsK.end(), pl.points.begin(), pl.points.end());
+        pointsK.insert(pointsK.end(), pl.points().begin(), pl.points().end());
     }
     sdg.insert_segments(points.begin(), points.end(), indices.begin(), indices.end());
     std::cout << "start cropping" << std::endl;

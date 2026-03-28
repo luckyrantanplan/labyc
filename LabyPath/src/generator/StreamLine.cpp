@@ -75,7 +75,7 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines,
         SimplifyLines::LineString const simpleLine =
             SimplifyLines::decimate(lineString, _config.simplify_distance);
         for (SimplifyLines::xy const simplifiedPoint : simpleLine) {
-            polyline.points.emplace_back(simplifiedPoint.x(), simplifiedPoint.y());
+            polyline.points().emplace_back(simplifiedPoint.x(), simplifiedPoint.y());
         }
     }
     connectExtremInPlace(ribbon);
@@ -96,9 +96,9 @@ void StreamLine::changeLine(const Point_2& midpoint,
                             PS::Vertex* vertex) {
     RibbonCoord const& ribbonCoord = ribbonCoordMap.at(vertex);
     if (ribbonCoord.position() == 0) {
-        ribbonCoord.polyline()->points.front() = midpoint;
+        ribbonCoord.polyline()->points().front() = midpoint;
     } else {
-        ribbonCoord.polyline()->points.back() = midpoint;
+        ribbonCoord.polyline()->points().back() = midpoint;
     }
 }
 
@@ -111,13 +111,13 @@ auto StreamLine::connectExtreme(Ribbon& ribbon) -> Ribbon {
     std::unordered_set<PS::Vertex*> connectedVertices;
     std::unordered_map<PS::Vertex*, RibbonCoord> ribbonCoordMap;
     for (Polyline& poly : ribbon.lines()) {
-        Point_2 const& startPoint = poly.points.front();
-        Point_2 const& endPoint = poly.points.back();
+        Point_2 const& startPoint = poly.points().front();
+        Point_2 const& endPoint = poly.points().back();
         PS::Vertex* startVertex = &*pointSet.insert(startPoint);
         PS::Vertex* endVertex = &*pointSet.insert(endPoint);
 
         ribbonCoordMap.emplace(startVertex, RibbonCoord{&poly, 0});
-        ribbonCoordMap.emplace(endVertex, RibbonCoord{&poly, poly.points.size() - 1});
+        ribbonCoordMap.emplace(endVertex, RibbonCoord{&poly, poly.points().size() - 1});
         existingSegments.emplace(startVertex, endVertex);
     }
 
@@ -150,8 +150,8 @@ auto StreamLine::connectExtreme(Ribbon& ribbon) -> Ribbon {
 
                 result.lines().emplace_back();
                 Polyline& polyline = result.lines().back();
-                polyline.points.emplace_back(segment.source()->point());
-                polyline.points.emplace_back(segment.target()->point());
+                polyline.points().emplace_back(segment.source()->point());
+                polyline.points().emplace_back(segment.target()->point());
             }
             connectedVertices.emplace(segment.source());
             connectedVertices.emplace(segment.target());

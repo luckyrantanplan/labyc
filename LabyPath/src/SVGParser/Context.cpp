@@ -11,11 +11,17 @@
 
 namespace laby::svgp {
 
-BaseContext::BaseContext() : _vectRibbonRef(&_vectRibbon) {}
+BaseContext::BaseContext() {
+    setRibbonRef(&ribbonStorage());
+}
 
 BaseContext::BaseContext(BaseContext& parent)
-    : Stylable(parent), _vectRibbonRef(parent._vectRibbonRef) {}
+    : Stylable(parent) {
+    setRibbonRef(parent.ribbonRef());
+}
 
 BaseContext::BaseContext(const BaseContext& parent)
-    : Stylable(parent), _vectRibbonRef(parent._vectRibbonRef) {}
+    : Stylable(parent) {
+    setRibbonRef(parent.ribbonRef());
+}
 } /* namespace laby::svgp */

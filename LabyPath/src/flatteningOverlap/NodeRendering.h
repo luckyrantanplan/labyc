@@ -20,20 +20,30 @@
 
 namespace laby {
 
-struct NodeOverlap {
+class NodeOverlap {
 
-    std::vector<Node*> _nodes;
+  public:
+    [[nodiscard]] auto nodes() const -> const std::vector<Node*>& {
+        return _nodes;
+    }
+
+    auto nodes() -> std::vector<Node*>& {
+        return _nodes;
+    }
 
     auto sortNode() -> void;
-    auto render(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList) -> void;
+    auto render(OrientedRibbon& orientedRibbon,
+                const std::vector<PolyConvex>& polyConvexList) -> void;
 
   private:
     auto addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) -> void;
+
+    std::vector<Node*> _nodes;
 };
 
 class NodeRendering {
   public:
-    static auto render(OrientedRibbon& oribbon, std::vector<Node>& nodes,
+    static auto render(OrientedRibbon& orientedRibbon, std::vector<Node>& nodes,
                        const std::vector<PolyConvex>& polyConvexList) -> void;
 };
 

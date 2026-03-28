@@ -201,7 +201,7 @@ void SkeletonRadial::fill_corner(
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) {
     std::vector<Kernel::Point_2> pointVect;
     for (const auto& line : _radial_list.lines()) {
-        for (const auto& p : line.points) {
+        for (const auto& p : line.points()) {
             pointVect.emplace_back(p);
         }
     }

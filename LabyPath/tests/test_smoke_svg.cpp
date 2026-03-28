@@ -53,7 +53,7 @@ std::string tmpOutput(const std::string& name) {
 /// (with a tolerance margin for floating-point rounding).
 bool allPointsInBounds(const laby::Polyline& polyline, const CGAL::Bbox_2& box,
                        double margin = 1.0) {
-    return std::all_of(polyline.points.begin(), polyline.points.end(), [&](const auto& pt) {
+    return std::all_of(polyline.points().begin(), polyline.points().end(), [&](const auto& pt) {
         double x = CGAL::to_double(pt.x());
         double y = CGAL::to_double(pt.y());
         return x >= box.xmin() - margin && x <= box.xmax() + margin && y >= box.ymin() - margin &&
@@ -63,7 +63,7 @@ bool allPointsInBounds(const laby::Polyline& polyline, const CGAL::Bbox_2& box,
 
 /// Check that all coordinates are finite (not NaN or Inf).
 bool allPointsFinite(const laby::Polyline& polyline) {
-    return std::all_of(polyline.points.begin(), polyline.points.end(), [](const auto& pt) {
+    return std::all_of(polyline.points().begin(), polyline.points().end(), [](const auto& pt) {
         double x = CGAL::to_double(pt.x());
         double y = CGAL::to_double(pt.y());
         return std::isfinite(x) && std::isfinite(y);
@@ -72,7 +72,7 @@ bool allPointsFinite(const laby::Polyline& polyline) {
 
 bool ribbonHasGeometry(const laby::Ribbon& ribbon) {
     return std::any_of(ribbon.lines().begin(), ribbon.lines().end(),
-                       [](const auto& line) { return line.points.size() > 1; });
+                       [](const auto& line) { return line.points().size() > 1; });
 }
 
 /// Count the number of path or polyline elements in SVG content.
@@ -190,7 +190,7 @@ TEST_F(SvgLoaderTest, RibbonsHavePolylines) {
         EXPECT_GT(rib.lines().size(), 0U) << "Ribbon should have polyline data";
         std::size_t nonEmpty = 0;
         for (const auto& line : rib.lines()) {
-            if (!line.points.empty()) {
+            if (!line.points().empty()) {
                 ++nonEmpty;
             }
         }
@@ -235,9 +235,9 @@ TEST_F(SvgLoaderTest, PolylinesHaveMinimumPoints) {
     laby::svgp::Loader loader(path);
     for (const auto& rib : loader.ribList()) {
         for (const auto& line : rib.lines()) {
-            if (!line.points.empty()) {
+            if (!line.points().empty()) {
                 // A meaningful polyline should have at least 2 points
-                EXPECT_GE(line.points.size(), 2U)
+                EXPECT_GE(line.points().size(), 2U)
                     << "Non-empty polylines should have at least 2 points";
             }
         }

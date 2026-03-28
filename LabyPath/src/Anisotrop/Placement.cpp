@@ -206,24 +206,24 @@ auto Placement::refinePath(Cell& cell, const std::vector<PolyConvex>& initialCon
                                                        _config.smoothing_iteration());
 
         polyline.simplify(kSimplifyTolerance);
-        if (polyline.id != netId) {
-            netId = polyline.id;
+        if (polyline.id() != netId) {
+            netId = polyline.id();
             ribbon.lines().emplace_back(netId);
-            ribbon.lines().back().points.emplace_back(polyline.points.front());
+            ribbon.lines().back().points().emplace_back(polyline.points().front());
         }
-        std::vector<Point_2>& points = ribbon.lines().back().points;
-        for (std::size_t pointIndex = 1; pointIndex < polyline.points.size(); ++pointIndex) {
-            points.emplace_back(polyline.points.at(pointIndex));
+        std::vector<Point_2>& points = ribbon.lines().back().points();
+        for (std::size_t pointIndex = 1; pointIndex < polyline.points().size(); ++pointIndex) {
+            points.emplace_back(polyline.points().at(pointIndex));
         }
     }
 
     SpatialIndex spatialIndex(polyConvexList);
     for (Polyline& poly : ribbon.lines()) {
-        Net& net = *netMap.at(poly.id);
+        Net& net = *netMap.at(poly.id());
         basic::LinearGradient lgrad = net.gradient();
         std::size_t const begin = polyConvexList.size();
-        for (std::size_t i = 1; i < poly.points.size(); ++i) {
-            polyConvexList.emplace_back(poly.points.at(i - 1), poly.points.at(i),
+        for (std::size_t i = 1; i < poly.points().size(); ++i) {
+            polyConvexList.emplace_back(poly.points().at(i - 1), poly.points().at(i),
                                         polyConvexList.size(), lgrad);
         }
         PolyConvex::connect(begin, polyConvexList);
