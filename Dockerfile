@@ -57,10 +57,10 @@ RUN set -eux; \
     tar -xf /tmp/cgal.tar.xz -C /tmp; \
     CGAL_SRC_DIR="$(find /tmp -maxdepth 1 -mindepth 1 -type d -name 'CGAL-*' | head -n 1)"; \
     cmake -S "${CGAL_SRC_DIR}" -B /tmp/cgal-build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DWITH_examples=OFF \
-        -DWITH_demos=OFF; \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DWITH_examples=OFF \
+    -DWITH_demos=OFF; \
     cmake --build /tmp/cgal-build --target install --parallel "$(nproc)"; \
     rm -rf /tmp/cgal.tar.xz "${CGAL_SRC_DIR}" /tmp/cgal-build
 
@@ -71,10 +71,10 @@ RUN set -eux; \
     tar -xzf /tmp/protobuf.tar.gz -C /tmp; \
     PROTOBUF_SRC_DIR="$(find /tmp -maxdepth 1 -mindepth 1 -type d -name 'protobuf-*' | head -n 1)"; \
     cmake -S "${PROTOBUF_SRC_DIR}" -B /tmp/protobuf-build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DCMAKE_CXX_STANDARD=20 \
-        -Dprotobuf_BUILD_TESTS=OFF; \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCMAKE_CXX_STANDARD=20 \
+    -Dprotobuf_BUILD_TESTS=OFF; \
     cmake --build /tmp/protobuf-build --target install --parallel "$(nproc)"; \
     rm -rf /tmp/protobuf.tar.gz "${PROTOBUF_SRC_DIR}" /tmp/protobuf-build
 

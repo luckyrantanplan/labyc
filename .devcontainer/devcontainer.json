@@ -3,7 +3,6 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "devcontainer",
     "workspaceFolder": "/workspace",
-
     "customizations": {
         "vscode": {
             "extensions": [
@@ -13,7 +12,6 @@
                 "ms-python.python",
                 "ms-python.debugpy",
                 "xaver.clang-format",
-
                 "bierner.markdown-mermaid",
                 "ms-azuretools.vscode-docker"
             ],
@@ -30,12 +28,12 @@
                 "C_Cpp.clang_format_path": "/usr/bin/clang-format",
                 "python.defaultInterpreterPath": "/home/vscode/venv/bin/python",
                 "python.testing.pytestEnabled": true,
-                "python.testing.pytestArgs": ["LabyPython/tests"]
+                "python.testing.pytestArgs": [
+                    "LabyPython/tests"
+                ]
             }
         }
     },
-
     "postCreateCommand": "cd LabyPath && cmake -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-14 -DCMAKE_BUILD_TYPE=Debug -DLABYPATH_BUILD_TESTS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
-
     "remoteUser": "vscode"
 }
