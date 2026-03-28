@@ -27,7 +27,9 @@
 
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Point_2.h>
+#include <CGAL/number_utils.h>
 #include <array>
+#include <cstddef>
 #include <vector>
 
 namespace agg {
@@ -40,6 +42,16 @@ constexpr double kHermiteDivisor = 3.0;
 constexpr double kCatmullRomDivisor = 6.0;
 constexpr double kCatmullRomDoubleWeight = 2.0;
 constexpr double kCatmullRomQuadrupleWeight = 4.0;
+constexpr double kCurvePiValue = 3.14159265358979323846;
+constexpr std::size_t kCurve4CoordinateCount = 8;
+constexpr std::size_t kCurve4StartXIndex = 0;
+constexpr std::size_t kCurve4StartYIndex = 1;
+constexpr std::size_t kCurve4Control1XIndex = 2;
+constexpr std::size_t kCurve4Control1YIndex = 3;
+constexpr std::size_t kCurve4Control2XIndex = 4;
+constexpr std::size_t kCurve4Control2YIndex = 5;
+constexpr std::size_t kCurve4EndXIndex = 6;
+constexpr std::size_t kCurve4EndYIndex = 7;
 
 //--------------------------------------------curve_approximation_method_e
 
@@ -112,17 +124,33 @@ class Curve3 {
 };
 
 //-------------------------------------------------------------curve4_points
-struct Curve4Points {
-    double startX = 0.0;
-    double startY = 0.0;
-    double control1X = 0.0;
-    double control1Y = 0.0;
-    double control2X = 0.0;
-    double control2Y = 0.0;
-    double endX = 0.0;
-    double endY = 0.0;
-
+class Curve4Points {
+  public:
     Curve4Points() = default;
+
+    explicit Curve4Points(const std::array<double, kCurve4CoordinateCount>& coordinates)
+        : _coordinates(coordinates) {}
+
+    [[nodiscard]] auto startX() const -> double { return _coordinates.at(kCurve4StartXIndex); }
+    [[nodiscard]] auto startY() const -> double { return _coordinates.at(kCurve4StartYIndex); }
+    [[nodiscard]] auto control1X() const -> double {
+        return _coordinates.at(kCurve4Control1XIndex);
+    }
+    [[nodiscard]] auto control1Y() const -> double {
+        return _coordinates.at(kCurve4Control1YIndex);
+    }
+    [[nodiscard]] auto control2X() const -> double {
+        return _coordinates.at(kCurve4Control2XIndex);
+    }
+    [[nodiscard]] auto control2Y() const -> double {
+        return _coordinates.at(kCurve4Control2YIndex);
+    }
+    [[nodiscard]] auto endX() const -> double { return _coordinates.at(kCurve4EndXIndex); }
+    [[nodiscard]] auto endY() const -> double { return _coordinates.at(kCurve4EndYIndex); }
+
+  private:
+    std::array<double, kCurve4CoordinateCount> _coordinates{0.0, 0.0, 0.0, 0.0,
+                                                             0.0, 0.0, 0.0, 0.0};
 };
 
 //-------------------------------------------------------catrom_to_bezier
@@ -136,21 +164,26 @@ inline auto catromToBezier(double startX, double startY, double control1X, doubl
     //  0       1/6     1       -1/6
     //  0       0       1       0
     //
-    return {control1X,
-            control1Y,
-            (-startX + kCatmullRomDivisor * control1X + control2X) / kCatmullRomDivisor,
-            (-startY + kCatmullRomDivisor * control1Y + control2Y) / kCatmullRomDivisor,
-            (control1X + kCatmullRomDivisor * control2X - endX) / kCatmullRomDivisor,
-            (control1Y + kCatmullRomDivisor * control2Y - endY) / kCatmullRomDivisor,
-            control2X,
-            control2Y};
+    return Curve4Points{{control1X,
+                         control1Y,
+                         (-startX + kCatmullRomDivisor * control1X + control2X) /
+                             kCatmullRomDivisor,
+                         (-startY + kCatmullRomDivisor * control1Y + control2Y) /
+                             kCatmullRomDivisor,
+                         (control1X + kCatmullRomDivisor * control2X - endX) /
+                             kCatmullRomDivisor,
+                         (control1Y + kCatmullRomDivisor * control2Y - endY) /
+                             kCatmullRomDivisor,
+                         control2X,
+                         control2Y}};
 }
 
 //-----------------------------------------------------------------------
 inline auto catromToBezier(const Curve4Points& controlPoints) -> Curve4Points {
-    return catromToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
-                          controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
-                          controlPoints.endX, controlPoints.endY);
+    return catromToBezier(controlPoints.startX(), controlPoints.startY(),
+                          controlPoints.control1X(), controlPoints.control1Y(),
+                          controlPoints.control2X(), controlPoints.control2Y(),
+                          controlPoints.endX(), controlPoints.endY());
 }
 
 //-----------------------------------------------------ubspline_to_bezier
@@ -164,25 +197,34 @@ inline auto ubsplineToBezier(double startX, double startY, double control1X, dou
     //  0       2/6     4/6     0
     //  0       1/6     4/6     1/6
     //
-    return {(startX + kCatmullRomQuadrupleWeight * control1X + control2X) / kCatmullRomDivisor,
-            (startY + kCatmullRomQuadrupleWeight * control1Y + control2Y) / kCatmullRomDivisor,
-            (kCatmullRomQuadrupleWeight * control1X + kCatmullRomDoubleWeight * control2X) /
-                kCatmullRomDivisor,
-            (kCatmullRomQuadrupleWeight * control1Y + kCatmullRomDoubleWeight * control2Y) /
-                kCatmullRomDivisor,
-            (kCatmullRomDoubleWeight * control1X + kCatmullRomQuadrupleWeight * control2X) /
-                kCatmullRomDivisor,
-            (kCatmullRomDoubleWeight * control1Y + kCatmullRomQuadrupleWeight * control2Y) /
-                kCatmullRomDivisor,
-            (control1X + kCatmullRomQuadrupleWeight * control2X + endX) / kCatmullRomDivisor,
-            (control1Y + kCatmullRomQuadrupleWeight * control2Y + endY) / kCatmullRomDivisor};
+    return Curve4Points{{(startX + kCatmullRomQuadrupleWeight * control1X + control2X) /
+                             kCatmullRomDivisor,
+                         (startY + kCatmullRomQuadrupleWeight * control1Y + control2Y) /
+                             kCatmullRomDivisor,
+                         (kCatmullRomQuadrupleWeight * control1X +
+                          kCatmullRomDoubleWeight * control2X) /
+                             kCatmullRomDivisor,
+                         (kCatmullRomQuadrupleWeight * control1Y +
+                          kCatmullRomDoubleWeight * control2Y) /
+                             kCatmullRomDivisor,
+                         (kCatmullRomDoubleWeight * control1X +
+                          kCatmullRomQuadrupleWeight * control2X) /
+                             kCatmullRomDivisor,
+                         (kCatmullRomDoubleWeight * control1Y +
+                          kCatmullRomQuadrupleWeight * control2Y) /
+                             kCatmullRomDivisor,
+                         (control1X + kCatmullRomQuadrupleWeight * control2X + endX) /
+                             kCatmullRomDivisor,
+                         (control1Y + kCatmullRomQuadrupleWeight * control2Y + endY) /
+                             kCatmullRomDivisor}};
 }
 
 //-----------------------------------------------------------------------
 inline auto ubsplineToBezier(const Curve4Points& controlPoints) -> Curve4Points {
-    return ubsplineToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
-                            controlPoints.control1Y, controlPoints.control2X,
-                            controlPoints.control2Y, controlPoints.endX, controlPoints.endY);
+    return ubsplineToBezier(controlPoints.startX(), controlPoints.startY(),
+                            controlPoints.control1X(), controlPoints.control1Y(),
+                            controlPoints.control2X(), controlPoints.control2Y(),
+                            controlPoints.endX(), controlPoints.endY());
 }
 
 //------------------------------------------------------hermite_to_bezier
@@ -196,21 +238,22 @@ inline auto hermiteToBezier(double startX, double startY, double control1X, doub
     //  0       1       0       -1/3
     //  0       1       0       0
     //
-    return {startX,
-            startY,
-            (kHermiteDivisor * startX + control2X) / kHermiteDivisor,
-            (kHermiteDivisor * startY + control2Y) / kHermiteDivisor,
-            (kHermiteDivisor * control1X - endX) / kHermiteDivisor,
-            (kHermiteDivisor * control1Y - endY) / kHermiteDivisor,
-            control1X,
-            control1Y};
+    return Curve4Points{{startX,
+                         startY,
+                         (kHermiteDivisor * startX + control2X) / kHermiteDivisor,
+                         (kHermiteDivisor * startY + control2Y) / kHermiteDivisor,
+                         (kHermiteDivisor * control1X - endX) / kHermiteDivisor,
+                         (kHermiteDivisor * control1Y - endY) / kHermiteDivisor,
+                         control1X,
+                         control1Y}};
 }
 
 //-----------------------------------------------------------------------
 inline auto hermiteToBezier(const Curve4Points& controlPoints) -> Curve4Points {
-    return hermiteToBezier(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
-                           controlPoints.control1Y, controlPoints.control2X,
-                           controlPoints.control2Y, controlPoints.endX, controlPoints.endY);
+    return hermiteToBezier(controlPoints.startX(), controlPoints.startY(),
+                           controlPoints.control1X(), controlPoints.control1Y(),
+                           controlPoints.control2X(), controlPoints.control2Y(),
+                           controlPoints.endX(), controlPoints.endY());
 }
 
 //-------------------------------------------------------------curve4_div
@@ -224,9 +267,9 @@ class Curve4 {
     }
 
     explicit Curve4(const Curve4Points& controlPoints) {
-        init(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
-             controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
-             controlPoints.endX, controlPoints.endY);
+        init(controlPoints.startX(), controlPoints.startY(), controlPoints.control1X(),
+             controlPoints.control1Y(), controlPoints.control2X(), controlPoints.control2Y(),
+             controlPoints.endX(), controlPoints.endY());
     }
 
     static auto calcSqDistance(const Point& firstPoint, const Point& secondPoint) -> double {
@@ -243,9 +286,9 @@ class Curve4 {
               double control2Y, double endX, double endY);
 
     void init(const Curve4Points& controlPoints) {
-        init(controlPoints.startX, controlPoints.startY, controlPoints.control1X,
-             controlPoints.control1Y, controlPoints.control2X, controlPoints.control2Y,
-             controlPoints.endX, controlPoints.endY);
+        init(controlPoints.startX(), controlPoints.startY(), controlPoints.control1X(),
+             controlPoints.control1Y(), controlPoints.control2X(), controlPoints.control2Y(),
+             controlPoints.endX(), controlPoints.endY());
     }
 
     void setApproximationScale(double approximationScale) {
@@ -263,11 +306,11 @@ class Curve4 {
     }
 
     void setCuspLimit(double cuspLimit) {
-        _cuspLimit = (cuspLimit == 0.0) ? 0.0 : M_PI - cuspLimit;
+        _cuspLimit = (cuspLimit == 0.0) ? 0.0 : kCurvePiValue - cuspLimit;
     }
 
     [[nodiscard]] auto cuspLimit() const -> double {
-        return (_cuspLimit == 0.0) ? 0.0 : M_PI - _cuspLimit;
+        return (_cuspLimit == 0.0) ? 0.0 : kCurvePiValue - _cuspLimit;
     }
 
     [[nodiscard]] auto getPoints() const -> const std::vector<Point>& {

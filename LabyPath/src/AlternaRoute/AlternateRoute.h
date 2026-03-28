@@ -25,16 +25,33 @@ class PolyConvex;
 class AlternateRoute {
 
     struct OffsetPair {
-        Kernel::Point_2 origin;
-        Kernel::Point_2 offset;
+      public:
+        [[nodiscard]] auto origin() const -> const Kernel::Point_2& {
+            return _origin;
+        }
+
+        [[nodiscard]] auto offset() const -> const Kernel::Point_2& {
+            return _offset;
+        }
+
+        void setOrigin(const Kernel::Point_2& origin) {
+            _origin = origin;
+        }
+
+        void setOffset(const Kernel::Point_2& offset) {
+            _offset = offset;
+        }
 
         void print(std::ostream& outputStream) const {
-
-            outputStream << " origin " << origin;
-            outputStream << " offset " << offset;
+            outputStream << " origin " << origin();
+            outputStream << " offset " << offset();
         }
         static auto simplify(std::vector<OffsetPair>& list,
                              const double& distance) -> std::vector<OffsetPair>;
+
+      private:
+        Kernel::Point_2 _origin;
+        Kernel::Point_2 _offset;
     };
 
     struct OffsetEndpoints {

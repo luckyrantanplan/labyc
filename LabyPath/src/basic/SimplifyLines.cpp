@@ -18,15 +18,14 @@ SimplifyLines::LineString SimplifyLines::decimate(LineString& line, double dist)
     boost::geometry::simplify(line, simplified, dist);
 
     return simplified;
-
 }
 
-SimplifyLines::LineStringIndexed SimplifyLines::decimateIndex(LineStringIndexed& line, double dist) {
+SimplifyLines::LineStringIndexed SimplifyLines::decimateIndex(LineStringIndexed& line,
+                                                              double dist) {
 
     LineStringIndexed simplified;
     boost::geometry::simplify(line, simplified, dist);
 
     return simplified;
-
 }
 } /* namespace laby */

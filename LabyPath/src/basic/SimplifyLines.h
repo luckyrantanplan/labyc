@@ -20,9 +20,9 @@ struct IndexedPoint {
     IndexedPoint(double ix, double iy, std::size_t i) : x(ix), y(iy), index(i) {}
     IndexedPoint() = default;
 
-    double x = 0;          
-    double y = 0;          
-    std::size_t index = 0; 
+    double x = 0;
+    double y = 0;
+    std::size_t index = 0;
 };
 } /* namespace laby */
 
@@ -30,7 +30,7 @@ BOOST_GEOMETRY_REGISTER_POINT_2D(laby::IndexedPoint, double, cs::cartesian, x, y
 
 namespace laby {
 class SimplifyLines {
-public:
+  public:
     using xy = boost::geometry::model::d2::point_xy<double>;
 
     using LineString = boost::geometry::model::linestring<xy>;

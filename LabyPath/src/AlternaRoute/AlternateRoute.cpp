@@ -94,8 +94,8 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
         SimplifyLines::LineStringIndexed lineString;
         for (std::size_t i = 0; i < list.size(); ++i) {
             const OffsetPair& pair = list.at(i);
-            lineString.emplace_back(IndexedPoint(CGAL::to_double(pair.offset.x()),
-                                                 CGAL::to_double(pair.offset.y()), i));
+            lineString.emplace_back(IndexedPoint(CGAL::to_double(pair.offset().x()),
+                                                 CGAL::to_double(pair.offset().y()), i));
         }
         SimplifyLines::LineStringIndexed simpleLine =
             SimplifyLines::decimateIndex(lineString, distance);
@@ -157,18 +157,18 @@ void AlternateRoute::addPoint(std::vector<OffsetPair>& offsets, const OffsetEndp
     offsets.emplace_back();
     OffsetPair& offsetPair = offsets.back();
 
-    offsetPair.origin = endpoints.originPoint;
-    offsetPair.offset =
-        CGAL::barycenter(offsetPair.origin, _config.thicknesspercent(), endpoints.targetPoint);
-    auto vec = offsetPair.offset - offsetPair.origin;
+    offsetPair.setOrigin(endpoints.originPoint);
+    offsetPair.setOffset(
+        CGAL::barycenter(offsetPair.origin(), _config.thicknesspercent(), endpoints.targetPoint));
+    auto vec = offsetPair.offset() - offsetPair.origin();
     if (vec.squared_length() > _sqMaxThickness) {
         auto scaledVector =
             vec * (_config.maxthickness() / sqrt(CGAL::to_double(vec.squared_length())));
-        offsetPair.offset = offsetPair.origin + scaledVector;
+        offsetPair.setOffset(offsetPair.origin() + scaledVector);
     } else if (vec.squared_length() < _sqMinThickness) {
         auto scaledVector =
             vec * (_config.minthickness() / sqrt(CGAL::to_double(vec.squared_length())));
-        offsetPair.offset = offsetPair.origin + scaledVector;
+        offsetPair.setOffset(offsetPair.origin() + scaledVector);
     }
 }
 
@@ -198,8 +198,8 @@ auto AlternateRoute::coupleList(const Halfedge& halfedge,
     {
         addPoint(left, {halfedgeIterator->source()->point(), halfedgeIterator->target()->point()});
         OffsetPair& pair = left.back();
-        Kernel::Vector_2 vect = pair.offset - supportLine.projection(pair.offset);
-        pair.offset = pair.origin + vect;
+        Kernel::Vector_2 vect = pair.offset() - supportLine.projection(pair.offset());
+        pair.setOffset(pair.origin() + vect);
     }
 
     ++halfedgeIterator;
@@ -212,8 +212,8 @@ auto AlternateRoute::coupleList(const Halfedge& halfedge,
             addPoint(left,
                      {halfedgeIterator->target()->point(), halfedgeIterator->source()->point()});
             OffsetPair& pair = left.back();
-            Kernel::Vector_2 vect = pair.offset - supportLine.projection(pair.offset);
-            pair.offset = pair.origin + vect;
+            Kernel::Vector_2 vect = pair.offset() - supportLine.projection(pair.offset());
+            pair.setOffset(pair.origin() + vect);
             break;
         }
     }
@@ -223,14 +223,14 @@ auto AlternateRoute::coupleList(const Halfedge& halfedge,
 void AlternateRoute::addTriplet(alter::OffsetTriplet& triplet, const OffsetPair& offsetPair,
                                 const Kernel::Point_2& lineStart, const Kernel::Point_2& lineEnd) {
 
-    triplet.origin = offsetPair.origin;
-    triplet.offset1 = offsetPair.offset;
+    triplet.setOrigin(offsetPair.origin());
+    triplet.setOffset1(offsetPair.offset());
     Kernel::Line_2 firstLine(lineStart, lineEnd);
-    Kernel::Line_2 secondLine(triplet.origin, triplet.offset1);
+    Kernel::Line_2 secondLine(triplet.origin(), triplet.offset1());
     auto variant2 = CGAL::intersection(firstLine, secondLine);
     if (variant2) {
         if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
-            triplet.offset2 = *intersectionPoint;
+            triplet.setOffset2(*intersectionPoint);
         }
     }
 }
@@ -294,28 +294,29 @@ auto AlternateRoute::createTripletList(const Halfedge& halfedge,
             alter::OffsetTriplet& triplet = tripletList.back();
 
             Kernel::Comparison_result predicat = CGAL::compare_distance_to_point(
-                halfedge.target()->point(), left.at(leftIndex).origin, right.at(rightIndex).origin);
+                halfedge.target()->point(), left.at(leftIndex).origin(),
+                right.at(rightIndex).origin());
             switch (predicat) {
             case CGAL::Comparison_result::EQUAL: {
-                triplet.origin = left.at(leftIndex).origin;
-                triplet.offset1 = left.at(leftIndex).offset;
-                triplet.offset2 = right.at(rightIndex).offset;
+                triplet.setOrigin(left.at(leftIndex).origin());
+                triplet.setOffset1(left.at(leftIndex).offset());
+                triplet.setOffset2(right.at(rightIndex).offset());
                 ++leftIndex;
                 ++rightIndex;
 
                 break;
             }
             case CGAL::Comparison_result::SMALLER: {
-                addTriplet(triplet, left.at(leftIndex), right.at(rightIndex - 1).offset,
-                           right.at(rightIndex).offset);
+                addTriplet(triplet, left.at(leftIndex), right.at(rightIndex - 1).offset(),
+                           right.at(rightIndex).offset());
 
                 ++leftIndex;
                 break;
             }
             case CGAL::Comparison_result::LARGER: {
-                addTriplet(triplet, right.at(rightIndex), left.at(leftIndex - 1).offset,
-                           left.at(leftIndex).offset);
-                std::swap(triplet.offset1, triplet.offset2);
+                addTriplet(triplet, right.at(rightIndex), left.at(leftIndex - 1).offset(),
+                           left.at(leftIndex).offset());
+                triplet.swapOffsets();
                 ++rightIndex;
                 break;
             }
@@ -345,7 +346,7 @@ void AlternateRoute::ribToTrapeze(const Ribbon& rib,
                 const alter::OffsetTriplet& firstTriplet = tripletList.at(i - 1);
                 const alter::OffsetTriplet& secondTriplet = tripletList.at(i);
                 trapezeVect.emplace_back(
-                    Kernel::Segment_2(firstTriplet.origin, secondTriplet.origin),
+                    Kernel::Segment_2(firstTriplet.origin(), secondTriplet.origin()),
                     alter::TrapezeEdgeInfo(alter::TrapezeEdgeInfo::SourceTriplet{firstTriplet},
                                            alter::TrapezeEdgeInfo::TargetTriplet{secondTriplet},
                                            direction));

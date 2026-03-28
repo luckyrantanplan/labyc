@@ -14,11 +14,8 @@
 #include <CGAL/Arrangement_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Polygon_2.h>
-#include <complex>
 #include <cstdint>
 #include <iostream>
-#include <optional>
-#include <unordered_map>
 #include <utility>
 
 namespace laby::alter {
@@ -39,16 +36,45 @@ using TrapezeDcel = CGAL::Arr_extended_dcel<TrapezeTraits2, Dummy, Dummy, Dummy>
 using ArrTrapeze = CGAL::Arrangement_2<TrapezeTraits2, TrapezeDcel>;
 
 struct OffsetTriplet {
+  public:
+    [[nodiscard]] auto origin() const -> const Kernel::Point_2& {
+        return _origin;
+    }
 
-    Kernel::Point_2 origin;
-    Kernel::Point_2 offset1;
-    Kernel::Point_2 offset2;
+    [[nodiscard]] auto offset1() const -> const Kernel::Point_2& {
+        return _offset1;
+    }
+
+    [[nodiscard]] auto offset2() const -> const Kernel::Point_2& {
+        return _offset2;
+    }
+
+    void setOrigin(const Kernel::Point_2& origin) {
+        _origin = origin;
+    }
+
+    void setOffset1(const Kernel::Point_2& offset) {
+        _offset1 = offset;
+    }
+
+    void setOffset2(const Kernel::Point_2& offset) {
+        _offset2 = offset;
+    }
+
+    void swapOffsets() {
+        std::swap(_offset1, _offset2);
+    }
 
     void print(std::ostream& outputStream) const {
-        outputStream << " offset1 " << offset1;
-        outputStream << " origin " << origin;
-        outputStream << "offset2 " << offset2;
+        outputStream << " offset1 " << offset1();
+        outputStream << " origin " << origin();
+        outputStream << "offset2 " << offset2();
     }
+
+  private:
+    Kernel::Point_2 _origin;
+    Kernel::Point_2 _offset1;
+    Kernel::Point_2 _offset2;
 };
 
 class TrapezeEdgeInfo {

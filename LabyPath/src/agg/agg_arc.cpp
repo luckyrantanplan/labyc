@@ -5,6 +5,8 @@
  *      Author: florian
  */
 #include "agg_arc.h"
+#include <CGAL/Vector_2.h>
+#include <CGAL/number_utils.h>
 #include <algorithm> // std::reverse
 #include <cmath>
 

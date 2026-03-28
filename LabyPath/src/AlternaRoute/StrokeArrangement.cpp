@@ -28,11 +28,11 @@ auto TrapezeEdgeInfo::intersection(const Kernel::Line_2& lineA,
 void TrapezeEdgeInfo::computeGeometry(const Kernel::Point_2& firstBoundaryPoint,
                                       const Kernel::Point_2& secondBoundaryPoint,
                                       CGAL::Polygon_2<Kernel>& geometry) const {
-    Kernel::Line_2 centerLine(_source.origin, _target.origin);
+    Kernel::Line_2 centerLine(_source.origin(), _target.origin());
     Kernel::Line_2 firstPerpendicular = centerLine.perpendicular(firstBoundaryPoint);
     Kernel::Line_2 secondPerpendicular = centerLine.perpendicular(secondBoundaryPoint);
-    Kernel::Line_2 outerLine(_source.offset2, _target.offset2);
-    Kernel::Line_2 innerLine(_source.offset1, _target.offset1);
+    Kernel::Line_2 outerLine(_source.offset2(), _target.offset2());
+    Kernel::Line_2 innerLine(_source.offset1(), _target.offset1());
     geometry.push_back(intersection(innerLine, firstPerpendicular));
     geometry.push_back(intersection(innerLine, secondPerpendicular));
     geometry.push_back(intersection(outerLine, secondPerpendicular));
@@ -44,7 +44,7 @@ auto TrapezeEdgeInfo::getGeometry(const Kernel::Segment_2& segment) const
     CGAL::Polygon_2<Kernel> geometry;
     const Kernel::Point_2& source = segment.source();
     const Kernel::Point_2& target = segment.target();
-    if (CGAL::compare_distance_to_point(_source.origin, source, target) == CGAL::SMALLER) {
+    if (CGAL::compare_distance_to_point(_source.origin(), source, target) == CGAL::SMALLER) {
 
         computeGeometry(source, target, geometry);
     } else {

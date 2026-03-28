@@ -24,6 +24,7 @@
 
 #include "agg_curves.h"
 #include <cmath>
+#include <vector>
 
 namespace agg {
 
@@ -32,6 +33,7 @@ constexpr double kCurveDistanceEpsilon = 1e-30;
 constexpr double kCurveCollinearityEpsilon = 1e-30;
 constexpr double kCurveAngleToleranceEpsilon = 0.01;
 constexpr double kHalf = 0.5;
+constexpr double kPi = kCurvePiValue;
 constexpr unsigned kCurveRecursionLimit = 32U;
 
 namespace {
@@ -82,6 +84,16 @@ struct Curve4Midpoints {
     double y1234;
 };
 
+struct Curve3SubdivisionTask {
+    Curve3Segment segment;
+    unsigned level;
+};
+
+struct Curve4SubdivisionTask {
+    Curve4Segment segment;
+    unsigned level;
+};
+
 auto computeCurve4Midpoints(const Curve4Segment& segment) -> Curve4Midpoints {
     const double x12 = (segment.startX + segment.control1X) / kQuadraticDivisor;
     const double y12 = (segment.startY + segment.control1Y) / kQuadraticDivisor;
@@ -126,8 +138,8 @@ auto handleCurve3RegularSegment(const Curve3Segment& segment, double midpointX, 
     double angleDelta =
         std::fabs(std::atan2(segment.endY - segment.controlY, segment.endX - segment.controlX) -
                   std::atan2(segment.controlY - segment.startY, segment.controlX - segment.startX));
-    if (angleDelta >= M_PI) {
-        angleDelta = 2 * M_PI - angleDelta;
+    if (angleDelta >= kPi) {
+        angleDelta = 2 * kPi - angleDelta;
     }
     if (angleDelta < config.angleTolerance) {
         points.emplace_back(midpointX, midpointY);
@@ -258,8 +270,8 @@ auto handleCurve4SecondControlCase(const Curve4Segment& segment, const Curve4Mid
     double angleDelta = std::fabs(
         std::atan2(segment.endY - segment.control2Y, segment.endX - segment.control2X) -
         std::atan2(segment.control2Y - segment.control1Y, segment.control2X - segment.control1X));
-    if (angleDelta >= M_PI) {
-        angleDelta = 2 * M_PI - angleDelta;
+    if (angleDelta >= kPi) {
+        angleDelta = 2 * kPi - angleDelta;
     }
     if (angleDelta < config.angleTolerance) {
         points.emplace_back(segment.control1X, segment.control1Y);
@@ -291,8 +303,8 @@ auto handleCurve4FirstControlCase(const Curve4Segment& segment, const Curve4Midp
     double angleDelta = std::fabs(
         std::atan2(segment.control2Y - segment.control1Y, segment.control2X - segment.control1X) -
         std::atan2(segment.control1Y - segment.startY, segment.control1X - segment.startX));
-    if (angleDelta >= M_PI) {
-        angleDelta = 2 * M_PI - angleDelta;
+    if (angleDelta >= kPi) {
+        angleDelta = 2 * kPi - angleDelta;
     }
     if (angleDelta < config.angleTolerance) {
         points.emplace_back(segment.control1X, segment.control1Y);
@@ -332,11 +344,11 @@ auto handleCurve4RegularCase(const Curve4Segment& segment, const Curve4Midpoints
     double secondAngleDelta =
         std::fabs(std::atan2(segment.endY - segment.control2Y, segment.endX - segment.control2X) -
                   inflectionAngle);
-    if (firstAngleDelta >= M_PI) {
-        firstAngleDelta = 2 * M_PI - firstAngleDelta;
+    if (firstAngleDelta >= kPi) {
+        firstAngleDelta = 2 * kPi - firstAngleDelta;
     }
-    if (secondAngleDelta >= M_PI) {
-        secondAngleDelta = 2 * M_PI - secondAngleDelta;
+    if (secondAngleDelta >= kPi) {
+        secondAngleDelta = 2 * kPi - secondAngleDelta;
     }
 
     if (firstAngleDelta + secondAngleDelta < config.angleTolerance) {
@@ -367,37 +379,42 @@ void Curve3::init(double startX, double startY, double controlX, double controlY
 //------------------------------------------------------------------------
 void Curve3::recursiveBezier(double startX, double startY, double controlX, double controlY,
                              double endX, double endY,
-                             unsigned level) { 
-    if (level > kCurveRecursionLimit) {
-        return;
-    }
+                             unsigned level) {
+    std::vector<Curve3SubdivisionTask> taskStack;
+    taskStack.push_back({Curve3Segment{startX, startY, controlX, controlY, endX, endY}, level});
 
-    const Curve3Segment segment{startX, startY, controlX, controlY, endX, endY};
-    const Curve3ApproximationConfig config{_distanceToleranceSquare, _angleTolerance};
-
-    // Calculate all the mid-points of the line segments
-    //----------------------
-    double x12 = (startX + controlX) / kQuadraticDivisor;
-    double y12 = (startY + controlY) / kQuadraticDivisor;
-    double x23 = (controlX + endX) / kQuadraticDivisor;
-    double y23 = (controlY + endY) / kQuadraticDivisor;
-    double x123 = (x12 + x23) / kQuadraticDivisor;
-    double y123 = (y12 + y23) / kQuadraticDivisor;
-
-    const double distanceToChord =
-        std::fabs(((controlX - endX) * (endY - startY) - (controlY - endY) * (endX - startX)));
-    if (distanceToChord > kCurveCollinearityEpsilon) {
-        if (handleCurve3RegularSegment(segment, x123, y123, config, _points)) {
-            return;
+    while (!taskStack.empty()) {
+        const Curve3SubdivisionTask task = taskStack.back();
+        taskStack.pop_back();
+        if (task.level > kCurveRecursionLimit) {
+            continue;
         }
-    } else if (handleCurve3CollinearSegment(segment, config, _points)) {
-        return;
-    }
 
-    // Continue subdivision
-    //----------------------
-    recursiveBezier(startX, startY, x12, y12, x123, y123, level + 1);
-    recursiveBezier(x123, y123, x23, y23, endX, endY, level + 1);
+        const Curve3Segment& segment = task.segment;
+        const Curve3ApproximationConfig config{_distanceToleranceSquare, _angleTolerance};
+        const double x12 = (segment.startX + segment.controlX) / kQuadraticDivisor;
+        const double y12 = (segment.startY + segment.controlY) / kQuadraticDivisor;
+        const double x23 = (segment.controlX + segment.endX) / kQuadraticDivisor;
+        const double y23 = (segment.controlY + segment.endY) / kQuadraticDivisor;
+        const double x123 = (x12 + x23) / kQuadraticDivisor;
+        const double y123 = (y12 + y23) / kQuadraticDivisor;
+
+        const double distanceToChord = std::fabs(
+            ((segment.controlX - segment.endX) * (segment.endY - segment.startY) -
+             (segment.controlY - segment.endY) * (segment.endX - segment.startX)));
+        if (distanceToChord > kCurveCollinearityEpsilon) {
+            if (handleCurve3RegularSegment(segment, x123, y123, config, _points)) {
+                continue;
+            }
+        } else if (handleCurve3CollinearSegment(segment, config, _points)) {
+            continue;
+        }
+
+        taskStack.push_back(
+            {Curve3Segment{x123, y123, x23, y23, segment.endX, segment.endY}, task.level + 1});
+        taskStack.push_back({Curve3Segment{segment.startX, segment.startY, x12, y12, x123, y123},
+                             task.level + 1});
+    }
 }
 
 //------------------------------------------------------------------------
@@ -420,75 +437,72 @@ void Curve4::init(double startX, double startY, double control1X, double control
 //------------------------------------------------------------------------
 void Curve4::recursiveBezier(double startX, double startY, double control1X, double control1Y,
                              double control2X, double control2Y, double endX, double endY,
-                             unsigned level) { 
-    if (level > kCurveRecursionLimit) {
-        return;
+                             unsigned level) {
+    std::vector<Curve4SubdivisionTask> taskStack;
+    taskStack.push_back(
+        {Curve4Segment{startX, startY, control1X, control1Y, control2X, control2Y, endX, endY},
+         level});
+
+    while (!taskStack.empty()) {
+        const Curve4SubdivisionTask task = taskStack.back();
+        taskStack.pop_back();
+        if (task.level > kCurveRecursionLimit) {
+            continue;
+        }
+
+        const Curve4Segment& segment = task.segment;
+        const Curve4Midpoints midpoints = computeCurve4Midpoints(segment);
+        const Curve4ApproximationConfig config{_distanceToleranceSquare, _angleTolerance,
+                                               _cuspLimit};
+
+        const double deltaX = segment.endX - segment.startX;
+        const double deltaY = segment.endY - segment.startY;
+        const double distanceControl1 =
+            std::fabs(((segment.control1X - segment.endX) * deltaY -
+                       (segment.control1Y - segment.endY) * deltaX));
+        const double distanceControl2 =
+            std::fabs(((segment.control2X - segment.endX) * deltaY -
+                       (segment.control2Y - segment.endY) * deltaX));
+        const auto control1OffLine =
+            static_cast<unsigned>(distanceControl1 > kCurveCollinearityEpsilon);
+        const auto control2OffLine =
+            static_cast<unsigned>(distanceControl2 > kCurveCollinearityEpsilon);
+
+        bool handled = false;
+        switch ((control1OffLine << 1U) + control2OffLine) {
+        case 0:
+            handled = handleCurve4CollinearCase(segment, config, _points);
+            break;
+
+        case 1:
+            handled = handleCurve4SecondControlCase(segment, midpoints, config, _points);
+            break;
+
+        case 2:
+            handled = handleCurve4FirstControlCase(segment, midpoints, config, _points);
+            break;
+
+        case 3:
+            handled = handleCurve4RegularCase(segment, midpoints, config, _points);
+            break;
+
+        default:
+            break;
+        }
+
+        if (handled) {
+            continue;
+        }
+
+        taskStack.push_back({Curve4Segment{midpoints.x1234, midpoints.y1234, midpoints.x234,
+                                           midpoints.y234, midpoints.x34, midpoints.y34,
+                                           segment.endX, segment.endY},
+                             task.level + 1});
+        taskStack.push_back({Curve4Segment{segment.startX, segment.startY, midpoints.x12,
+                                           midpoints.y12, midpoints.x123, midpoints.y123,
+                                           midpoints.x1234, midpoints.y1234},
+                             task.level + 1});
     }
-
-    const Curve4Segment segment{startX,    startY,    control1X, control1Y,
-                                control2X, control2Y, endX,      endY};
-    const Curve4Midpoints midpoints = computeCurve4Midpoints(segment);
-    const Curve4ApproximationConfig config{_distanceToleranceSquare, _angleTolerance, _cuspLimit};
-
-    // Calculate all the mid-points of the line segments
-    //----------------------
-    const double x12 = midpoints.x12;
-    const double y12 = midpoints.y12;
-    const double x34 = midpoints.x34;
-    const double y34 = midpoints.y34;
-    const double x123 = midpoints.x123;
-    const double y123 = midpoints.y123;
-    const double x234 = midpoints.x234;
-    const double y234 = midpoints.y234;
-    const double x1234 = midpoints.x1234;
-    const double y1234 = midpoints.y1234;
-
-    // Try to approximate the full cubic curve by a single straight line
-    //------------------
-    const double deltaX = endX - startX;
-    const double deltaY = endY - startY;
-    const double distanceControl1 =
-        std::fabs(((control1X - endX) * deltaY - (control1Y - endY) * deltaX));
-    const double distanceControl2 =
-        std::fabs(((control2X - endX) * deltaY - (control2Y - endY) * deltaX));
-    const auto control1OffLine =
-        static_cast<unsigned>(distanceControl1 > kCurveCollinearityEpsilon);
-    const auto control2OffLine =
-        static_cast<unsigned>(distanceControl2 > kCurveCollinearityEpsilon);
-
-    switch ((control1OffLine << 1U) + control2OffLine) {
-    case 0:
-        if (handleCurve4CollinearCase(segment, config, _points)) {
-            return;
-        }
-        break;
-
-    case 1:
-        if (handleCurve4SecondControlCase(segment, midpoints, config, _points)) {
-            return;
-        }
-        break;
-
-    case 2:
-        if (handleCurve4FirstControlCase(segment, midpoints, config, _points)) {
-            return;
-        }
-        break;
-
-    case 3:
-        if (handleCurve4RegularCase(segment, midpoints, config, _points)) {
-            return;
-        }
-        break;
-
-    default:
-        break;
-    }
-
-    // Continue subdivision
-    //----------------------
-    recursiveBezier(startX, startY, x12, y12, x123, y123, x1234, y1234, level + 1);
-    recursiveBezier(x1234, y1234, x234, y234, x34, y34, endX, endY, level + 1);
 }
 
 //------------------------------------------------------------------------
