@@ -21,19 +21,19 @@ public:
 
     HalfedgeRangeIterator(HalfedgeRangeIterator&&) noexcept = default;
 
-    HalfedgeRangeIterator& operator=(const HalfedgeRangeIterator&) = default;
+    auto operator=(const HalfedgeRangeIterator&) -> HalfedgeRangeIterator& = default;
 
-    HalfedgeRangeIterator& operator=(HalfedgeRangeIterator&&) noexcept = default;
+    auto operator=(HalfedgeRangeIterator&&) noexcept -> HalfedgeRangeIterator& = default;
 
     ~HalfedgeRangeIterator() = default;
 
-    bool operator!=(const HalfedgeRangeIterator& it) const { return _start != it._start || _circulator != it._circulator; }
+    auto operator!=(const HalfedgeRangeIterator& it) const -> bool { return _start != it._start || _circulator != it._circulator; }
 
-    bool operator==(const HalfedgeRangeIterator& it) const { return _start == it._start && _circulator == it._circulator; }
+    auto operator==(const HalfedgeRangeIterator& it) const -> bool { return _start == it._start && _circulator == it._circulator; }
 
-    typename T::reference operator*() { return *_circulator; }
+    auto operator*() -> typename T::reference { return *_circulator; }
 
-    HalfedgeRangeIterator& operator++() { // prefix increment
+    auto operator++() -> HalfedgeRangeIterator& { // prefix increment
         _start = false;
         ++_circulator;
 
@@ -50,9 +50,9 @@ template <typename T> class HalfedgeRange {
 public:
     explicit HalfedgeRange(T circ) : _circulator{circ}, _ending{std::move(circ)} {}
 
-    HalfedgeRangeIterator<T> begin() { return HalfedgeRangeIterator<T>{true, _circulator}; }
+    auto begin() -> HalfedgeRangeIterator<T> { return HalfedgeRangeIterator<T>{true, _circulator}; }
 
-    HalfedgeRangeIterator<T> end() { return HalfedgeRangeIterator<T>{false, _ending}; }
+    auto end() -> HalfedgeRangeIterator<T> { return HalfedgeRangeIterator<T>{false, _ending}; }
 
 private:
     T _circulator;
@@ -63,9 +63,9 @@ template <typename T> class RangeIterator {
 public:
     RangeIterator(T begin, T end) : _beginIt{std::move(begin)}, _endIt{std::move(end)} {}
 
-    T& begin() { return _beginIt; }
+    auto begin() -> T& { return _beginIt; }
 
-    T& end() { return _endIt; }
+    auto end() -> T& { return _endIt; }
 
 private:
     T _beginIt;
@@ -76,7 +76,7 @@ class RangeHelper {
 public:
     template <typename T> static auto make(T begin, T end) { return RangeIterator<T>(std::move(begin), std::move(end)); }
 
-    template <typename T> static HalfedgeRange<T> make(T circulator) { return HalfedgeRange<T>(std::move(circulator)); }
+    template <typename T> static auto make(T circulator) -> HalfedgeRange<T> { return HalfedgeRange<T>(std::move(circulator)); }
 };
 
 } /* namespace laby */

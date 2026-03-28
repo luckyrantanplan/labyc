@@ -5,6 +5,7 @@
 
 #include "GeomData.h"
 #include <complex>
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <optional>
 
@@ -12,7 +13,7 @@ namespace laby {
 namespace {
 
 TEST(VertexInfoTest, DefaultConstruction) {
-    VertexInfo info;
+    VertexInfo const info;
     EXPECT_EQ(info.getType(), VertexInfo::UNDEFINED);
     EXPECT_EQ(info.getVisit(), -1);
     EXPECT_FALSE(info.getGlobalCoordinate().has_value());

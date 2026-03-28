@@ -5,7 +5,6 @@
  *      Author: florian
  */
 
-#include "DocumentSVG.h"
 
 namespace svg {
 

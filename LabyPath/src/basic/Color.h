@@ -11,61 +11,61 @@
 #include <cstdint>
 #include <svgpp/factory/integer_color.hpp>
 
-namespace laby {
-namespace basic {
+
+namespace laby::basic {
 
 class Color {
 public:
-    static constexpr double COLOR_COMPONENT_MAX = 0x000000FF;
+    static constexpr double colorComponentMax = 0x000000FF;
     static constexpr uint32_t mask = 0x000000FF;
 
-    static uint32_t get_channel(const uint32_t color, const int offset) {
+    static auto getChannel(const uint32_t color, const int offset) -> uint32_t {
         return (color >> offset) & 0x000000FF;
     }
 
-    static double get_red_normalized(const uint32_t color) {
-        return get_red(color) / COLOR_COMPONENT_MAX;
+    static auto getRedNormalized(const uint32_t color) -> double {
+        return getRed(color) / colorComponentMax;
     }
 
-    static double get_green_normalized(const uint32_t color) {
-        return get_green(color) / COLOR_COMPONENT_MAX;
+    static auto getGreenNormalized(const uint32_t color) -> double {
+        return getGreen(color) / colorComponentMax;
     }
 
-    static double get_blue_normalized(const uint32_t color) {
-        return get_blue(color) / COLOR_COMPONENT_MAX;
+    static auto getBlueNormalized(const uint32_t color) -> double {
+        return getBlue(color) / colorComponentMax;
     }
 
-    static uint32_t get_red(const uint32_t color) {
-        return get_channel(color, svgpp::factory::color::rgb8_policy::r_offset);
+    static auto getRed(const uint32_t color) -> uint32_t {
+        return getChannel(color, svgpp::factory::color::rgb8_policy::r_offset);
     }
 
-    static uint32_t get_green(const uint32_t color) {
-        return get_channel(color, svgpp::factory::color::rgb8_policy::g_offset);
+    static auto getGreen(const uint32_t color) -> uint32_t {
+        return getChannel(color, svgpp::factory::color::rgb8_policy::g_offset);
     }
 
-    static uint32_t get_blue(const uint32_t color) {
-        return get_channel(color, svgpp::factory::color::rgb8_policy::b_offset);
+    static auto getBlue(const uint32_t color) -> uint32_t {
+        return getChannel(color, svgpp::factory::color::rgb8_policy::b_offset);
     }
 
-    static uint32_t create(const uint32_t r, const uint32_t g, const uint32_t b) {
+    static auto create(const uint32_t r, const uint32_t g, const uint32_t b) -> uint32_t {
         using svgpp::factory::color::rgb8_policy;
         return rgb8_policy::preset_bits | (r << rgb8_policy::r_offset) | (g << rgb8_policy::g_offset) | (b << rgb8_policy::b_offset);
     }
 
-    static uint32_t set_red(const uint32_t color, const uint32_t red) {
-        return create(red, get_green(color), get_blue(color));
+    static auto setRed(const uint32_t color, const uint32_t red) -> uint32_t {
+        return create(red, getGreen(color), getBlue(color));
     }
 
-    static uint32_t set_green(const uint32_t color, const uint32_t green) {
-        return create(get_red(color), green, get_blue(color));
+    static auto setGreen(const uint32_t color, const uint32_t green) -> uint32_t {
+        return create(getRed(color), green, getBlue(color));
     }
 
-    static uint32_t set_blue(const uint32_t color, const uint32_t blue) {
-        return create(get_red(color), get_green(color), blue);
+    static auto setBlue(const uint32_t color, const uint32_t blue) -> uint32_t {
+        return create(getRed(color), getGreen(color), blue);
     }
 };
 
-} /* namespace basic */
-} /* namespace laby */
+} // namespace laby::basic
+
 
 #endif /* BASIC_COLOR_H_ */

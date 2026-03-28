@@ -378,8 +378,7 @@ void Curve3::init(double startX, double startY, double controlX, double controlY
 
 //------------------------------------------------------------------------
 void Curve3::recursiveBezier(double startX, double startY, double controlX, double controlY,
-                             double endX, double endY,
-                             unsigned level) {
+                             double endX, double endY, unsigned level) {
     std::vector<Curve3SubdivisionTask> taskStack;
     taskStack.push_back({Curve3Segment{startX, startY, controlX, controlY, endX, endY}, level});
 
@@ -399,9 +398,9 @@ void Curve3::recursiveBezier(double startX, double startY, double controlX, doub
         const double x123 = (x12 + x23) / kQuadraticDivisor;
         const double y123 = (y12 + y23) / kQuadraticDivisor;
 
-        const double distanceToChord = std::fabs(
-            ((segment.controlX - segment.endX) * (segment.endY - segment.startY) -
-             (segment.controlY - segment.endY) * (segment.endX - segment.startX)));
+        const double distanceToChord =
+            std::fabs(((segment.controlX - segment.endX) * (segment.endY - segment.startY) -
+                       (segment.controlY - segment.endY) * (segment.endX - segment.startX)));
         if (distanceToChord > kCurveCollinearityEpsilon) {
             if (handleCurve3RegularSegment(segment, x123, y123, config, _points)) {
                 continue;
@@ -412,8 +411,8 @@ void Curve3::recursiveBezier(double startX, double startY, double controlX, doub
 
         taskStack.push_back(
             {Curve3Segment{x123, y123, x23, y23, segment.endX, segment.endY}, task.level + 1});
-        taskStack.push_back({Curve3Segment{segment.startX, segment.startY, x12, y12, x123, y123},
-                             task.level + 1});
+        taskStack.push_back(
+            {Curve3Segment{segment.startX, segment.startY, x12, y12, x123, y123}, task.level + 1});
     }
 }
 
@@ -457,12 +456,10 @@ void Curve4::recursiveBezier(double startX, double startY, double control1X, dou
 
         const double deltaX = segment.endX - segment.startX;
         const double deltaY = segment.endY - segment.startY;
-        const double distanceControl1 =
-            std::fabs(((segment.control1X - segment.endX) * deltaY -
-                       (segment.control1Y - segment.endY) * deltaX));
-        const double distanceControl2 =
-            std::fabs(((segment.control2X - segment.endX) * deltaY -
-                       (segment.control2Y - segment.endY) * deltaX));
+        const double distanceControl1 = std::fabs(((segment.control1X - segment.endX) * deltaY -
+                                                   (segment.control1Y - segment.endY) * deltaX));
+        const double distanceControl2 = std::fabs(((segment.control2X - segment.endX) * deltaY -
+                                                   (segment.control2Y - segment.endY) * deltaX));
         const auto control1OffLine =
             static_cast<unsigned>(distanceControl1 > kCurveCollinearityEpsilon);
         const auto control2OffLine =
@@ -494,14 +491,14 @@ void Curve4::recursiveBezier(double startX, double startY, double control1X, dou
             continue;
         }
 
-        taskStack.push_back({Curve4Segment{midpoints.x1234, midpoints.y1234, midpoints.x234,
-                                           midpoints.y234, midpoints.x34, midpoints.y34,
-                                           segment.endX, segment.endY},
-                             task.level + 1});
-        taskStack.push_back({Curve4Segment{segment.startX, segment.startY, midpoints.x12,
-                                           midpoints.y12, midpoints.x123, midpoints.y123,
-                                           midpoints.x1234, midpoints.y1234},
-                             task.level + 1});
+        taskStack.push_back(
+            {Curve4Segment{midpoints.x1234, midpoints.y1234, midpoints.x234, midpoints.y234,
+                           midpoints.x34, midpoints.y34, segment.endX, segment.endY},
+             task.level + 1});
+        taskStack.push_back(
+            {Curve4Segment{segment.startX, segment.startY, midpoints.x12, midpoints.y12,
+                           midpoints.x123, midpoints.y123, midpoints.x1234, midpoints.y1234},
+             task.level + 1});
     }
 }
 

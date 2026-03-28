@@ -5,7 +5,6 @@
  *      Author: florian
  */
 
-#include "PolyVertex.h"
 
 namespace laby {
 

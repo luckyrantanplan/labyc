@@ -19,18 +19,18 @@ namespace laby {
 
 class PolyVertex {
 public:
-    int32_t number() const {
+    [[nodiscard]] auto number() const -> int32_t {
         return _number;
     }
 
-    const std::vector<Vertex*>& vertexList() const {
+    [[nodiscard]] auto vertexList() const -> const std::vector<Vertex*>& {
         return _vertexList;
     }
-    std::vector<Vertex*>& vertexList() {
+    auto vertexList() -> std::vector<Vertex*>& {
         return _vertexList;
     }
 
-    PolyVertex(const int32_t number = 0, const std::vector<Vertex*>& vertex = { }) :
+    explicit PolyVertex(const int32_t number = 0, const std::vector<Vertex*>& vertex = { }) :
             _number { number }, _vertexList { vertex } {
     }
 
@@ -40,7 +40,7 @@ public:
 
     }
 
-    Polyline polyline() const {
+    [[nodiscard]] auto polyline() const -> Polyline {
         Polyline pl(_number);
         for (Vertex* v : _vertexList) {
             pl.points.emplace_back(v->point());

@@ -6,64 +6,69 @@
  */
 
 // File : ex_triangle . cpp
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <CGAL/Cartesian.h>
 #include <CGAL/Arr_non_caching_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>
 #include <array>
-typedef int Number_type;
-typedef CGAL::Cartesian<Number_type> Kernel;
-typedef CGAL::Arr_non_caching_segment_traits_2<Kernel> Traits;
-typedef Traits::Point_2 Point;
-typedef Traits::X_monotone_curve_2 Segment;
-typedef CGAL::Arrangement_2<Traits> Arrangement;
+#include <iostream>
+using Number_type = int;
+using Kernel = CGAL::Cartesian<Number_type>;
+using Traits = CGAL::Arr_non_caching_segment_traits_2<Kernel>;
+using Point = Traits::Point_2;
+using Segment = Traits::X_monotone_curve_2;
+using Arrangement = CGAL::Arrangement_2<Traits>;
 
 
 
 template<typename Arrangement>
-void print_incident_halfedges(typename Arrangement::Vertex_const_handle& v) {
+void printIncidentHalfedges(typename Arrangement::Vertex_const_handle& v) {
     if (v->is_isolated()) {
         std::cout << "The vertex ( " << v->point() << " ) is isolated " << std::endl;
         return;
     }
     std::cout << "The neighbors of the vertex ( " << v->point() << " ) are : ";
-    typename Arrangement::Halfedge_around_vertex_const_circulator first, curr;
+    typename Arrangement::Halfedge_around_vertex_const_circulator first;
+    typename Arrangement::Halfedge_around_vertex_const_circulator curr;
     first = curr = v->incident_halfedges();
 
-    do
+    do {
         std::cout << "( " << curr->source()->point() << " ) ";
-    while (++curr != first);
-    std::cout << std::endl;
+    } while (++curr != first);
+    std::cout << '\n';
 
 }
 
 template<typename Arrangement>
-void print_ccb(typename Arrangement::Ccb_halfedge_const_circulator circ) {
+void printCcb(typename Arrangement::Ccb_halfedge_const_circulator circ) {
     std::cout << " (" << circ->source()->point() << " ) ";
     typename Arrangement::Ccb_halfedge_const_circulator curr = circ;
     do {
-        typename Arrangement::Halfedge_const_handle he = curr;
+        typename Arrangement::Halfedge_const_handle const he = curr;
         std::cout << "␣␣␣ [ " << he->curve() << " ] ␣␣␣" << " ( " << he->target()->point() << " ) ";
     } while (++curr != circ);
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
-int mainold(){
-    Point p1(1, 1), p2(1, 2), p3(2, 1);
+auto mainold() -> int{
+    Point p1(1, 1);
+    Point p2(1, 2);
+    Point p3(2, 1);
 
     std::array<Segment, 3> cv = { Segment(p1, p2), Segment(p2, p3), Segment(p3, p1) };
     Arrangement arr;
     CGAL::insert(arr, cv.begin(), cv.end());
-    std::cout << "Number of  faces : " << arr.number_of_faces() << std::endl;
+    std::cout << "Number of  faces : " << arr.number_of_faces() << '\n';
 
-    std::cout << "Number of  vertices : " << arr.number_of_vertices() << std::endl;
+    std::cout << "Number of  vertices : " << arr.number_of_vertices() << '\n';
 
-    std::cout << "Number of  halfedges : " << arr.number_of_halfedges() << std::endl;
+    std::cout << "Number of  halfedges : " << arr.number_of_halfedges() << '\n';
 
     for (Arrangement::Vertex_const_iterator it = arr.vertices_begin(); it != arr.vertices_end(); ++it) {
-        print_incident_halfedges<Arrangement>(it);
+        printIncidentHalfedges<Arrangement>(it);
     }
 
-    Arrangement::Ccb_halfedge_const_circulator ccb = arr.halfedges_begin()->ccb();
-    print_ccb<Arrangement>(ccb);
+    Arrangement::Ccb_halfedge_const_circulator const ccb = arr.halfedges_begin()->ccb();
+    printCcb<Arrangement>(ccb);
     return 0;
 }

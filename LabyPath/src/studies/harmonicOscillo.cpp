@@ -15,19 +15,31 @@
  copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
+#include <cstddef>
+#include <boost/numeric/odeint/integrate/integrate.hpp>
+#include <boost/numeric/odeint/stepper/runge_kutta4.hpp>
+#include <boost/numeric/odeint/integrate/integrate_const.hpp>
+#include <boost/numeric/odeint/stepper/runge_kutta_cash_karp54.hpp>
+#include <boost/numeric/odeint/stepper/controlled_runge_kutta.hpp>
+#include <boost/numeric/odeint/integrate/integrate_adaptive.hpp>
+#include <boost/numeric/odeint/algebra/range_algebra.hpp>
+#include <boost/numeric/odeint/algebra/default_operations.hpp>
+#include <boost/numeric/odeint/stepper/generation/make_controlled.hpp>
+#include <algorithm>
+#include <boost/numeric/odeint/iterator/const_step_time_iterator.hpp>
 #include <iostream>
+#include <utility>
 #include <vector>
 
-#include <boost/numeric/odeint.hpp>
 
 //[ rhs_function
 /* The type of container used to hold the state vector */
-typedef std::vector<double> state_type;
+using state_type = std::vector<double>;
 
 const double gam = 0.15;
 
 /* The rhs of x' = f(x) */
-void harmonic_oscillator(const state_type &x, state_type &dxdt, const double /* t */) {
+void harmonicOscillator(const state_type &x, state_type &dxdt, const double /* t */) {
     dxdt[0] = x[1];
     dxdt[1] = -x[0] - gam * x[1];
 }
@@ -35,28 +47,28 @@ void harmonic_oscillator(const state_type &x, state_type &dxdt, const double /* 
 
 //[ rhs_class
 /* The rhs of x' = f(x) defined as a class */
-class harm_osc {
+class HarmOsc {
 
-    double m_gam;
+    double _m_gam;
 
 public:
-    harm_osc(double gam) :
-            m_gam(gam) {
+    explicit HarmOsc(double gam) :
+            _m_gam(gam) {
     }
 
-    void operator()(const state_type &x, state_type &dxdt, const double /* t */) {
+    void operator()(const state_type &x, state_type &dxdt, const double /* t */) const {
         dxdt[0] = x[1];
-        dxdt[1] = -x[0] - m_gam * x[1];
+        dxdt[1] = -x[0] - _m_gam * x[1];
     }
 };
 //]
 
 //[ integrate_observer
-struct push_back_state_and_time {
+struct PushBackStateAndTime {
     std::vector<state_type>& m_states;
     std::vector<double>& m_times;
 
-    push_back_state_and_time(std::vector<state_type> &states, std::vector<double> &times) :
+    PushBackStateAndTime(std::vector<state_type> &states, std::vector<double> &times) :
             m_states(states), m_times(times) {
     }
 
@@ -67,13 +79,13 @@ struct push_back_state_and_time {
 };
 //]
 
-struct write_state {
+struct WriteState {
     void operator()(const state_type &x) const {
         std::cout << x[0] << "\t" << x[1] << "\n";
     }
 };
 
-int mainHarmonicOscillo(int /* argc */, char** /* argv */) {
+auto mainHarmonicOscillo(int /* argc */, char** /* argv */) -> int {
     using namespace std;
     using namespace boost::numeric::odeint;
 
@@ -84,35 +96,36 @@ int mainHarmonicOscillo(int /* argc */, char** /* argv */) {
     //]
 
     //[ integration
-    size_t steps = integrate(harmonic_oscillator, x, 0.0, 10.0, 0.1);
+    size_t steps = integrate(harmonicOscillator, x, 0.0, 10.0, 0.1);
     //]
 
     //[ integration_class
-    harm_osc ho(0.15);
+    HarmOsc const ho(0.15);
     steps = integrate(ho, x, 0.0, 10.0, 0.1);
     //]
 
     //[ integrate_observ
-    vector<state_type> x_vec;
+    vector<state_type> xVec;
     vector<double> times;
 
-    steps = integrate(harmonic_oscillator, x, 0.0, 10.0, 0.1, push_back_state_and_time(x_vec, times));
+    steps = integrate(harmonicOscillator, x, 0.0, 10.0, 0.1, PushBackStateAndTime(xVec, times));
 
     /* output */
     for (size_t i = 0; i <= steps; i++) {
-        cout << times[i] << '\t' << x_vec[i][0] << '\t' << x_vec[i][1] << '\n';
+        cout << times[i] << '\t' << xVec[i][0] << '\t' << xVec[i][1] << '\n';
     }
     //]
 
     //[ define_const_stepper
     runge_kutta4<state_type> stepper;
-    integrate_const(stepper, harmonic_oscillator, x, 0.0, 10.0, 0.01);
+    integrate_const(stepper, harmonicOscillator, x, 0.0, 10.0, 0.01);
     //]
 
     //[ integrate_const_loop
     const double dt = 0.01;
-    for (double t = 0.0; t < 10.0; t += dt)
-        stepper.do_step(harmonic_oscillator, x, t, dt);
+    for (double t = 0.0; t < 10.0; t += dt) {
+        stepper.do_step(harmonicOscillator, x, t, dt);
+}
     //]
 
     //[ define_adapt_stepper
@@ -121,37 +134,40 @@ int mainHarmonicOscillo(int /* argc */, char** /* argv */) {
 
     //[ integrate_adapt
     typedef controlled_runge_kutta<error_stepper_type> controlled_stepper_type;
-    controlled_stepper_type controlled_stepper;
-    integrate_adaptive(controlled_stepper, harmonic_oscillator, x, 0.0, 10.0, 0.01);
+    controlled_stepper_type const controlledStepper;
+    integrate_adaptive(controlledStepper, harmonicOscillator, x, 0.0, 10.0, 0.01);
     //]
 
     {
         //[integrate_adapt_full
-        double abs_err = 1.0e-10, rel_err = 1.0e-6, a_x = 1.0, a_dxdt = 1.0;
-        controlled_stepper_type controlled_stepper(default_error_checker<double, range_algebra, default_operations>(abs_err, rel_err, a_x, a_dxdt));
-        integrate_adaptive(controlled_stepper, harmonic_oscillator, x, 0.0, 10.0, 0.01);
+        double abs_err = 1.0e-10;
+        double rel_err = 1.0e-6;
+        double a_x = 1.0;
+        double a_dxdt = 1.0;
+        controlled_stepper_type const controlledStepper(default_error_checker<double, range_algebra, default_operations>(abs_err, rel_err, a_x, a_dxdt));
+        integrate_adaptive(controlledStepper, harmonicOscillator, x, 0.0, 10.0, 0.01);
         //]
     }
 
     //[integrate_adapt_make_controlled
-    integrate_adaptive(make_controlled<error_stepper_type>(1.0e-10, 1.0e-6), harmonic_oscillator, x, 0.0, 10.0, 0.01);
+    integrate_adaptive(make_controlled<error_stepper_type>(1.0e-10, 1.0e-6), harmonicOscillator, x, 0.0, 10.0, 0.01);
     //]
 
     //[integrate_adapt_make_controlled_alternative
-    integrate_adaptive(make_controlled(1.0e-10, 1.0e-6, error_stepper_type()), harmonic_oscillator, x, 0.0, 10.0, 0.01);
+    integrate_adaptive(make_controlled(1.0e-10, 1.0e-6, error_stepper_type()), harmonicOscillator, x, 0.0, 10.0, 0.01);
     //]
 
 #ifdef BOOST_NUMERIC_ODEINT_CXX11
     //[ define_const_stepper_cpp11
     {
-        runge_kutta4<state_type> stepper;
-        integrate_const(stepper, []( const state_type &x , state_type &dxdt , double t ) {
+        runge_kutta4<state_type> const stepper;
+        integrate_const(stepper, []( const state_type &x , state_type &dxdt , double  /*t*/ ) {
             dxdt[0] = x[1]; dxdt[1] = -x[0] - gam*x[1];}, x, 0.0, 10.0, 0.01);
     }
     //]
 
     //[ harm_iterator_const_step]
-    std::for_each(make_const_step_time_iterator_begin(stepper, harmonic_oscillator, x, 0.0, 0.1, 10.0), make_const_step_time_iterator_end(stepper, harmonic_oscillator, x),
+    std::for_each(make_const_step_time_iterator_begin(stepper, harmonicOscillator, x, 0.0, 0.1, 10.0), make_const_step_time_iterator_end(stepper, harmonicOscillator, x),
             []( std::pair< const state_type & , const double & > x ) {
                 cout << x.second << " " << x.first[0] << " " << x.first[1] << "\n";});
     //]

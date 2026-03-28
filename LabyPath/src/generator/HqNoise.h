@@ -15,8 +15,8 @@
 
 #include "FftwArray.h"
 
-namespace laby {
-namespace generator {
+
+namespace laby::generator {
 struct HqNoiseConfig {
 
     uint32_t maxN;
@@ -38,21 +38,21 @@ struct HqNoiseConfig {
 
 struct HqNoiseUtils {
 
-    static int32_t fastFloor(double f);
-    static double interpLinear(double t);
-    static double lerp(double a, double b, double t);
-    static std::complex<double> lerpC(const std::complex<double>& a, const std::complex<double>& b, double t);
+    static auto fastFloor(double f) -> int32_t;
+    static auto interpLinear(double t) -> double;
+    static auto lerp(double a, double b, double t) -> double;
+    static auto lerpC(const std::complex<double>& a, const std::complex<double>& b, double t) -> std::complex<double>;
 };
 
 class HqNoise1D {
 public:
     const HqNoiseConfig config;
     fft::Array1D arr;
-    static double sgn(uint32_t val);
+    static auto sgn(uint32_t val) -> double;
     explicit HqNoise1D(const HqNoiseConfig& config);
 
-    double get(double x) const;
-    std::complex<double> getComplex(double x) const;
+    [[nodiscard]] auto get(double x) const -> double;
+    [[nodiscard]] auto getComplex(double x) const -> std::complex<double>;
 
 private:
     void normalize(uint32_t nx);
@@ -63,18 +63,18 @@ public:
     const HqNoiseConfig config;
     fft::Array2D arr;
 
-    static double sgn(uint32_t x, uint32_t y);
+    static auto sgn(uint32_t x, uint32_t y) -> double;
 
     explicit HqNoise2D(const HqNoiseConfig& config);
 
-    double get(const double x, const double y) const;
-    std::complex<double> getComplex(const double x, const double y) const;
-    std::complex<double> getComplex(const std::complex<double>& c) const;
+    [[nodiscard]] auto get(double x, double y) const -> double;
+    [[nodiscard]] auto getComplex(double x, double y) const -> std::complex<double>;
+    [[nodiscard]] auto getComplex(const std::complex<double>& c) const -> std::complex<double>;
 
 private:
     void normalize(uint32_t nx, uint32_t ny);
 };
-} /* namespace generator */
-} /* namespace laby */
+} // namespace laby::generator
+
 
 #endif /* HQNOISE_H_ */

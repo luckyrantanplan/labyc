@@ -5,10 +5,9 @@
  *      Author: florian
  */
 
-#include "Common.h"
 
-namespace laby {
-namespace svgp {
 
-} /* namespace svgp */
-} /* namespace laby */
+
+
+
+

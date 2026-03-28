@@ -8,9 +8,10 @@
 #include "Net.h"
 
 #include "../basic/LinearGradient.h"
-#include <CGAL/Arr_dcel_base.h>
-#include <CGAL/Point_2.h>
+#include "GeomData.h"
 #include <CGAL/number_utils.h>
+#include <vector>
+#include <complex>
 
 namespace laby::aniso {
 

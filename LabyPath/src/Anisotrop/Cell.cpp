@@ -7,27 +7,36 @@
 
 #include "Cell.h"
 
+#include <CGAL/Vector_2.h>
+#include <CGAL/number_utils.h>
+#include <CGAL/Kernel/global_functions_2.h>
+#include <CGAL/enum.h>
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <complex>
 #include <cstdint>
 #include <iostream>
-#include <iterator>
 #include <utility>
 
 #include <CGAL/Arr_extended_dcel.h>
-#include <CGAL/Arrangement_2.h>
 #include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Bbox_2.h>
-#include <CGAL/Point_2.h>
 #include <optional>
+#include <vector>
 
 #include "../basic/NumericRange.h"
 #include "../basic/RandomUniDist.h"
 #include "../generator/PoissonGenerator.h"
 
 #include "../basic/RangeHelper.h"
+#include "protoc/AllConfig.pb.h"
+#include "GeomData.h"
+#include "Ribbon.h"
+#include "Polyline.h"
+#include "Anisotrop/Net.h"
 
 namespace laby::aniso {
 
@@ -42,7 +51,7 @@ constexpr double kMidpointDivisor = 2.0;
 
 Cell::Cell(proto::Cell config, Arrangement_2& arr, const Ribbon& limit)
     : _config(std::move(config)), _arr(&arr), _random(0, 100.0, _config.seed()) {
-    std::vector<Point_2> points = limit.getPoints();
+    std::vector<Point_2> const points = limit.getPoints();
 
     std::cout << " points.size() " << points.size() << '\n';
 
@@ -73,9 +82,9 @@ auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
     const double subdivisionResolution = resolution();
     for (std::size_t i = 1; i < polyline.points.size(); ++i) {
 
-        CGAL::Vector_2<Kernel> vec = polyline.points.at(i) - polyline.points.at(i - 1);
+        CGAL::Vector_2<Kernel> const vec = polyline.points.at(i) - polyline.points.at(i - 1);
 
-        double length = std::sqrt(CGAL::to_double(vec.squared_length()));
+        double const length = std::sqrt(CGAL::to_double(vec.squared_length()));
         if (length > 0) {
             CGAL::Vector_2<Kernel> unitVector = vec / length;
 
@@ -113,11 +122,11 @@ void Cell::createOutlinedNet(std::size_t begin, double thickness) {
 
 void Cell::createRandomPin(const CGAL::Bbox_2& bbox, std::size_t maxPin) {
 
-    std::vector<std::complex<double>> points =
+    std::vector<std::complex<double>> const points =
         generator::PoissonPoints::generateRectangle(bbox, maxPin + 1);
 
     for (const std::complex<double> point : points) {
-        Point_2 point2(point.real(), point.imag());
+        Point_2 const point2(point.real(), point.imag());
         selectNearestPoint(point2);
     }
 
@@ -149,10 +158,10 @@ void Cell::selectNearestPoint(const Point_2& point2) {
 
     // TODO change insert_point by locate
 
-    Vertex_handle handle = CGAL::insert_point(*_arr, point2);
+    Vertex_handle const handle = CGAL::insert_point(*_arr, point2);
 
     if (handle->is_isolated()) {
-        Face_handle faceHandle = handle->face();
+        Face_handle const faceHandle = handle->face();
         auto& nearestVertex = GeomHelper::getNearestVertex(*faceHandle, *handle);
 
         if (CGAL::compare_squared_distance(nearestVertex.point(), point2, kSnapDistanceSquared) ==
@@ -166,14 +175,14 @@ void Cell::selectNearestPoint(const Point_2& point2) {
 }
 
 void Cell::insertPointAndConnect(const Point_2& point2) {
-    Vertex_handle handle = CGAL::insert_point(*_arr, point2);
+    Vertex_handle const handle = CGAL::insert_point(*_arr, point2);
     handle->data().setType(VertexInfo::PIN);
     _randomVertices.push_back(handle.ptr());
     if (handle->is_isolated()) {
-        Face_handle faceHandle = handle->face();
+        Face_handle const faceHandle = handle->face();
         const Point_2& point = GeomHelper::getNearestVertex(*faceHandle, *handle).point();
-        Segment_2 segment{handle->point(), point};
-        Segment_info_2 segInfo(segment, EdgeInfo(EdgeInfo::Type::CELL));
+        Segment_2 const segment{handle->point(), point};
+        Segment_info_2 const segInfo(segment, EdgeInfo(EdgeInfo::Type::CELL));
         CGAL::insert(*_arr, segInfo);
     }
 }
@@ -186,42 +195,42 @@ void Cell::shuffleVertices() {
 void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
 
     std::vector<Point_2> allvertices;
-    double outlineResolution = kOutlineResolution;
+    double const outlineResolution = kOutlineResolution;
     { allvertices.emplace_back(bbox.xmin(), bbox.ymin()); }
-    double step = 1 / outlineResolution;
-    for (double xCoord : NumericRange<double>(bbox.xmin() + step, bbox.xmax() - step, step)) {
+    double const step = 1 / outlineResolution;
+    for (double const xCoord : NumericRange<double>(bbox.xmin() + step, bbox.xmax() - step, step)) {
         allvertices.emplace_back(xCoord, bbox.ymin());
     }
-    for (double yCoord : NumericRange<double>(bbox.ymin(), bbox.ymax() - step, step)) {
+    for (double const yCoord : NumericRange<double>(bbox.ymin(), bbox.ymax() - step, step)) {
         allvertices.emplace_back(bbox.xmax(), yCoord);
     }
-    for (double xCoord : NumericRange<double>(bbox.xmax(), bbox.xmin() + step, -step)) {
+    for (double const xCoord : NumericRange<double>(bbox.xmax(), bbox.xmin() + step, -step)) {
         allvertices.emplace_back(xCoord, bbox.ymax());
     }
-    for (double yCoord : NumericRange<double>(bbox.ymax(), bbox.ymin() + step, -step)) {
+    for (double const yCoord : NumericRange<double>(bbox.ymax(), bbox.ymin() + step, -step)) {
         allvertices.emplace_back(bbox.xmin(), yCoord);
     }
 
-    std::size_t begin = _listVertex.size();
+    std::size_t const begin = _listVertex.size();
     for (std::size_t i = 0; i < allvertices.size(); ++i) {
         if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()),
                                   static_cast<int32_t>(config.quantity))
                 .has_value()) {
-            Vertex_handle handle = CGAL::insert_point(*_arr, allvertices.at(i));
+            Vertex_handle const handle = CGAL::insert_point(*_arr, allvertices.at(i));
             handle->data().setType(VertexInfo::PIN);
 
             _listVertex.emplace_back(handle.ptr());
         }
     }
 
-    std::complex<double> corner1{bbox.xmin(), bbox.ymin()};
-    std::complex<double> corner2{bbox.xmax(), bbox.ymax()};
-    std::complex<double> center = (corner1 + corner2) / kMidpointDivisor;
+    std::complex<double> const corner1{bbox.xmin(), bbox.ymin()};
+    std::complex<double> const corner2{bbox.xmax(), bbox.ymax()};
+    std::complex<double> const center = (corner1 + corner2) / kMidpointDivisor;
     std::vector<Segment_info_2> listSeg;
 
     for (std::size_t i = begin; i < _listVertex.size(); ++i) {
         Vertex* vertex = _listVertex.at(i);
-        std::complex<double> vertexPoint{CGAL::to_double(vertex->point().x()),
+        std::complex<double> const vertexPoint{CGAL::to_double(vertex->point().x()),
                                          CGAL::to_double(vertex->point().y())};
 
         std::complex<double> vect = vertexPoint - center;
@@ -233,11 +242,11 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
     }
 
     for (std::size_t i = begin + 1; i < _listVertex.size(); ++i) {
-        Segment_2 outlineSegment{_listVertex.at(i - 1)->point(), _listVertex.at(i)->point()};
+        Segment_2 const outlineSegment{_listVertex.at(i - 1)->point(), _listVertex.at(i)->point()};
         listSeg.emplace_back(outlineSegment, EdgeInfo{EdgeInfo::Type::CELL});
     }
 
-    Segment_2 outlineSegment{_listVertex.back()->point(), _listVertex.at(begin)->point()};
+    Segment_2 const outlineSegment{_listVertex.back()->point(), _listVertex.at(begin)->point()};
     listSeg.emplace_back(outlineSegment, EdgeInfo{EdgeInfo::Type::CELL});
     CGAL::insert(*_arr, listSeg.begin(), listSeg.end());
     createOutlinedNet(begin, config.thickness);

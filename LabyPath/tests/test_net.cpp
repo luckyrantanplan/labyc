@@ -1,6 +1,8 @@
 #include "Anisotrop/Net.h"
 #include "GeomData.h"
 
+#include <cstddef>
+#include <CGAL/number_utils.h>
 #include <cstdint>
 
 #include <gtest/gtest.h>
@@ -53,7 +55,7 @@ class NetTest : public ArrangementFixture {};
 
 TEST_F(PinTest, ConstructionAndThickness) {
     Vertex& vertex = makeVertex(kCoordOne, kCoordTwo);
-    Pin pin(vertex, kThicknessThreePointFive);
+    Pin const pin(vertex, kThicknessThreePointFive);
     EXPECT_DOUBLE_EQ(pin.thickness(), kThicknessThreePointFive);
 }
 
@@ -80,35 +82,35 @@ TEST_F(PinTest, PolyConvexIndex) {
 
 TEST_F(PinTest, DefaultThicknessIsZero) {
     Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    Pin pin(vertex, kThicknessZero);
+    Pin const pin(vertex, kThicknessZero);
     EXPECT_DOUBLE_EQ(pin.thickness(), kThicknessZero);
 }
 
 TEST_F(NetTest, ConstructionAndId) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordTen, kCoordTen);
-    Pin src(sourceVertex, kThicknessTwo);
-    Pin tgt(targetVertex, kThicknessThree);
+    Pin const src(sourceVertex, kThicknessTwo);
+    Pin const tgt(targetVertex, kThicknessThree);
 
-    Net net(Net::SourcePin{src}, Net::TargetPin{tgt}, kNetIdSeven);
+    Net const net(Net::SourcePin{src}, Net::TargetPin{tgt}, kNetIdSeven);
     EXPECT_EQ(net.id(), kNetIdSeven);
 }
 
 TEST_F(NetTest, DefaultIdIsZero) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordTen, kCoordTen);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessOne);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessOne);
 
-    Net net(Net::SourcePin{src}, Net::TargetPin{tgt});
+    Net const net(Net::SourcePin{src}, Net::TargetPin{tgt});
     EXPECT_EQ(net.id(), kNetIdZero);
 }
 
 TEST_F(NetTest, SourceAndTarget) {
     Vertex& sourceVertex = makeVertex(kCoordOne, kCoordTwo);
     Vertex& targetVertex = makeVertex(kCoordThree, kCoordFour);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessTwo);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessTwo);
 
     Net net(Net::SourcePin{src}, Net::TargetPin{tgt}, kNetIdOne);
     EXPECT_DOUBLE_EQ(net.source().thickness(), kThicknessOne);
@@ -118,8 +120,8 @@ TEST_F(NetTest, SourceAndTarget) {
 TEST_F(NetTest, ConstSourceAndTarget) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordFive, kCoordFive);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessTwo);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessTwo);
 
     const Net net(Net::SourcePin{src}, Net::TargetPin{tgt}, kNetIdOne);
     EXPECT_DOUBLE_EQ(net.source().thickness(), kThicknessOne);
@@ -129,8 +131,8 @@ TEST_F(NetTest, ConstSourceAndTarget) {
 TEST_F(NetTest, PathIsEmptyByDefault) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordFive, kCoordFive);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessOne);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessOne);
 
     Net net(Net::SourcePin{src}, Net::TargetPin{tgt});
     EXPECT_TRUE(net.path().empty());
@@ -139,8 +141,8 @@ TEST_F(NetTest, PathIsEmptyByDefault) {
 TEST_F(NetTest, PathMutable) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordFive, kCoordFive);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessOne);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessOne);
 
     Net net(Net::SourcePin{src}, Net::TargetPin{tgt});
     net.path().push_back(kPathNodeTen);
@@ -153,18 +155,18 @@ TEST_F(NetTest, PathMutable) {
 TEST_F(NetTest, IsPlacedDefault) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordFive, kCoordFive);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessOne);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessOne);
 
-    Net net(Net::SourcePin{src}, Net::TargetPin{tgt});
+    Net const net(Net::SourcePin{src}, Net::TargetPin{tgt});
     EXPECT_FALSE(net.isPlaced());
 }
 
 TEST_F(NetTest, MarkPlaced) {
     Vertex& sourceVertex = makeVertex(kCoordZero, kCoordZero);
     Vertex& targetVertex = makeVertex(kCoordFive, kCoordFive);
-    Pin src(sourceVertex, kThicknessOne);
-    Pin tgt(targetVertex, kThicknessOne);
+    Pin const src(sourceVertex, kThicknessOne);
+    Pin const tgt(targetVertex, kThicknessOne);
 
     Net net(Net::SourcePin{src}, Net::TargetPin{tgt});
     net.markPlaced();

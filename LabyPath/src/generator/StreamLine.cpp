@@ -7,12 +7,14 @@
 
 #include "StreamLine.h"
 
+#include <complex>
+#include <CGAL/Distance_2/Point_2_Point_2.h>
+#include <cstddef>
+#include <CGAL/Segment_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
 #include <cstdint>
-#include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
-#include <CGAL/aff_transformation_tags.h>
-#include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Compact_container.h>
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions_2.h>
@@ -22,30 +24,33 @@
 // #include <CGAL/Runge_kutta_integrator_2.h>
 // #include <CGAL/Stream_lines_2.h>
 #include <CGAL/Triangulation_ds_face_base_2.h>
-#include <CGAL/Triangulation_utils_2.h>
 #include <CGAL/Vector_2.h>
+#include "Ribbon.h"
+#include "Polyline.h"
+#include "GeomData.h"
 #include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cmath>
 #include <future>
-#include <iostream>
-#include <list>
+#include <math.h>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 // #include <vector>
 #include "../SegmentPS.h"
 #include "../basic/RangeHelper.h"
 #include "../basic/SimplifyLines.h"
 
-namespace laby {
-namespace generator {
+
+namespace laby::generator {
 
 void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, Ribbon& ribbon) {
-    double div = _config.resolution;
+    double const div = _config.resolution;
     int32_t lineNumber = 0;
 
-    for (auto& sit : stream_lines) {
+    for (const auto& sit : stream_lines) {
         ribbon.lines().emplace_back(lineNumber);
         ++lineNumber;
         Polyline& pl = ribbon.lines().back();
@@ -55,8 +60,8 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, 
             p = p / div;
             lineString.emplace_back(SimplifyLines::xy(p.real(), p.imag()));
         }
-        SimplifyLines::LineString simpleLine = SimplifyLines::decimate(lineString, _config.simplify_distance);
-        for (SimplifyLines::xy p : simpleLine) {
+        SimplifyLines::LineString const simpleLine = SimplifyLines::decimate(lineString, _config.simplify_distance);
+        for (SimplifyLines::xy const p : simpleLine) {
             pl.points.emplace_back(p.x(), p.y());
         }
     }
@@ -65,14 +70,14 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, 
 
 StreamLine::StreamLine(const Config& config) : _config(config), _radialList(0), _circularList(1) {
     if (_config.old_RegularGrid) {
-        auto x_samples = static_cast<uint32_t>(config.size * _config.resolution);
-        auto y_samples = static_cast<uint32_t>(config.size * _config.resolution);
-        _field.resize(boost::extents[x_samples][y_samples]);
+        auto xSamples = static_cast<uint32_t>(config.size * _config.resolution);
+        auto ySamples = static_cast<uint32_t>(config.size * _config.resolution);
+        _field.resize(boost::extents[xSamples][ySamples]);
     }
 }
 
 void StreamLine::changeLine(const Point_2& mid, std::unordered_map<PS::Vertex*, RibbonCoord>& map, PS::Vertex* v1) {
-    RibbonCoord& r1 = map.at(v1);
+    RibbonCoord const& r1 = map.at(v1);
     if (r1._pos == 0) {
         r1._pl->points.front() = mid;
     }
@@ -81,7 +86,7 @@ void StreamLine::changeLine(const Point_2& mid, std::unordered_map<PS::Vertex*, 
     }
 }
 
-Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
+auto StreamLine::connectExtreme(Ribbon& ribbon) -> Ribbon {
 
     PS pointSet;
 
@@ -90,8 +95,8 @@ Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
     std::unordered_set<PS::Vertex*> set;
     std::unordered_map<PS::Vertex*, RibbonCoord> map;
     for (Polyline& poly : ribbon.lines()) {
-        Point_2& p1 = poly.points.front();
-        Point_2& p2 = poly.points.back();
+        Point_2 const& p1 = poly.points.front();
+        Point_2 const& p2 = poly.points.back();
         PS::Vertex* v1 = &*pointSet.insert(p1);
         PS::Vertex* v2 = &*pointSet.insert(p2);
 
@@ -101,22 +106,22 @@ Ribbon StreamLine::connectExtreme(Ribbon& ribbon) {
     }
 
     for (auto& edge : RangeHelper::make(pointSet.finite_edges_begin(), pointSet.finite_edges_end())) {
-        PS::Face_handle& fh = edge.first;
-        int i = edge.second;
-        SegmentPS seg(&*fh->vertex(PS::cw(i)), &*fh->vertex(PS::ccw(i)));
+        PS::Face_handle const& fh = edge.first;
+        int const i = edge.second;
+        SegmentPS const seg(&*fh->vertex(PS::cw(i)), &*fh->vertex(PS::ccw(i)));
         if (isAlreadyInside.count(seg) == 0) {
             vectSeg.emplace_back(seg);
         }
     }
     std::sort(vectSeg.begin(), vectSeg.end());
     Ribbon result(ribbon.fillColor());
-    for (SegmentPS& seg : vectSeg) {
+    for (SegmentPS const& seg : vectSeg) {
 
         if (set.count(seg.source()) == 0 and set.count(seg.target()) == 0) {
 
             if (CGAL::to_double(CGAL::squared_distance(seg.source()->point(), seg.target()->point())) < 1) {
 
-                Point_2 mid = CGAL::midpoint(seg.source()->point(), seg.target()->point());
+                Point_2 const mid = CGAL::midpoint(seg.source()->point(), seg.target()->point());
                 changeLine(mid, map, seg.source());
                 changeLine(mid, map, seg.target());
             }
@@ -142,13 +147,13 @@ void StreamLine::connectExtremInPlace(laby::Ribbon& ribbon) {
 
 void StreamLine::render() {
     EASY_FUNCTION();
-    auto x_samples = static_cast<int>(_field.size());
-    auto y_samples = static_cast<int>(_field.shape()[1]);
-    Field radial(x_samples, y_samples, x_samples, y_samples);
-    Field circular(x_samples, y_samples, x_samples, y_samples);
+    auto xSamples = static_cast<int>(_field.size());
+    auto ySamples = static_cast<int>(_field.shape()[1]);
+    Field radial(xSamples, ySamples, xSamples, ySamples);
+    Field circular(xSamples, ySamples, xSamples, ySamples);
 
-    for (int i = 0; i < x_samples; ++i)
-        for (int j = 0; j < y_samples; ++j) {
+    for (int i = 0; i < xSamples; ++i) {
+        for (int j = 0; j < ySamples; ++j) {
 
             std::complex<double>& vect = _field[i][j];
 
@@ -156,6 +161,7 @@ void StreamLine::render() {
             vect *= std::polar<double>(1., M_PI / 2.);
             circular.set_field(i, j, CGAL::Vector_2<K>(vect.real(), vect.imag()));
         }
+}
 
     /* the placement of streamlines */
 
@@ -173,8 +179,8 @@ void StreamLine::render() {
 
 void StreamLine::drawSpiral(const std::complex<double>& o, const double& r, const double& angle) {
     EASY_FUNCTION();
-    std::complex<double> center = o * (1. * _config.resolution);
-    double rSqr = r * r * _config.resolution * _config.resolution;
+    std::complex<double> const center = o * (1. * _config.resolution);
+    double const rSqr = r * r * _config.resolution * _config.resolution;
 
     for (std::size_t i = 0; i < _field.size(); ++i) {
         for (std::size_t j = 0; j < _field.shape()[1]; ++j) {
@@ -190,7 +196,7 @@ void StreamLine::drawSpiral(const std::complex<double>& o, const double& r, cons
                 double localAngle = std::arg(vect);
                 localAngle += M_PI / 4 + 2 * M_PI;
                 localAngle *= 2 / M_PI;
-                int angleInt = static_cast<int>(localAngle);
+                int const angleInt = static_cast<int>(localAngle);
 
                 vect = std::polar<double>(_config.epsilon * 0.5, angleInt * M_PI * 0.5);
                 // vect=0;
@@ -206,12 +212,12 @@ void StreamLine::addToArrangement(Arrangement_2& arr) {
     Ribbon::appendToArr(_radialList, _circularList, arr);
 }
 
-Ribbon StreamLine::generateTriangularField(std::vector<CGAL::Point_2<K>> pointList, std::vector<CGAL::Vector_2<K>> vectorList, const Config& config) {
-    FieldTri triangular_field(pointList.begin(), pointList.end(), vectorList.begin());
+auto StreamLine::generateTriangularField(std::vector<CGAL::Point_2<K>> pointList, std::vector<CGAL::Vector_2<K>> vectorList, const Config& config) -> Ribbon {
+    FieldTri const triangularField(pointList.begin(), pointList.end(), vectorList.begin());
     StreamLine st(config);
-    double dSep = config.resolution * config.divisor; // 3.5;
+    double const dSep = config.resolution * config.divisor; // 3.5;
     Ribbon ribbon;
-    auto lines = st.streamPlacement(triangular_field, dSep, config.dRat);
+    auto lines = st.streamPlacement(triangularField, dSep, config.dRat);
     st.postStreamCompute(lines.iterator_container, ribbon);
     return ribbon;
 }
@@ -251,10 +257,10 @@ void StreamLine::VectorCompute::addSegLong(std::vector<CGAL::Point_2<K>>& pointL
     vectorList.emplace_back(vect);
 }
 
-Ribbon StreamLine::getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) {
+auto StreamLine::getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) -> Ribbon {
     std::vector<CGAL::Point_2<K>> pointList;
     std::vector<CGAL::Vector_2<K>> vectorList;
-    VectorCompute vCompute(config.resolution);
+    VectorCompute const vCompute(config.resolution);
 
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
         for (const CGAL::Segment_2<Kernel>& seg : RangeHelper::make(polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
@@ -270,10 +276,10 @@ Ribbon StreamLine::getRadial(const Config& config, const std::vector<CGAL::Polyg
     return generateTriangularField(pointList, vectorList, config);
 }
 
-Ribbon StreamLine::getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) {
+auto StreamLine::getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) -> Ribbon {
     std::vector<CGAL::Point_2<K>> pointList;
     std::vector<CGAL::Vector_2<K>> vectorList;
-    VectorCompute vCompute(config.resolution);
+    VectorCompute const vCompute(config.resolution);
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
 
         for (const CGAL::Segment_2<Kernel> seg : RangeHelper::make(polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
@@ -289,5 +295,5 @@ Ribbon StreamLine::getLongitudinal(const Config& config, const std::vector<CGAL:
     return generateTriangularField(pointList, vectorList, config);
 }
 
-} /* namespace generator */
-} /* namespace laby */
+} // namespace laby::generator
+

@@ -7,23 +7,30 @@
 
 #include "Routing.h"
 
+#include "GeomData.h"
+#include "Anisotrop/QueueElement.h"
+#include "Anisotrop/QueueCost.h"
+#include "Anisotrop/Net.h"
 #include "basic/EasyProfilerCompat.h"
 #include <CGAL/Arr_extended_dcel.h>
-#include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
-#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Point_set_2.h>
-#include <boost/heap/detail/stable_heap.hpp>
+#include <CGAL/Union_find.h>
+#include <algorithm>
 #include <boost/heap/pairing_heap.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "../SegmentPS.h"
 #include "../basic/LinearGradient.h"
 #include "../basic/PairInteger.h"
 #include "../basic/PolygonTools.h"
+#include "basic/RangeHelper.h"
+#include "protoc/AllConfig.pb.h"
 
 namespace laby::aniso {
 
@@ -108,7 +115,7 @@ void initializeMazeUnionFind(std::vector<PolyConvex>& polyConvexList,
     }
 
     for (const PolyConvex& polyConvex : polyConvexList) {
-        for (std::size_t adjacentId : polyConvex._adjacents) {
+        for (std::size_t const adjacentId : polyConvex._adjacents) {
             unionFind.unify_sets(polyConvex.handle, polyConvexList.at(adjacentId).handle);
         }
     }
@@ -244,8 +251,8 @@ void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
 
     std::cout << " connectMaze \n";
 
-    std::vector<std::size_t> highDegreePolyConvex;
-    std::unordered_set<basic::PairInteger> adjacenceList;
+    std::vector<std::size_t> const highDegreePolyConvex;
+    std::unordered_set<basic::PairInteger> const adjacenceList;
 
     CGAL::Union_find<std::size_t> unionFind;
 
@@ -337,7 +344,7 @@ void Routing::createMaze() {
         if (polyConvex._adjacents.size() > 2UL) {
             highDegreePolyConvex.emplace_back(polyConvex._id);
         }
-        for (std::size_t adjacency : polyConvex._adjacents) {
+        for (std::size_t const adjacency : polyConvex._adjacents) {
             adjacenceList.emplace(polyConvex._id, adjacency);
         }
 
@@ -347,9 +354,9 @@ void Routing::createMaze() {
     // create roots
 
     // this loop could be optimize inside the init loop (to avoid erasing adjacence_list elements)
-    for (std::size_t polyConvexId : highDegreePolyConvex) {
-        PolyConvex& polyConvex = _convexList.at(polyConvexId);
-        for (std::size_t adjacency : polyConvex._adjacents) {
+    for (std::size_t const polyConvexId : highDegreePolyConvex) {
+        PolyConvex const& polyConvex = _convexList.at(polyConvexId);
+        for (std::size_t const adjacency : polyConvex._adjacents) {
             auto ite = adjacenceList.find(basic::PairInteger{polyConvex._id, adjacency});
             if (ite != adjacenceList.end()) {
                 unionFind.unify_sets(polyConvex.handle, _convexList.at(adjacency).handle);
@@ -431,7 +438,7 @@ auto Routing::findRoute(Net& net) -> bool {
     sourceQueueElement.cost().via_num = 0;
     sourceQueueElement.cost().memory_source = collectCongestedNetIds(pin1.vertex());
 
-    std::unordered_set<int32_t> targetNets = collectCongestedNetIds(pin2.vertex());
+    std::unordered_set<int32_t> const targetNets = collectCongestedNetIds(pin2.vertex());
 
     int32_t priorityNumber = 0;
     bool solved = false;

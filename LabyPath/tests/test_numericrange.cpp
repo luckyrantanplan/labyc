@@ -4,16 +4,18 @@
  */
 
 #include "basic/NumericRange.h"
+#include <cstdint>
 #include <gtest/gtest.h>
+#include <optional>
 #include <vector>
 
 namespace laby {
 namespace {
 
 TEST(NumericRangeTest, IntegerRange) {
-    NumericRange<int32_t> range(0, 10, 2);
+    NumericRange<int32_t> const range(0, 10, 2);
     std::vector<int32_t> values;
-    for (int32_t v : range) {
+    for (int32_t const v : range) {
         values.push_back(v);
     }
     // 0, 2, 4, 6, 8, 10
@@ -27,9 +29,9 @@ TEST(NumericRangeTest, IntegerRange) {
 }
 
 TEST(NumericRangeTest, StepOne) {
-    NumericRange<int32_t> range(0, 3, 1);
+    NumericRange<int32_t> const range(0, 3, 1);
     std::vector<int32_t> values;
-    for (int32_t v : range) {
+    for (int32_t const v : range) {
         values.push_back(v);
     }
     // 0, 1, 2, 3
@@ -39,9 +41,9 @@ TEST(NumericRangeTest, StepOne) {
 }
 
 TEST(NumericRangeTest, DoubleRange) {
-    NumericRange<double> range(0.0, 1.0, 0.25);
+    NumericRange<double> const range(0.0, 1.0, 0.25);
     std::vector<double> values;
-    for (double v : range) {
+    for (double const v : range) {
         values.push_back(v);
     }
     // 0.0, 0.25, 0.5, 0.75, 1.0
@@ -52,7 +54,7 @@ TEST(NumericRangeTest, DoubleRange) {
 }
 
 TEST(NumericRangeTest, GetValue) {
-    NumericRange<int32_t> range(10, 20, 5);
+    NumericRange<int32_t> const range(10, 20, 5);
     EXPECT_EQ(range.getValue(0), 10);
     EXPECT_EQ(range.getValue(1), 15);
     EXPECT_EQ(range.getValue(2), 20);

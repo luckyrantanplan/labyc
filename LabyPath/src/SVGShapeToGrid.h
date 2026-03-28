@@ -37,35 +37,35 @@ public:
         bool _walked = false;
     };
 
-    typedef CGAL::Arr_segment_traits_2<Kernel> Traits_2;
+    using Traits_2 = CGAL::Arr_segment_traits_2<Kernel>;
 
-    typedef CGAL::Arr_face_extended_dcel<Traits_2, FaceNonZeroData> Dcel;
+    using Dcel = CGAL::Arr_face_extended_dcel<Traits_2, FaceNonZeroData>;
 
-    typedef Traits_2::Point_2 Point_2;
-    typedef Traits_2::Curve_2 Segment_2;
-    typedef CGAL::Arrangement_with_history_2<Traits_2, Dcel> Arr_with_hist_2;
-    typedef Arr_with_hist_2::Curve_handle Curve_handle;
-    typedef Arr_with_hist_2::Curve_handle::value_type Curve;
-    typedef Arr_with_hist_2::Face_handle::value_type Face;
-    typedef Arr_with_hist_2::Halfedge_handle::value_type Halfedge;
-    typedef CGAL::Arr_simple_point_location<Arr_with_hist_2> Point_location;
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel InexactK;
-    typedef CGAL::Straight_skeleton_2<InexactK> Ss;
-    typedef boost::shared_ptr<Ss> SsPtr;
+    using Point_2 = Traits_2::Point_2;
+    using Segment_2 = Traits_2::Curve_2;
+    using Arr_with_hist_2 = CGAL::Arrangement_with_history_2<Traits_2, Dcel>;
+    using Curve_handle = Arr_with_hist_2::Curve_handle;
+    using Curve = Arr_with_hist_2::Curve_handle::value_type;
+    using Face = Arr_with_hist_2::Face_handle::value_type;
+    using Halfedge = Arr_with_hist_2::Halfedge_handle::value_type;
+    using Point_location = CGAL::Arr_simple_point_location<Arr_with_hist_2>;
+    using InexactK = CGAL::Exact_predicates_inexact_constructions_kernel;
+    using Ss = CGAL::Straight_skeleton_2<InexactK>;
+    using SsPtr = boost::shared_ptr<Ss>;
 
-    static std::vector<Segment_2> get_grid(const Ribbon& ribb);
+    static auto getGrid(const Ribbon& ribb) -> std::vector<Segment_2>;
 
-    static std::vector<Segment_2> get_grid(Arr_with_hist_2& arr);
+    static auto getGrid(Arr_with_hist_2& arr) -> std::vector<Segment_2>;
 
-    static std::vector<Segment_2> addToSegments(const Ribbon& ribb);
+    static auto addToSegments(const Ribbon& ribb) -> std::vector<Segment_2>;
 
-    static std::vector<CGAL::Polygon_with_holes_2<Kernel> > get_polygons(const Ribbon& ribb);
+    static auto getPolygons(const Ribbon& ribb) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> >;
 
 private:
     static void markFace(Halfedge& twin, Face& face, std::queue<Face*>& q);
     static void markWindingRule(Arr_with_hist_2& arr);
-    static std::vector<CGAL::Polygon_with_holes_2<Kernel> > get_polygons(Arr_with_hist_2& arr);
-    static std::vector<Segment_2> createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>>& res, const double l);
+    static auto getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> >;
+    static auto createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>>& res, double l) -> std::vector<Segment_2>;
     static void debugPoly(const CGAL::Polygon_2<Kernel>& outP);
 };
 

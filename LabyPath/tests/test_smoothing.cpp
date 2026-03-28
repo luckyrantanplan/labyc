@@ -4,6 +4,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "Polyline.h"
 #include "Smoothing.h"
 
 namespace laby {
@@ -22,8 +23,8 @@ TEST(SmoothingTest, ShortPolylineUnchanged) {
 }
 
 TEST(SmoothingTest, EmptyPolylineUnchanged) {
-    Polyline pl;
-    Polyline result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 3);
+    Polyline const pl;
+    Polyline const result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 3);
     EXPECT_TRUE(result.points.empty());
 }
 
@@ -33,7 +34,7 @@ TEST(SmoothingTest, SingleIterationIncreasesPoints) {
     pl.points.emplace_back(5, 0);
     pl.points.emplace_back(5, 5);
 
-    Polyline result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 1);
+    Polyline const result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 1);
     // Chaikin smoothing should produce more points than original
     EXPECT_GT(result.points.size(), pl.points.size());
 }
@@ -45,8 +46,8 @@ TEST(SmoothingTest, MoreIterationsMorePoints) {
     pl.points.emplace_back(5, 5);
     pl.points.emplace_back(0, 5);
 
-    Polyline r1 = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 1);
-    Polyline r2 = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 2);
+    Polyline const r1 = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 1);
+    Polyline const r2 = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 2);
     EXPECT_GT(r2.points.size(), r1.points.size());
 }
 
@@ -81,7 +82,7 @@ TEST(SmoothingTest, ZeroIterationsUnchanged) {
     pl.points.emplace_back(5, 0);
     pl.points.emplace_back(5, 5);
 
-    Polyline result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 0);
+    Polyline const result = Smoothing::getCurveSmoothingChaikin(pl, 0.5, 0);
     EXPECT_EQ(result.points.size(), pl.points.size());
 }
 

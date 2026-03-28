@@ -16,25 +16,25 @@ namespace laby::aniso {
 class Pin;
 } /* namespace laby::aniso */
 
-namespace laby {
-namespace basic {
+
+namespace laby::basic {
 
 class LinearGradient {
 public:
-    LinearGradient(const Point_2& p1, const double thickness1, const Point_2& p2, const double thickness2);
+    LinearGradient(Point_2  p1, double thickness1, const Point_2& p2, double thickness2);
 
-    double thickness(const Point_2& p);
-    double f(double t, double _thickness1, double _thickness2);
+    auto thickness(const Point_2& p) -> double;
+    static auto f(double t, double _thickness1, double _thickness2) -> double;
 
 private:
     double _thickness1;
     double _thickness2;
     double _sq_length;
-    Point_2 origin;
+    Point_2 _origin;
     CGAL::Vector_2<Kernel> _vec;
 };
 
-} /* namespace basic */
-} /* namespace laby */
+} // namespace laby::basic
+
 
 #endif /* BASIC_LINEARGRADIENT_H_ */

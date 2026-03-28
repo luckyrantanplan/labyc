@@ -8,6 +8,8 @@
 #ifndef SVGWRITER_DOCUMENTSVG_H_
 #define SVGWRITER_DOCUMENTSVG_H_
 
+#include <utility>
+#include <utility>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -20,18 +22,18 @@
 namespace svg {
 // Utility XML/String Functions.
 template<typename T>
-inline std::string attribute(std::string const & attribute_name, T const & value, std::string const & unit = "") {
+inline auto attribute(std::string const & attribute_name, T const & value, std::string const & unit = "") -> std::string {
     std::stringstream ss;
     ss << attribute_name << "=\"" << value << unit << "\" ";
     return ss.str();
 }
-inline std::string elemStart(std::string const & element_name) {
+inline auto elemStart(std::string const & element_name) -> std::string {
     return "\t<" + element_name + " ";
 }
-inline std::string elemEnd(std::string const & element_name) {
+inline auto elemEnd(std::string const & element_name) -> std::string {
     return "</" + element_name + ">\n";
 }
-inline std::string emptyElemEnd() {
+inline auto emptyElemEnd() -> std::string {
     return "/>\n";
 }
 
@@ -39,35 +41,36 @@ inline std::string emptyElemEnd() {
 //  value if no good return is possible.  The user checks for validity
 //  before using the returned value.
 template<typename T>
-class optional {
+class Optional {
 public:
-    optional(T const & val) :
-            valid(true), type(val) {
+    explicit Optional(T const & val) :
+            _valid(true), _type(val) {
     }
-    optional() :
-            valid(false), type(T()) {
+    Optional() :
+            _valid(false), _type(T()) {
     }
-    T * operator->() {
+    auto operator->() -> T * {
         // If we try to access an invalid value, an exception is thrown.
-        if (!valid)
+        if (!_valid) {
             throw std::exception();
+}
 
-        return &type;
+        return &_type;
     }
     // Test for validity.
-    bool operator!() const {
-        return !valid;
+    auto operator!() const -> bool {
+        return !_valid;
     }
 private:
-    bool valid;
-    T type;
+    bool _valid;
+    T _type;
 };
 
 struct Dimensions {
     Dimensions(double w, double h) :
             width(w), height(h) {
     }
-    Dimensions(double combined = 0) :
+    explicit Dimensions(double combined = 0) :
             width(combined), height(combined) {
     }
     double width;
@@ -90,8 +93,8 @@ struct Layout {
         TopLeft, BottomLeft, TopRight, BottomRight
     };
 
-    Layout(Dimensions const & dims = Dimensions(400, 300), Origin orig = BottomLeft, double sc = 1, Point const & orig_offset = Point(0, 0)) :
-            dimensions(dims), scale(sc), origin(orig), origin_offset(orig_offset) {
+    explicit Layout(Dimensions const & dims = Dimensions(400, 300), Origin orig = BottomLeft, double sc = 1, Point  orig_offset = Point(0, 0)) :
+            dimensions(dims), scale(sc), origin(orig), origin_offset(std::move(orig_offset)) {
     }
     Dimensions dimensions;
     double scale;
@@ -100,35 +103,31 @@ struct Layout {
 };
 
 // Convert coordinates in user space to SVG native space.
-inline double translateX(const Point& p, Layout const & layout) {
+inline auto translateX(const Point& p, Layout const & layout) -> double {
     const double x = CGAL::to_double(p.x());
     const double offx = CGAL::to_double(layout.origin_offset.x());
-    if (layout.origin == Layout::BottomRight || layout.origin == Layout::TopRight)
+    if (layout.origin == Layout::BottomRight || layout.origin == Layout::TopRight) {
         return layout.dimensions.width - ((x + offx) * layout.scale);
-    else
-        return (offx + x) * layout.scale;
+    }         return (offx + x) * layout.scale;
 }
 
-inline double translateY(const Point& p, Layout const & layout) {
+inline auto translateY(const Point& p, Layout const & layout) -> double {
     const double y = CGAL::to_double(p.y());
     const double offy = CGAL::to_double(layout.origin_offset.y());
-    if (layout.origin == Layout::BottomLeft || layout.origin == Layout::BottomRight)
+    if (layout.origin == Layout::BottomLeft || layout.origin == Layout::BottomRight) {
         return layout.dimensions.height - ((y + offy) * layout.scale);
-    else
-        return (offy + y) * layout.scale;
+    }         return (offy + y) * layout.scale;
 }
-inline double translateScale(double dimension, Layout const & layout) {
+inline auto translateScale(double dimension, Layout const & layout) -> double {
     return dimension * layout.scale;
 }
 
 class Serializeable {
 public:
-    Serializeable() {
-    }
-    virtual ~Serializeable() {
-    }
+    Serializeable() = default;
+    virtual ~Serializeable() = default
     ;
-    virtual std::string toString(Layout const & layout) const = 0;
+    [[nodiscard]] virtual auto toString(Layout const & layout) const -> std::string = 0;
 };
 
 class Color: public Serializeable {
@@ -138,10 +137,10 @@ public:
     };
 
     Color(int32_t r, int32_t g, int32_t b) :
-            transparent(false), red(r), green(g), blue(b) {
+            _transparent(false), _red(r), _green(g), _blue(b) {
     }
-    Color(Defaults color) :
-            transparent(false), red(0), green(0), blue(0) {
+    explicit Color(Defaults color) :
+            _transparent(false), _red(0), _green(0), _blue(0) {
         switch (color) {
         case Aqua:
             assign(0, 255, 255);
@@ -189,221 +188,224 @@ public:
             assign(255, 255, 0);
             break;
         default:
-            transparent = true;
+            _transparent = true;
             break;
         }
     }
-    virtual ~Color() {
-    }
-    std::string toString(Layout const &) const {
+    ~Color() override = default;
+    [[nodiscard]] auto toString(Layout const & /*layout*/) const override -> std::string {
         std::stringstream ss;
-        if (transparent)
+        if (_transparent) {
             ss << "none";
-        else
-            ss << "rgb(" << red << "," << green << "," << blue << ")";
+        } else {
+            ss << "rgb(" << _red << "," << _green << "," << _blue << ")";
+}
         return ss.str();
     }
 private:
-    bool transparent;
-    int red;
-    int32_t green;
-    int32_t blue;
+    bool _transparent;
+    int _red;
+    int32_t _green;
+    int32_t _blue;
 
     void assign(int32_t r, int32_t g, int32_t b) {
-        red = r;
-        green = g;
-        blue = b;
+        _red = r;
+        _green = g;
+        _blue = b;
     }
 };
 
 class Fill: public Serializeable {
 public:
-    Fill(Color::Defaults col) :
-            color(col) {
+    explicit Fill(Color::Defaults col) :
+            _color(col) {
     }
-    Fill(Color col = Color::Transparent) :
-            color(col) {
+    explicit Fill(const Color& col = Color::Transparent) :
+            _color(col) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << attribute("fill", color.toString(layout));
+        ss << attribute("fill", _color.toString(layout));
         return ss.str();
     }
 private:
-    Color color;
+    Color _color;
 };
 
 class Stroke: public Serializeable {
 public:
-    Stroke(double w = -1, Color col = Color::Transparent, bool nonScalingStroke = false) :
-            width(w), color(col), nonScaling(nonScalingStroke) {
+    explicit Stroke(double w = -1, const Color& col = Color::Transparent, bool nonScalingStroke = false) :
+            _width(w), _color(col), _nonScaling(nonScalingStroke) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         // If stroke width is invalid.
-        if (width < 0)
-            return std::string();
+        if (_width < 0) {
+            return {};
+}
 
         std::stringstream ss;
-        ss << attribute("stroke-width", translateScale(width, layout)) << attribute("stroke", color.toString(layout));
+        ss << attribute("stroke-width", translateScale(_width, layout)) << attribute("stroke", _color.toString(layout));
         ss << attribute("stroke-linecap", "round");
         ss << attribute(" stroke-linejoin", "round");
-        if (nonScaling)
+        if (_nonScaling) {
             ss << attribute("vector-effect", "non-scaling-stroke");
+}
         return ss.str();
     }
 private:
-    double width;
-    Color color;
-    bool nonScaling;
+    double _width;
+    Color _color;
+    bool _nonScaling;
 };
 
 class Font: public Serializeable {
 public:
-    Font(double sz = 12, std::string const & fam = "Verdana") :
-            size(sz), family(fam) {
+    explicit Font(double sz = 12, std::string  fam = "Verdana") :
+            _size(sz), _family(std::move(fam)) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << attribute("font-size", translateScale(size, layout)) << attribute("font-family", family);
+        ss << attribute("font-size", translateScale(_size, layout)) << attribute("font-family", _family);
         return ss.str();
     }
 private:
-    double size;
-    std::string family;
+    double _size;
+    std::string _family;
 };
 
 class Shape: public Serializeable {
 public:
-    Shape(Fill const & f = Fill(), Stroke const & s = Stroke()) :
-            fill(f), stroke(s) {
+    explicit Shape(Fill  f = Fill(), Stroke  s = Stroke()) :
+            fill(std::move(f)), stroke(std::move(s)) {
     }
-    virtual ~Shape() {
-    }
-    virtual std::string toString(Layout const & layout) const = 0;
+    ~Shape() override = default;
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override = 0;
     virtual void offset(const laby::Kernel::Vector_2 & offset) = 0;
 protected:
     Fill fill;
     Stroke stroke;
 };
 template<typename T>
-inline std::string vectorToString(std::vector<T> collection, Layout const & layout) {
-    std::string combination_str;
-    for (unsigned i = 0; i < collection.size(); ++i)
-        combination_str += collection[i].toString(layout);
+inline auto vectorToString(std::vector<T> collection, Layout const & layout) -> std::string {
+    std::string combinationStr;
+    for (unsigned i = 0; i < collection.size(); ++i) {
+        combinationStr += collection[i].toString(layout);
+}
 
-    return combination_str;
+    return combinationStr;
 }
 
 class Circle: public Shape {
 public:
-    Circle(Point const & c, double diameter, Fill const & f, Stroke const & s = Stroke()) :
-            Shape(f, s), center(c), radius(diameter / 2) {
+    Circle(Point  c, double diameter, Fill const & f, Stroke const & s = Stroke()) :
+            Shape(f, s), _center(std::move(c)), _radius(diameter / 2) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << elemStart("circle") << attribute("cx", translateX(center, layout)) << attribute("cy", translateY(center, layout)) << attribute("r", translateScale(radius, layout))
+        ss << elemStart("circle") << attribute("cx", translateX(_center, layout)) << attribute("cy", translateY(_center, layout)) << attribute("r", translateScale(_radius, layout))
                 << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
-        center += off;
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        _center += off;
 
     }
 private:
-    Point center;
-    double radius;
+    Point _center;
+    double _radius;
 };
 
 class Elipse: public Shape {
 public:
-    Elipse(Point const & c, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
-            Shape(f, s), center(c), radius_width(w / 2), radius_height(h / 2) {
+    Elipse(Point  c, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s), _center(std::move(c)), _radius_width(w / 2), _radius_height(h / 2) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << elemStart("ellipse") << attribute("cx", translateX(center, layout)) << attribute("cy", translateY(center, layout)) << attribute("rx", translateScale(radius_width, layout))
-                << attribute("ry", translateScale(radius_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
+        ss << elemStart("ellipse") << attribute("cx", translateX(_center, layout)) << attribute("cy", translateY(_center, layout)) << attribute("rx", translateScale(_radius_width, layout))
+                << attribute("ry", translateScale(_radius_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
+    void offset(const laby::Kernel::Vector_2 & off) override {
 
-        center += off;
+        _center += off;
     }
 private:
-    Point center;
-    double radius_width;
-    double radius_height;
+    Point _center;
+    double _radius_width;
+    double _radius_height;
 };
 
 class Rectangle: public Shape {
 public:
-    Rectangle(Point const & e, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
-            Shape(f, s), edge(e), width(w), height(h) {
+    Rectangle(Point  e, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+            Shape(f, s), _edge(std::move(e)), _width(w), _height(h) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << elemStart("rect") << attribute("x", translateX(edge, layout)) << attribute("y", translateY(edge, layout)) << attribute("width", translateScale(width, layout))
-                << attribute("height", translateScale(height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
+        ss << elemStart("rect") << attribute("x", translateX(_edge, layout)) << attribute("y", translateY(_edge, layout)) << attribute("width", translateScale(_width, layout))
+                << attribute("height", translateScale(_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
+    void offset(const laby::Kernel::Vector_2 & off) override {
 
-        edge += off;
+        _edge += off;
     }
 private:
-    Point edge;
-    double width;
-    double height;
+    Point _edge;
+    double _width;
+    double _height;
 };
 
 class Line: public Shape {
 public:
-    Line(Point const & sp, Point const & ep, Stroke const & s = Stroke()) :
-            Shape(Fill(), s), start_point(sp), end_point(ep) {
+    Line(Point  sp, Point  ep, Stroke const & s = Stroke()) :
+            Shape(Fill(), s), _start_point(std::move(sp)), _end_point(std::move(ep)) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << elemStart("line") << attribute("x1", translateX(start_point, layout)) << attribute("y1", translateY(start_point, layout)) << attribute("x2", translateX(end_point, layout))
-                << attribute("y2", translateY(end_point, layout)) << stroke.toString(layout) << emptyElemEnd();
+        ss << elemStart("line") << attribute("x1", translateX(_start_point, layout)) << attribute("y1", translateY(_start_point, layout)) << attribute("x2", translateX(_end_point, layout))
+                << attribute("y2", translateY(_end_point, layout)) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
-        start_point += off;
-        end_point += off;
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        _start_point += off;
+        _end_point += off;
     }
 private:
-    Point start_point;
-    Point end_point;
+    Point _start_point;
+    Point _end_point;
 };
 
 class Polygon: public Shape {
 public:
-    Polygon(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+    explicit Polygon(Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s) {
     }
-    Polygon(Stroke const & s = Stroke()) :
+    explicit Polygon(Stroke const & s = Stroke()) :
             Shape(Color::Transparent, s) {
     }
-    Polygon & operator<<(Point const & point) {
+    auto operator<<(Point const & point) -> Polygon & {
         points.push_back(point);
         return *this;
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
         ss << elemStart("polygon");
 
         ss << "points=\"";
-        for (unsigned i = 0; i < points.size(); ++i)
-            ss << translateX(points[i], layout) << "," << translateY(points[i], layout) << " ";
+        for (const auto & point : points) {
+            ss << translateX(point, layout) << "," << translateY(point, layout) << " ";
+}
         ss << "\" ";
 
         ss << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
-        for (unsigned i = 0; i < points.size(); ++i) {
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        for (auto & point : points) {
 
-            points[i] += off;
+            point += off;
         }
     }
 private:
@@ -412,41 +414,44 @@ private:
 
 class Path: public Shape {
 public:
-    Path(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+    explicit Path(Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s) {
         startNewSubPath();
     }
-    Path(Stroke const & s = Stroke()) :
+    explicit Path(Stroke const & s = Stroke()) :
             Shape(Color::Transparent, s) {
         startNewSubPath();
     }
-    Path & operator<<(Point const & point) {
+    auto operator<<(Point const & point) -> Path & {
         paths.back().points.push_back(point);
         return *this;
     }
 
     void startNewSubPath() {
-        if (paths.empty() || 0 < paths.back().points.size())
+        if (paths.empty() || !paths.back().points.empty()) {
             paths.emplace_back();
+}
     }
 
     void closeSubPath() {
         paths.back().closed = true;
     }
 
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
         ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
         ss << elemStart("path");
 
         ss << "d=\"";
         for (const auto & subpath : paths) {
-            if (subpath.empty())
+            if (subpath.empty()) {
                 continue;
+}
 
             ss << "M";
-            for (const auto & point : subpath.points)
+            for (const auto & point : subpath.points) {
                 ss << translateX(point, layout) << "," << translateY(point, layout) << " ";
+}
             if (subpath.closed) {
                 ss << "z ";
             }
@@ -458,12 +463,13 @@ public:
         return ss.str();
     }
 
-    void offset(const laby::Kernel::Vector_2 & off) {
-        for (auto& subpath : paths)
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        for (auto& subpath : paths) {
             for (auto& point : subpath.points) {
                 point = point + off;
 
             }
+}
     }
 private:
     std::vector<laby::Polyline> paths;
@@ -471,35 +477,36 @@ private:
 
 class Polyline: public Shape {
 public:
-    Polyline(Fill const & f = Fill(), Stroke const & s = Stroke()) :
+    explicit Polyline(Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s) {
     }
-    Polyline(Stroke const & s = Stroke()) :
+    explicit Polyline(Stroke const & s = Stroke()) :
             Shape(Color::Transparent, s) {
     }
-    Polyline(std::vector<Point> const & pts, Fill const & f = Fill(), Stroke const & s = Stroke()) :
+    explicit Polyline(std::vector<Point> const & pts, Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s), points(pts) {
     }
-    Polyline & operator<<(Point const & point) {
+    auto operator<<(Point const & point) -> Polyline & {
         points.push_back(point);
         return *this;
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
         ss << elemStart("polyline");
 
         ss << "points=\"";
-        for (unsigned i = 0; i < points.size(); ++i)
-            ss << translateX(points[i], layout) << "," << translateY(points[i], layout) << " ";
+        for (const auto & point : points) {
+            ss << translateX(point, layout) << "," << translateY(point, layout) << " ";
+}
         ss << "\" ";
 
         ss << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
-        for (unsigned i = 0; i < points.size(); ++i) {
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        for (auto & point : points) {
 
-            points[i] = points[i] + off;
+            point = point + off;
 
         }
     }
@@ -508,66 +515,66 @@ public:
 
 class Text: public Shape {
 public:
-    Text(Point const & orig, std::string const & text, Fill const & f = Fill(), Font const & fnt = Font(), Stroke const & s = Stroke()) :
-            Shape(f, s), origin(orig), content(text), font(fnt) {
+    Text(Point  orig, std::string  text, Fill const & f = Fill(), Font  fnt = Font(), Stroke const & s = Stroke()) :
+            Shape(f, s), _origin(std::move(orig)), _content(std::move(text)), _font(std::move(fnt)) {
     }
-    std::string toString(Layout const & layout) const {
+    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
         std::stringstream ss;
-        ss << elemStart("text") << attribute("x", translateX(origin, layout)) << attribute("y", translateY(origin, layout)) << fill.toString(layout) << stroke.toString(layout) << font.toString(layout)
-                << ">" << content << elemEnd("text");
+        ss << elemStart("text") << attribute("x", translateX(_origin, layout)) << attribute("y", translateY(_origin, layout)) << fill.toString(layout) << stroke.toString(layout) << _font.toString(layout)
+                << ">" << _content << elemEnd("text");
         return ss.str();
     }
-    void offset(const laby::Kernel::Vector_2 & off) {
-        origin = origin + off;
+    void offset(const laby::Kernel::Vector_2 & off) override {
+        _origin = _origin + off;
 
     }
 private:
-    Point origin;
-    std::string content;
-    Font font;
+    Point _origin;
+    std::string _content;
+    Font _font;
 };
 
 class DocumentSVG {
 public:
-    DocumentSVG(std::string const & fname, Layout lay = Layout()) :
-            file_name(fname), layout(lay) {
-        std::cout << "Document SVG constructed" << std::endl;
+    explicit DocumentSVG(std::string  fname, Layout lay = Layout()) :
+            _file_name(std::move(fname)), _layout(std::move(std::move(lay))) {
+        std::cout << "Document SVG constructed" << '\n';
     }
 
-    DocumentSVG & operator<<(Shape const & shape) {
-        body_nodes_str += shape.toString(layout);
+    auto operator<<(Shape const & shape) -> DocumentSVG & {
+        _body_nodes_str += shape.toString(_layout);
         return *this;
     }
-    std::string toString() const {
+    [[nodiscard]] auto toString() const -> std::string {
         std::stringstream ss;
         ss << "<?xml " << attribute("version", "1.0") << //
                 attribute("standalone", "no") << //
                 "?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " << //
                 "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n<svg " << //
-                attribute("width", layout.dimensions.width, "px") << //
-                attribute("height", layout.dimensions.height, "px") << //
-                attribute("viewBox", std::string("0 0 ") + std::to_string(layout.dimensions.width) + " " + std::to_string(layout.dimensions.height)) << //
+                attribute("width", _layout.dimensions.width, "px") << //
+                attribute("height", _layout.dimensions.height, "px") << //
+                attribute("viewBox", std::string("0 0 ") + std::to_string(_layout.dimensions.width) + " " + std::to_string(_layout.dimensions.height)) << //
                 attribute("xmlns", "http://www.w3.org/2000/svg") << //
                 attribute("version", "1.1") << ">\n" << //
-                body_nodes_str << elemEnd("svg");
+                _body_nodes_str << elemEnd("svg");
         return ss.str();
     }
-    bool save() const {
-        std::ofstream ofs(file_name.c_str());
+    [[nodiscard]] auto save() const -> bool {
+        std::ofstream ofs(_file_name.c_str());
         if (!ofs.good()) {
-            std::cout << "Document not SVG saved !!!" << std::endl;
+            std::cout << "Document not SVG saved !!!" << '\n';
             return false;
         }
         ofs << toString();
         ofs.close();
-        std::cout << "Document SVG saved" << std::endl;
+        std::cout << "Document SVG saved" << '\n';
         return true;
     }
 private:
-    std::string file_name;
-    Layout layout;
+    std::string _file_name;
+    Layout _layout;
 
-    std::string body_nodes_str;
+    std::string _body_nodes_str;
 };
 
 } /* namespace svg */

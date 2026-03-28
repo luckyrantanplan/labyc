@@ -6,11 +6,12 @@
 #include "Anisotrop/QueueCost.h"
 #include <gtest/gtest.h>
 #include <sstream>
+#include <string>
 
 using laby::aniso::QueueCost;
 
 TEST(QueueCostTest, DefaultValues) {
-    QueueCost c;
+    QueueCost const c;
     EXPECT_EQ(c.distance, -1);
     EXPECT_EQ(c.via_num, 0);
     EXPECT_EQ(c.congestion, 0);
@@ -95,7 +96,7 @@ TEST(QueueCostTest, PrintOutput) {
     c.randomization = 7;
     std::ostringstream oss;
     c.print(oss);
-    std::string output = oss.str();
+    std::string const output = oss.str();
     EXPECT_NE(output.find('5'), std::string::npos);
     EXPECT_NE(output.find('3'), std::string::npos);
     EXPECT_NE(output.find("100"), std::string::npos);

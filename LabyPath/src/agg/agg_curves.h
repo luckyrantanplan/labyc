@@ -131,8 +131,12 @@ class Curve4Points {
     explicit Curve4Points(const std::array<double, kCurve4CoordinateCount>& coordinates)
         : _coordinates(coordinates) {}
 
-    [[nodiscard]] auto startX() const -> double { return _coordinates.at(kCurve4StartXIndex); }
-    [[nodiscard]] auto startY() const -> double { return _coordinates.at(kCurve4StartYIndex); }
+    [[nodiscard]] auto startX() const -> double {
+        return _coordinates.at(kCurve4StartXIndex);
+    }
+    [[nodiscard]] auto startY() const -> double {
+        return _coordinates.at(kCurve4StartYIndex);
+    }
     [[nodiscard]] auto control1X() const -> double {
         return _coordinates.at(kCurve4Control1XIndex);
     }
@@ -145,12 +149,15 @@ class Curve4Points {
     [[nodiscard]] auto control2Y() const -> double {
         return _coordinates.at(kCurve4Control2YIndex);
     }
-    [[nodiscard]] auto endX() const -> double { return _coordinates.at(kCurve4EndXIndex); }
-    [[nodiscard]] auto endY() const -> double { return _coordinates.at(kCurve4EndYIndex); }
+    [[nodiscard]] auto endX() const -> double {
+        return _coordinates.at(kCurve4EndXIndex);
+    }
+    [[nodiscard]] auto endY() const -> double {
+        return _coordinates.at(kCurve4EndYIndex);
+    }
 
   private:
-    std::array<double, kCurve4CoordinateCount> _coordinates{0.0, 0.0, 0.0, 0.0,
-                                                             0.0, 0.0, 0.0, 0.0};
+    std::array<double, kCurve4CoordinateCount> _coordinates{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 };
 
 //-------------------------------------------------------catrom_to_bezier
@@ -164,26 +171,20 @@ inline auto catromToBezier(double startX, double startY, double control1X, doubl
     //  0       1/6     1       -1/6
     //  0       0       1       0
     //
-    return Curve4Points{{control1X,
-                         control1Y,
-                         (-startX + kCatmullRomDivisor * control1X + control2X) /
-                             kCatmullRomDivisor,
-                         (-startY + kCatmullRomDivisor * control1Y + control2Y) /
-                             kCatmullRomDivisor,
-                         (control1X + kCatmullRomDivisor * control2X - endX) /
-                             kCatmullRomDivisor,
-                         (control1Y + kCatmullRomDivisor * control2Y - endY) /
-                             kCatmullRomDivisor,
-                         control2X,
-                         control2Y}};
+    return Curve4Points{
+        {control1X, control1Y,
+         (-startX + kCatmullRomDivisor * control1X + control2X) / kCatmullRomDivisor,
+         (-startY + kCatmullRomDivisor * control1Y + control2Y) / kCatmullRomDivisor,
+         (control1X + kCatmullRomDivisor * control2X - endX) / kCatmullRomDivisor,
+         (control1Y + kCatmullRomDivisor * control2Y - endY) / kCatmullRomDivisor, control2X,
+         control2Y}};
 }
 
 //-----------------------------------------------------------------------
 inline auto catromToBezier(const Curve4Points& controlPoints) -> Curve4Points {
-    return catromToBezier(controlPoints.startX(), controlPoints.startY(),
-                          controlPoints.control1X(), controlPoints.control1Y(),
-                          controlPoints.control2X(), controlPoints.control2Y(),
-                          controlPoints.endX(), controlPoints.endY());
+    return catromToBezier(controlPoints.startX(), controlPoints.startY(), controlPoints.control1X(),
+                          controlPoints.control1Y(), controlPoints.control2X(),
+                          controlPoints.control2Y(), controlPoints.endX(), controlPoints.endY());
 }
 
 //-----------------------------------------------------ubspline_to_bezier
@@ -197,26 +198,19 @@ inline auto ubsplineToBezier(double startX, double startY, double control1X, dou
     //  0       2/6     4/6     0
     //  0       1/6     4/6     1/6
     //
-    return Curve4Points{{(startX + kCatmullRomQuadrupleWeight * control1X + control2X) /
-                             kCatmullRomDivisor,
-                         (startY + kCatmullRomQuadrupleWeight * control1Y + control2Y) /
-                             kCatmullRomDivisor,
-                         (kCatmullRomQuadrupleWeight * control1X +
-                          kCatmullRomDoubleWeight * control2X) /
-                             kCatmullRomDivisor,
-                         (kCatmullRomQuadrupleWeight * control1Y +
-                          kCatmullRomDoubleWeight * control2Y) /
-                             kCatmullRomDivisor,
-                         (kCatmullRomDoubleWeight * control1X +
-                          kCatmullRomQuadrupleWeight * control2X) /
-                             kCatmullRomDivisor,
-                         (kCatmullRomDoubleWeight * control1Y +
-                          kCatmullRomQuadrupleWeight * control2Y) /
-                             kCatmullRomDivisor,
-                         (control1X + kCatmullRomQuadrupleWeight * control2X + endX) /
-                             kCatmullRomDivisor,
-                         (control1Y + kCatmullRomQuadrupleWeight * control2Y + endY) /
-                             kCatmullRomDivisor}};
+    return Curve4Points{
+        {(startX + kCatmullRomQuadrupleWeight * control1X + control2X) / kCatmullRomDivisor,
+         (startY + kCatmullRomQuadrupleWeight * control1Y + control2Y) / kCatmullRomDivisor,
+         (kCatmullRomQuadrupleWeight * control1X + kCatmullRomDoubleWeight * control2X) /
+             kCatmullRomDivisor,
+         (kCatmullRomQuadrupleWeight * control1Y + kCatmullRomDoubleWeight * control2Y) /
+             kCatmullRomDivisor,
+         (kCatmullRomDoubleWeight * control1X + kCatmullRomQuadrupleWeight * control2X) /
+             kCatmullRomDivisor,
+         (kCatmullRomDoubleWeight * control1Y + kCatmullRomQuadrupleWeight * control2Y) /
+             kCatmullRomDivisor,
+         (control1X + kCatmullRomQuadrupleWeight * control2X + endX) / kCatmullRomDivisor,
+         (control1Y + kCatmullRomQuadrupleWeight * control2Y + endY) / kCatmullRomDivisor}};
 }
 
 //-----------------------------------------------------------------------
@@ -238,13 +232,10 @@ inline auto hermiteToBezier(double startX, double startY, double control1X, doub
     //  0       1       0       -1/3
     //  0       1       0       0
     //
-    return Curve4Points{{startX,
-                         startY,
-                         (kHermiteDivisor * startX + control2X) / kHermiteDivisor,
+    return Curve4Points{{startX, startY, (kHermiteDivisor * startX + control2X) / kHermiteDivisor,
                          (kHermiteDivisor * startY + control2Y) / kHermiteDivisor,
                          (kHermiteDivisor * control1X - endX) / kHermiteDivisor,
-                         (kHermiteDivisor * control1Y - endY) / kHermiteDivisor,
-                         control1X,
+                         (kHermiteDivisor * control1Y - endY) / kHermiteDivisor, control1X,
                          control1Y}};
 }
 

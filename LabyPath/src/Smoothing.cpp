@@ -6,10 +6,15 @@
  */
 
 #include "Smoothing.h"
+#include "Polyline.h"
+#include <cstdint>
+#include <algorithm>
+#include <cstddef>
+#include <CGAL/Kernel/global_functions_2.h>
 
 namespace laby {
 
-Polyline Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tension, uint32_t nrOfIterations) {
+auto Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tension, uint32_t nrOfIterations) -> Polyline {
     //checks
     if (line.points.size() < 3) {
         return line;
@@ -21,7 +26,7 @@ Polyline Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tensio
     // '(i.e. 1-cutting distance) to keep symmetry.
     // 'with a tension value of 0.5 this amounts to 0.25 = 1/4 and 0.75 = 3/4,
     // 'the original Chaikin values
-    double cutdist = 0.05 + (tension * 0.4);
+    double const cutdist = 0.05 + (tension * 0.4);
     //  'make a copy of the pointlist and iterate it
     Polyline nl = line;
     for (uint32_t i = 0; i < nrOfIterations; ++i) {
@@ -29,7 +34,7 @@ Polyline Smoothing::getCurveSmoothingChaikin(const Polyline& line, double tensio
     }
     return nl;
 }
-Polyline Smoothing::getSmootherChaikin(const Polyline& line, double cuttingDist) {
+auto Smoothing::getSmootherChaikin(const Polyline& line, double cuttingDist) -> Polyline {
     Polyline nl(line.id);
     nl.closed = line.closed;
     if (line.points.at(0) != line.points.back() or !line.closed) {

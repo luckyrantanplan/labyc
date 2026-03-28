@@ -5,10 +5,9 @@
  *      Author: florian
  */
 
-#include "AugmentedPolygonSet.h"
 
-namespace laby {
-namespace basic {
 
-} /* namespace basic */
-} /* namespace laby */
+
+
+
+

@@ -6,15 +6,8 @@
  */
 
 #include "Context.h"
+#include "SVGParser/Stylable.h"
 
-#include <boost/mpl/insert.hpp>
-#include <iostream>
-#include <svgpp/attribute_dispatcher.hpp>
-#include <svgpp/definitions.hpp>
-#include <svgpp/document_traversal.hpp>
-#include <svgpp/policy/marker_events.hpp>
-#include <svgpp/traits/element_groups.hpp>
-#include <vector>
 
 namespace laby::svgp {
 

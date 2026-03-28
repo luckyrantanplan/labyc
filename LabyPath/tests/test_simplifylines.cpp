@@ -4,8 +4,8 @@
  */
 
 #include "basic/SimplifyLines.h"
-#include <boost/geometry.hpp>
 #include <cmath>
+#include <cstddef>
 #include <gtest/gtest.h>
 
 using laby::SimplifyLines;
@@ -14,7 +14,7 @@ TEST(SimplifyLinesTest, DecimateReducesPoints) {
     SimplifyLines::LineString line;
     // Create a line with many closely-spaced points on x-axis
     for (int i = 0; i <= 100; ++i) {
-        double x = static_cast<double>(i) * 0.1;
+        double const x = static_cast<double>(i) * 0.1;
         line.push_back(SimplifyLines::xy(x, 0.0));
     }
     ASSERT_EQ(line.size(), 101U);
@@ -53,7 +53,7 @@ TEST(SimplifyLinesTest, DecimateSmallDistanceKeepsAll) {
 TEST(SimplifyLinesTest, DecimateIndexReducesPoints) {
     SimplifyLines::LineStringIndexed line;
     for (int i = 0; i <= 50; ++i) {
-        double x = static_cast<double>(i) * 0.1;
+        double const x = static_cast<double>(i) * 0.1;
         line.push_back(laby::IndexedPoint(x, 0.0, static_cast<std::size_t>(i)));
     }
     ASSERT_EQ(line.size(), 51U);

@@ -8,16 +8,16 @@
 #include "Placement.h"
 
 #include <CGAL/Arr_dcel_base.h>
-#include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
 #include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
-#include <CGAL/Arrangement_on_surface_2.h>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iostream>
-#include <iterator>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "../GridIndex.h"
 #include "../Rendering/GraphicRendering.h"
@@ -25,13 +25,19 @@
 #include "../SVGParser/Loader.h"
 #include "../Smoothing.h"
 #include "../basic/LinearGradient.h"
-#include "../basic/PairInteger.h"
 #include "Cell.h"
+#include "GeomData.h"
 #include "Net.h"
+#include "PolyConvex.h"
+#include "OrientedRibbon.h"
+#include "PolyVertex.h"
+#include "Polyline.h"
 #include "Routing.h"
 #include "SpatialIndex.h"
 
 #include "../flatteningOverlap/PathRendering.h"
+#include "protoc/AllConfig.pb.h"
+#include "basic/RangeHelper.h"
 
 namespace laby::aniso {
 
@@ -53,7 +59,7 @@ Placement::Placement(proto::Placement config, const proto::Filepaths& filepaths)
         // info
         rib.setFillColor(rib.strokeColor());
     }
-    std::unordered_map<uint32_t, GridIndex> mapOfGrids = GridIndex::getIndexMap(ribList);
+    std::unordered_map<uint32_t, GridIndex> const mapOfGrids = GridIndex::getIndexMap(ribList);
 
     std::vector<PolyConvex> polyConvexList;
 
@@ -104,7 +110,7 @@ auto Placement::createRoute(Cell& cell) -> Routing {
             Vertex& vertex2 = **iteTarget;
             if (&vertex2 != &queue.front().vertex()) {
 
-                Pin pinTarget{vertex2,
+                Pin const pinTarget{vertex2,
                               std::max(queue.front().thickness() / _config.decrement_factor(),
                                        _config.minimal_thickness())};
                 Net netCandidate(Net::SourcePin{queue.front()}, Net::TargetPin{pinTarget},
@@ -162,7 +168,7 @@ auto Placement::explodeGraph(const std::vector<PolyConvex>& initialConvex,
     for (Net& net : cell.nets()) {
 
         PolyVertex polytemp(net.id());
-        for (std::size_t polyConvexId : net.path()) {
+        for (std::size_t const polyConvexId : net.path()) {
             const PolyConvex& polyConvex = initialConvex.at(polyConvexId);
             Vertex& vertex = *polyConvex._supportHe->source();
             polytemp.vertexList().emplace_back(&vertex);
@@ -181,7 +187,7 @@ auto Placement::explodeGraph(const std::vector<PolyConvex>& initialConvex,
 
 auto Placement::refinePath(Cell& cell, const std::vector<PolyConvex>& initialConvex,
                            std::vector<PolyConvex>& polyConvexList) -> std::vector<PolyConvex> {
-    std::vector<PolyVertex> ribbonTemp = explodeGraph(initialConvex, cell);
+    std::vector<PolyVertex> const ribbonTemp = explodeGraph(initialConvex, cell);
 
     std::unordered_map<int32_t, Net*> netMap;
     for (Net& net : cell.nets()) {
@@ -215,7 +221,7 @@ auto Placement::refinePath(Cell& cell, const std::vector<PolyConvex>& initialCon
     for (Polyline& poly : ribbon.lines()) {
         Net& net = *netMap.at(poly.id);
         basic::LinearGradient lgrad = net.gradient();
-        std::size_t begin = polyConvexList.size();
+        std::size_t const begin = polyConvexList.size();
         for (std::size_t i = 1; i < poly.points.size(); ++i) {
             polyConvexList.emplace_back(poly.points.at(i - 1), poly.points.at(i),
                                         polyConvexList.size(), lgrad);

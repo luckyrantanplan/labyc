@@ -32,7 +32,7 @@ public:
 
     explicit EdgeNodeInfo(int32_t polygonId) : _polygonId{polygonId} {}
 
-    bool operator==(const EdgeNodeInfo& it) const { return _polygonId == it._polygonId; }
+    auto operator==(const EdgeNodeInfo& it) const -> bool { return _polygonId == it._polygonId; }
 
     void print(std::ostream& os) const { os << _polygonId; }
 };
@@ -42,8 +42,8 @@ public:
     FaceNodeInfo() = default;
     FaceNodeInfo(const FaceNodeInfo&) = default;
     FaceNodeInfo(FaceNodeInfo&&) noexcept = default;
-    FaceNodeInfo& operator=(const FaceNodeInfo&) = default;
-    FaceNodeInfo& operator=(FaceNodeInfo&&) noexcept = default;
+    auto operator=(const FaceNodeInfo&) -> FaceNodeInfo& = default;
+    auto operator=(FaceNodeInfo&&) noexcept -> FaceNodeInfo& = default;
     ~FaceNodeInfo() override = default;
 
     void setPolygonId(int32_t polygonId) {
@@ -55,23 +55,23 @@ public:
 
     void setData(const std::unordered_set<int32_t>& data) { _polygonIds = data; }
 
-    void set_data(const std::unordered_set<int32_t>& data) { setData(data); } 
+    void setData(const std::unordered_set<int32_t>& data) { setData(data); } 
 
-    std::unordered_set<int32_t>& data() { return _polygonIds; }
+    auto data() -> std::unordered_set<int32_t>& { return _polygonIds; }
 
-    const std::unordered_set<int32_t>& data() const { return _polygonIds; }
+    auto data() const -> const std::unordered_set<int32_t>& { return _polygonIds; }
     /*! Assign from another face. */
     void assign(const Arr_face_base& f) override {
         Gps_face_base::assign(f);
 
         // CGAL passes back the exact derived face type here.
-        const auto& exFace = static_cast<const FaceNodeInfo&>(f); 
+        const auto& exFace = dynamic_cast<const FaceNodeInfo&>(f); 
         _polygonIds = exFace._polygonIds;
     }
 };
 
 struct OverlayLabel {
-    std::unordered_set<int32_t> operator()(const std::unordered_set<int32_t>& a, const std::unordered_set<int32_t>& b) const {
+    auto operator()(const std::unordered_set<int32_t>& a, const std::unordered_set<int32_t>& b) const -> std::unordered_set<int32_t> {
         std::unordered_set<int32_t> fn;
         fn.insert(a.begin(), a.end());
         fn.insert(b.begin(), b.end());
@@ -110,7 +110,7 @@ using Overlay_traitsNode = CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
 // Replaces the old pattern: he.curve().data().find(EdgeNodeInfo(id)) != he.curve().data().end()
 // which relied on Arr_consolidated_curve_data_traits_2 (incompatible with CGAL 5.x).
 namespace basic {
-inline bool edgeHasPolygonId(const HalfedgeNode& he, int32_t id) {
+inline auto edgeHasPolygonId(const HalfedgeNode& he, int32_t id) -> bool {
     const bool faceHas = he.face()->data().count(id) > 0;
     const bool twinFaceHas = he.twin()->face()->data().count(id) > 0;
     return faceHas != twinFaceHas;

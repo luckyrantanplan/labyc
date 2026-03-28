@@ -33,8 +33,8 @@
 #include "../GeomData.h"
 #include "../Ribbon.h"
 
-namespace laby {
-namespace generator {
+
+namespace laby::generator {
 class RibbonCoord {
 public:
     RibbonCoord(Polyline* pl, std::size_t pos) : _pl{pl}, _pos{pos} {}
@@ -54,17 +54,17 @@ public:
         double divisor;        // distance between lines
         bool old_RegularGrid = false;
     };
-    const Ribbon& circularList() const { return _circularList; }
+    [[nodiscard]] auto circularList() const -> const Ribbon& { return _circularList; }
 
-    const Ribbon& radialList() const { return _radialList; }
+    [[nodiscard]] auto radialList() const -> const Ribbon& { return _radialList; }
 
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    using K = CGAL::Exact_predicates_inexact_constructions_kernel;
 
     struct VectorCompute {
 
-        typedef CGAL::Cartesian_converter<Kernel, K> Kernel_To_K;
+        using Kernel_To_K = CGAL::Cartesian_converter<Kernel, K>;
 
-        VectorCompute(const double resolution) : kernel_to_k(), scale(CGAL::SCALING, resolution) {}
+        explicit VectorCompute(const double resolution) : kernel_to_k(), scale(CGAL::SCALING, resolution) {}
 
         void addSegLong(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, std::vector<CGAL::Vector_2<K>>& vectorList) const;
         void addSegPerp(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, std::vector<CGAL::Vector_2<K>>& vectorList) const;
@@ -74,13 +74,13 @@ public:
         double epsilon = 0.001;
     };
 
-    typedef CGAL::Point_set_2<Kernel> PS;
-    typedef CGAL::Triangular_field_2<K> FieldTri;
+    using PS = CGAL::Point_set_2<Kernel>;
+    using FieldTri = CGAL::Triangular_field_2<K>;
 
-    typedef CGAL::Regular_grid_2<StreamLine::K> Field;
+    using Field = CGAL::Regular_grid_2<StreamLine::K>;
 
-    typedef std::list<CGAL::Point_2<K>> Strl_polyline;
-    typedef std::list<std::pair<Strl_polyline::iterator, Strl_polyline::iterator>> Strl_iterator_container;
+    using Strl_polyline = std::list<CGAL::Point_2<K>>;
+    using Strl_iterator_container = std::list<std::pair<Strl_polyline::iterator, Strl_polyline::iterator>>;
 
     explicit StreamLine(const Config& config);
 
@@ -90,32 +90,32 @@ public:
 
     void render();
 
-    static Ribbon getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs);
-    static Ribbon getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs);
+    static auto getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs) -> Ribbon;
+    static auto getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs) -> Ribbon;
 
 private:
-    Ribbon connectExtreme(Ribbon& ribbon);
+    auto connectExtreme(Ribbon& ribbon) -> Ribbon;
     void connectExtremInPlace(laby::Ribbon& ribbon);
-    void changeLine(const Point_2& mid, std::unordered_map<PS::Vertex*, RibbonCoord>& map, PS::Vertex* seg);
+    static void changeLine(const Point_2& mid, std::unordered_map<PS::Vertex*, RibbonCoord>& map, PS::Vertex* seg);
 
     template <typename FIELD, typename Rk_integrator = CGAL::Runge_kutta_integrator_2<FIELD>>
-    CGAL::Stream_lines_2<FIELD, Rk_integrator> streamPlacement(const FIELD& field, double dSep, double dRat) {
+    auto streamPlacement(const FIELD& field, double dSep, double dRat) -> CGAL::Stream_lines_2<FIELD, Rk_integrator> {
 
-        Rk_integrator runge_kutta_integrator;
-        return CGAL::Stream_lines_2<FIELD, Rk_integrator>(field, runge_kutta_integrator, dSep, dRat);
+        Rk_integrator rungeKuttaIntegrator;
+        return CGAL::Stream_lines_2<FIELD, Rk_integrator>(field, rungeKuttaIntegrator, dSep, dRat);
     }
 
     void postStreamCompute(const Strl_iterator_container& Stream_lines, Ribbon& ribbon);
 
-    static Ribbon generateTriangularField(std::vector<CGAL::Point_2<K>> pointList, std::vector<CGAL::Vector_2<K>> vectorList, const Config& config);
-    CGAL::Vector_2<CGAL::Epick> addSeg(const std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, VectorCompute& vCompute,
-                                       std::vector<CGAL::Vector_2<K>>& vectorList);
+    static auto generateTriangularField(std::vector<CGAL::Point_2<K>> pointList, std::vector<CGAL::Vector_2<K>> vectorList, const Config& config) -> Ribbon;
+    auto addSeg(const std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, VectorCompute& vCompute,
+                                       std::vector<CGAL::Vector_2<K>>& vectorList) -> CGAL::Vector_2<CGAL::Epick>;
 
     Config _config;
     Ribbon _radialList;
     Ribbon _circularList;
     boost::multi_array<std::complex<double>, 2> _field;
 };
-} /* namespace generator */
-} /* namespace laby */
+} // namespace laby::generator
+
 #endif /* STREAMLINE_H_ */

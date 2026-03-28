@@ -13,7 +13,7 @@
 
 namespace laby {
 
-const Halfedge* EdgeInfo::getNextHalfedge(int32_t visited, const Vertex& v) const {
+auto EdgeInfo::getNextHalfedge(int32_t visited, const Vertex& v) const -> const Halfedge* {
 
     for (const Halfedge& he : RangeHelper::make(v.incident_halfedges())) {
         const laby::EdgeInfo& data = he.curve().data();

@@ -16,97 +16,108 @@
 //
 #include <boost/graph/astar_search.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graph_selectors.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/graph/detail/adjacency_list.hpp>
+#include <boost/graph/named_function_params.hpp>
 #include <boost/graph/random.hpp>
-#include <boost/random.hpp>
+#include <boost/pending/property.hpp>
+#include <boost/property_map/property_map.hpp>
 #include <boost/graph/graphviz.hpp>
-#include <sys/time.h>
+#include <cstddef>
+#include <boost/tuple/tuple.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <ctime>
+#include <utility>
 #include <vector>
 #include <list>
 #include <iostream>
 #include <fstream>
-#include <math.h>    // for sqrt
+#include <cmath>    // for sqrt
 
 using namespace boost;
 using namespace std;
 
 // auxiliary types
-struct location {
+struct Location {
     float y, x; // lat, long
 };
-typedef float cost;
+using cost = float;
 
 template<class Name, class LocMap>
-class city_writer {
+class CityWriter {
 public:
-    city_writer(Name n, LocMap l, float _minx, float _maxx, float _miny, float _maxy, unsigned int _ptx, unsigned int _pty) :
-            name(n), loc(l), minx(_minx), maxx(_maxx), miny(_miny), maxy(_maxy), ptx(_ptx), pty(_pty) {
+    CityWriter(Name n, LocMap l, float _minx, float _maxx, float _miny, float _maxy, unsigned int _ptx, unsigned int _pty) :
+            _name(n), _loc(l), _minx(_minx), _maxx(_maxx), _miny(_miny), _maxy(_maxy), _ptx(_ptx), _pty(_pty) {
     }
     template<class Vertex>
     void operator()(ostream& out, const Vertex& v) const {
-        float px = 1 - (loc[v].x - minx) / (maxx - minx);
-        float py = (loc[v].y - miny) / (maxy - miny);
-        out << "[label=\"" << name[v] << "\", pos=\"" << static_cast<unsigned int>(ptx * px) << "," << static_cast<unsigned int>(pty * py) << "\", fontsize=\"11\"]";
+        float const px = 1 - (_loc[v].x - _minx) / (_maxx - _minx);
+        float const py = (_loc[v].y - _miny) / (_maxy - _miny);
+        out << "[label=\"" << _name[v] << "\", pos=\"" << static_cast<unsigned int>(_ptx * px) << "," << static_cast<unsigned int>(_pty * py) << R"(", fontsize="11"])";
     }
 private:
-    Name name;
-    LocMap loc;
-    float minx, maxx, miny, maxy;
-    unsigned int ptx, pty;
+    Name _name;
+    LocMap _loc;
+    float _minx, _maxx, _miny, _maxy;
+    unsigned int _ptx, _pty;
 };
 
 template<class WeightMap>
-class time_writer {
+class TimeWriter {
 public:
-    time_writer(WeightMap w) :
-            wm(w) {
+    explicit TimeWriter(WeightMap w) :
+            _wm(w) {
     }
     template<class Edge>
     void operator()(ostream &out, const Edge& e) const {
-        out << "[label=\"" << wm[e] << "\", fontsize=\"11\"]";
+        out << "[label=\"" << _wm[e] << R"(", fontsize="11"])";
     }
 private:
-    WeightMap wm;
+    WeightMap _wm;
 };
 
 // euclidean distance heuristic
 template<class Graph, class CostType, class LocMap>
-class distance_heuristic: public astar_heuristic<Graph, CostType> {
+class DistanceHeuristic: public astar_heuristic<Graph, CostType> {
 public:
-    typedef typename graph_traits<Graph>::vertex_descriptor Vertex;
-    distance_heuristic(LocMap l, Vertex goal) :
-            m_location(l), m_goal(goal) {
+    using Vertex = typename graph_traits<Graph>::vertex_descriptor;
+    DistanceHeuristic(LocMap l, Vertex goal) :
+            _m_location(l), _m_goal(goal) {
     }
-    CostType operator()(Vertex u) {
-        CostType dx = m_location[m_goal].x - m_location[u].x;
-        CostType dy = m_location[m_goal].y - m_location[u].y;
+    auto operator()(Vertex u) -> CostType {
+        CostType dx = _m_location[_m_goal].x - _m_location[u].x;
+        CostType dy = _m_location[_m_goal].y - _m_location[u].y;
         return ::sqrt(dx * dx + dy * dy);
     }
 private:
-    LocMap m_location;
-    Vertex m_goal;
+    LocMap _m_location;
+    Vertex _m_goal;
 };
 
-struct found_goal {
+struct FoundGoal {
 };
 // exception for termination
 
 // visitor that terminates when we find the goal
 template<class Vertex>
-class astar_goal_visitor: public boost::default_astar_visitor {
+class AstarGoalVisitor: public boost::default_astar_visitor {
 public:
-    astar_goal_visitor(Vertex goal) :
-            m_goal(goal) {
+    explicit AstarGoalVisitor(Vertex goal) :
+            _m_goal(goal) {
     }
     template<class Graph>
-    void examine_vertex(Vertex u, Graph& g) {
-        if (u == m_goal)
-            throw found_goal();
+    void examine_vertex(Vertex u, Graph&  /*g*/) {
+        if (u == _m_goal) {
+            throw FoundGoal();
+}
     }
 private:
-    Vertex m_goal;
+    Vertex _m_goal;
 };
 
-int mainAStar(int argc, char **argv) {
+auto mainAStar(int  /*argc*/, char ** /*argv*/) -> int {
 
     // specify some types
     typedef adjacency_list<listS, vecS, undirectedS, no_property, property<edge_weight_t, cost> > mygraph_t;
@@ -120,63 +131,65 @@ int mainAStar(int argc, char **argv) {
         Troy, LakePlacid, Plattsburgh, Massena, Watertown, Utica, Syracuse, Rochester, Buffalo, Ithaca, Binghamton, Woodstock, NewYork, N
     };
     const char *name[] = { "Troy", "Lake Placid", "Plattsburgh", "Massena", "Watertown", "Utica", "Syracuse", "Rochester", "Buffalo", "Ithaca", "Binghamton", "Woodstock", "New York" };
-    location locations[] = { // lat/long
+    Location locations[] = { // lat/long
             { 42.73, 73.68 }, { 44.28, 73.99 }, { 44.70, 73.46 }, { 44.93, 74.89 }, { 43.97, 75.91 }, { 43.10, 75.23 }, { 43.04, 76.14 }, { 43.17, 77.61 }, { 42.89, 78.86 }, { 42.44, 76.50 }, { 42.10,
                     75.91 }, { 42.04, 74.11 }, { 40.67, 73.94 } };
-    edge edge_array[] = { edge(Troy, Utica), edge(Troy, LakePlacid), edge(Troy, Plattsburgh), edge(LakePlacid, Plattsburgh), edge(Plattsburgh, Massena), edge(LakePlacid, Massena), edge(Massena,
+    edge const edgeArray[] = { edge(Troy, Utica), edge(Troy, LakePlacid), edge(Troy, Plattsburgh), edge(LakePlacid, Plattsburgh), edge(Plattsburgh, Massena), edge(LakePlacid, Massena), edge(Massena,
             Watertown), edge(Watertown, Utica), edge(Watertown, Syracuse), edge(Utica, Syracuse), edge(Syracuse, Rochester), edge(Rochester, Buffalo), edge(Syracuse, Ithaca), edge(Ithaca, Binghamton),
             edge(Ithaca, Rochester), edge(Binghamton, Troy), edge(Binghamton, Woodstock), edge(Binghamton, NewYork), edge(Syracuse, Binghamton), edge(Woodstock, Troy), edge(Woodstock, NewYork) };
-    unsigned int num_edges = sizeof(edge_array) / sizeof(edge);
-    cost weights[] = { // estimated travel time (mins)
+    unsigned int const numEdges = sizeof(edgeArray) / sizeof(edge);
+    cost const weights[] = { // estimated travel time (mins)
             96, 134, 143, 65, 115, 133, 117, 116, 74, 56, 84, 73, 69, 70, 116, 147, 173, 183, 74, 71, 124 };
 
     // create graph
     mygraph_t g(N);
-    WeightMap weightmap = get(edge_weight, g);
-    for (std::size_t j = 0; j < num_edges; ++j) {
+    WeightMap const weightmap = get(edge_weight, g);
+    for (std::size_t j = 0; j < numEdges; ++j) {
         edge_descriptor e;
-        bool inserted;
-        boost::tie(e, inserted) = add_edge(edge_array[j].first, edge_array[j].second, g);
+        bool inserted = false;
+        boost::tie(e, inserted) = add_edge(edgeArray[j].first, edgeArray[j].second, g);
         weightmap[e] = weights[j];
     }
 
     // pick random start/goal
-    boost::mt19937 gen(time(0));
-    vertex start = random_vertex(g, gen);
-    vertex goal = random_vertex(g, gen);
+    boost::mt19937 gen(time(nullptr));
+    vertex const start = random_vertex(g, gen);
+    vertex const goal = random_vertex(g, gen);
 
-    cout << "Start vertex: " << name[start] << endl;
-    cout << "Goal vertex: " << name[goal] << endl;
+    cout << "Start vertex: " << name[start] << '\n';
+    cout << "Goal vertex: " << name[goal] << '\n';
 
     ofstream dotfile;
     dotfile.open("test-astar-cities.dot");
-    write_graphviz(dotfile, g, city_writer<const char **, location*>(name, locations, 73.46, 78.86, 40.67, 44.93, 480, 400), time_writer<WeightMap>(weightmap));
+    write_graphviz(dotfile, g, CityWriter<const char **, Location*>(name, locations, 73.46, 78.86, 40.67, 44.93, 480, 400), TimeWriter<WeightMap>(weightmap));
 
     vector<mygraph_t::vertex_descriptor> p(num_vertices(g));
     vector<cost> d(num_vertices(g));
     try {
         // call astar named parameter interface
-        astar_search_tree(g, start, distance_heuristic<mygraph_t, cost, location*>(locations, goal),
+        astar_search_tree(g, start, DistanceHeuristic<mygraph_t, cost, Location*>(locations, goal),
                 predecessor_map(make_iterator_property_map(p.begin(), get(vertex_index, g))).distance_map(make_iterator_property_map(d.begin(), get(vertex_index, g))).visitor(
-                        astar_goal_visitor<vertex>(goal)));
+                        AstarGoalVisitor<vertex>(goal)));
 
-    } catch (found_goal& fg) { // found a path to the goal
-        list<vertex> shortest_path;
+    } catch (FoundGoal& fg) { // found a path to the goal
+        list<vertex> shortestPath;
         for (vertex v = goal;; v = p[v]) {
-            shortest_path.push_front(v);
-            if (p[v] == v)
+            shortestPath.push_front(v);
+            if (p[v] == v) {
                 break;
+}
         }
         cout << "Shortest path from " << name[start] << " to " << name[goal] << ": ";
-        list<vertex>::iterator spi = shortest_path.begin();
+        auto spi = shortestPath.begin();
         cout << name[start];
-        for (++spi; spi != shortest_path.end(); ++spi)
+        for (++spi; spi != shortestPath.end(); ++spi) {
             cout << " -> " << name[*spi];
-        cout << endl << "Total travel time: " << d[goal] << endl;
+}
+        cout << '\n' << "Total travel time: " << d[goal] << '\n';
         return 0;
     }
 
-    cout << "Didn't find a path from " << name[start] << "to" << name[goal] << "!" << endl;
+    cout << "Didn't find a path from " << name[start] << "to" << name[goal] << "!" << '\n';
     return 0;
 
 }

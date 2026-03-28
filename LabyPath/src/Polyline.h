@@ -32,7 +32,7 @@ struct Polyline {
 
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly) : points{poly.container()}, closed{true} {}
 
-    [[nodiscard]] bool empty() const { return points.empty(); }
+    [[nodiscard]] auto empty() const -> bool { return points.empty(); }
 
     void reverse();
 
@@ -42,7 +42,7 @@ struct Polyline {
         min_point = *std::min_element(points.begin(), points.end(), [](const Point_2& a, const Point_2& b) { return a < b; });
     }
 
-    [[nodiscard]] double totalLength() const {
+    [[nodiscard]] auto totalLength() const -> double {
         double sqdist = 0;
         for (std::size_t i = 1; i < points.size(); ++i) {
             sqdist += sqrt(CGAL::to_double((points.at(i) - points.at(i - 1)).squared_length()));

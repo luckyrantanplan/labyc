@@ -6,13 +6,12 @@
  */
 
 #include "SimplifyLines.h"
-#include <boost/geometry.hpp>
 
 #include <boost/geometry/algorithms/simplify.hpp>
 
 namespace laby {
 
-SimplifyLines::LineString SimplifyLines::decimate(LineString& line, double dist) {
+auto SimplifyLines::decimate(LineString& line, double dist) -> SimplifyLines::LineString {
 
     LineString simplified;
     boost::geometry::simplify(line, simplified, dist);
@@ -20,8 +19,8 @@ SimplifyLines::LineString SimplifyLines::decimate(LineString& line, double dist)
     return simplified;
 }
 
-SimplifyLines::LineStringIndexed SimplifyLines::decimateIndex(LineStringIndexed& line,
-                                                              double dist) {
+auto SimplifyLines::decimateIndex(LineStringIndexed& line,
+                                                              double dist) -> SimplifyLines::LineStringIndexed {
 
     LineStringIndexed simplified;
     boost::geometry::simplify(line, simplified, dist);

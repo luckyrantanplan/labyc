@@ -39,7 +39,7 @@ template <class T> auto operator<<(std::ostream& os, const T& t) -> decltype(t.p
     return os;
 }
 
-template <typename T> std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
+template <typename T> auto operator<<(std::ostream& out, const std::vector<T>& v) -> std::ostream& {
     if (!v.empty()) {
         out << '[';
         std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
@@ -103,11 +103,11 @@ public:
 
     EdgeInfo() = default;
 
-    int32_t direction() const { return _direction; }
+    auto direction() const -> int32_t { return _direction; }
 
-    int32_t congestion() const { return static_cast<int32_t>(_path.size()); }
+    auto congestion() const -> int32_t { return static_cast<int32_t>(_path.size()); }
 
-    bool hasNet(const int32_t serialId) const { return _path.count(serialId) != 0; }
+    auto hasNet(const int32_t serialId) const -> bool { return _path.count(serialId) != 0; }
 
     void addPath(const int32_t serialId) {
         auto it = _path.emplace(serialId, 1);
@@ -118,17 +118,17 @@ public:
 
     void clearAllPath() { _path.clear(); }
 
-    int32_t getVisit() const { return _visit; }
+    auto getVisit() const -> int32_t { return _visit; }
 
     void setVisit(int32_t value = -1) const { _visit = value; }
 
-    bool operator==(const EdgeInfo& it) const { return _direction == it._direction; }
+    auto operator==(const EdgeInfo& it) const -> bool { return _direction == it._direction; }
 
-    double thickness() const { return _thickness; }
+    auto thickness() const -> double { return _thickness; }
 
     void setThickness(double thickness = 1) { _thickness = thickness; }
 
-    const Halfedge* getNextHalfedge(int32_t visited, const Vertex& v) const;
+    auto getNextHalfedge(int32_t visited, const Vertex& v) const -> const Halfedge*;
 
     void print(std::ostream& os) const {
         os << " path ";
@@ -137,9 +137,9 @@ public:
         }
     }
 
-    int32_t getNet() const { return _path.begin()->first; }
+    auto getNet() const -> int32_t { return _path.begin()->first; }
 
-    std::size_t coordinate() const { return _coordinate; }
+    auto coordinate() const -> std::size_t { return _coordinate; }
 
 private:
     // TODO : replace unordered_map by just an int
@@ -156,11 +156,11 @@ public:
 
     VertexInfo() = default;
 
-    Type getType() const { return _type; }
+    auto getType() const -> Type { return _type; }
 
     void setType(Type type) { _type = type; }
 
-    int32_t getVisit() const { return _visit; }
+    auto getVisit() const -> int32_t { return _visit; }
 
     void setVisit(int32_t ivisit, Halfedge* he) {
         _visit = ivisit;
@@ -169,9 +169,9 @@ public:
 
     void setGlobalCoordinate(const std::complex<int32_t>& global) { _global = {global}; }
 
-    const std::optional<std::complex<int32_t>>& getGlobalCoordinate() const { return _global; }
+    auto getGlobalCoordinate() const -> const std::optional<std::complex<int32_t>>& { return _global; }
 
-    const std::optional<std::complex<int32_t>>& getDetail() const { return _detail; }
+    auto getDetail() const -> const std::optional<std::complex<int32_t>>& { return _detail; }
 
     void setDetail(const std::optional<std::complex<int32_t>>& detail) { _detail = detail; }
 
@@ -180,7 +180,7 @@ public:
         os << " global " << getGlobalCoordinate().value_or(defaultCoord) << " detail " << getDetail().value_or(defaultCoord);
     }
 
-    int32_t id() const { return _id; }
+    auto id() const -> int32_t { return _id; }
 
     void setId(const int32_t id) { _id = id; }
 
@@ -212,7 +212,7 @@ public:
         }
     }
 
-    static const Vertex& getNearestVertex(const Face& fh, const Vertex& handle) {
+    static auto getNearestVertex(const Face& fh, const Vertex& handle) -> const Vertex& {
         const Vertex* vertMin = nullptr;
 
         getNearest(handle, vertMin, RangeHelper::make(fh.inner_ccbs_begin(), fh.inner_ccbs_end()));
@@ -236,7 +236,7 @@ public:
         }
     }
 
-    static Vertex& getNearestVertex(Face& fh, const Vertex& handle) {
+    static auto getNearestVertex(Face& fh, const Vertex& handle) -> Vertex& {
         Vertex* vertMin = nullptr;
 
         getNearest(handle, vertMin, RangeHelper::make(fh.inner_ccbs_begin(), fh.inner_ccbs_end()));
@@ -257,9 +257,9 @@ public:
 
     void print(std::ostream& os) const { os << " a " << _a << " b " << _b; }
 
-    [[nodiscard]] const std::complex<int32_t>& a() const { return _a; }
+    [[nodiscard]] auto a() const -> const std::complex<int32_t>& { return _a; }
 
-    [[nodiscard]] const std::complex<int32_t>& b() const { return _b; }
+    [[nodiscard]] auto b() const -> const std::complex<int32_t>& { return _b; }
 
 private:
     std::complex<int32_t> _a;

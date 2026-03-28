@@ -6,7 +6,13 @@
  */
 
 #include "OrientedRibbon.h"
-#include "basic/Color.h"
+#include "GeomData.h"
+#include "Polyline.h"
+#include "Ribbon.h"
+#include "basic/RangeHelper.h"
+#include <algorithm>
+#include <vector>
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 
 namespace laby {
 

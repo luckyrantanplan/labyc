@@ -10,7 +10,7 @@ namespace laby {
 namespace {
 
 TEST(EdgeInfoTest, DefaultConstruction) {
-    EdgeInfo info;
+    EdgeInfo const info;
     EXPECT_EQ(info.direction(), -1);
     EXPECT_EQ(info.congestion(), 0);
     EXPECT_DOUBLE_EQ(info.thickness(), 1.0);
@@ -19,13 +19,13 @@ TEST(EdgeInfoTest, DefaultConstruction) {
 }
 
 TEST(EdgeInfoTest, ConstructWithDirectionAndCoordinate) {
-    EdgeInfo info(42, EdgeInfo::Coordinate{7});
+    EdgeInfo const info(42, EdgeInfo::Coordinate{7});
     EXPECT_EQ(info.direction(), 42);
     EXPECT_EQ(info.coordinate(), 7U);
 }
 
 TEST(EdgeInfoTest, ConstructWithType) {
-    EdgeInfo info(EdgeInfo::HORIZONTAL);
+    EdgeInfo const info(EdgeInfo::HORIZONTAL);
     EXPECT_EQ(info.direction(), EdgeInfo::HORIZONTAL);
 }
 
@@ -52,7 +52,7 @@ TEST(EdgeInfoTest, AddAndClearPaths) {
 }
 
 TEST(EdgeInfoTest, VisitTracking) {
-    EdgeInfo info;
+    EdgeInfo const info;
     EXPECT_EQ(info.getVisit(), -1);
 
     info.setVisit(5);
@@ -71,9 +71,9 @@ TEST(EdgeInfoTest, ThicknessGetSet) {
 }
 
 TEST(EdgeInfoTest, Equality) {
-    EdgeInfo a(EdgeInfo::HORIZONTAL);
-    EdgeInfo b(EdgeInfo::HORIZONTAL);
-    EdgeInfo c(EdgeInfo::VERTICAL);
+    EdgeInfo const a(EdgeInfo::HORIZONTAL);
+    EdgeInfo const b(EdgeInfo::HORIZONTAL);
+    EdgeInfo const c(EdgeInfo::VERTICAL);
 
     EXPECT_TRUE(a == b);
     EXPECT_FALSE(a == c);

@@ -12,39 +12,39 @@
 #include <algorithm>
 #include <random>
 
-namespace laby {
-namespace basic {
+
+namespace laby::basic {
 
 class RandomUniDist {
 
 public:
     RandomUniDist(const double min, const double max, uint32_t seed = std::random_device()()) :
-            gen { seed }, //
-            dis { min, max } {
+            _gen { seed }, //
+            _dis { min, max } {
 
     }
 
-    double get() {
-        return dis(gen);
+    auto get() -> double {
+        return _dis(_gen);
     }
 
-    std::size_t select(std::size_t start, std::size_t end) {
+    auto select(std::size_t start, std::size_t end) -> std::size_t {
         std::uniform_int_distribution<std::size_t> udis(start, end - 1);
 
-        return udis(gen);
+        return udis(_gen);
     }
 
     template<typename CONTAINER>
     void shuffle(CONTAINER& container) {
-        std::shuffle(container.begin(), container.end(), gen);
+        std::shuffle(container.begin(), container.end(), _gen);
     }
 
 private:
-    std::mt19937 gen;
-    std::uniform_real_distribution<> dis;
+    std::mt19937 _gen;
+    std::uniform_real_distribution<> _dis;
 };
 
-} /* namespace basic */
-} /* namespace laby */
+} // namespace laby::basic
+
 
 #endif /* BASIC_RANDOMUNIDIST_H_ */

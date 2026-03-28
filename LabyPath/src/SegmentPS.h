@@ -18,20 +18,20 @@ namespace laby {
 class SegmentPS {
 
 public:
-    typedef CGAL::Point_set_2<Kernel> PS;
+    using PS = CGAL::Point_set_2<Kernel>;
 
     SegmentPS(PS::Vertex* source, PS::Vertex* target) :
             _source(source), _target(target) {
         _squared_distance = CGAL::squared_distance(_source->point(), _target->point());
     }
 
-    bool operator <(const SegmentPS &rhs) const {
+    auto operator <(const SegmentPS &rhs) const -> bool {
         return _squared_distance < rhs._squared_distance;
     }
 
-    Kernel::FT squared_distance() const { return _squared_distance; }
-    PS::Vertex* source() const { return _source; }
-    PS::Vertex* target() const { return _target; }
+    [[nodiscard]] auto squaredDistance() const -> Kernel::FT { return _squared_distance; }
+    [[nodiscard]] auto source() const -> PS::Vertex* { return _source; }
+    [[nodiscard]] auto target() const -> PS::Vertex* { return _target; }
 
 private:
     Kernel::FT _squared_distance;

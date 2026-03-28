@@ -16,9 +16,9 @@ namespace laby {
 
 class Smoothing {
 public:
-    static Polyline getCurveSmoothingChaikin(const Polyline& line, double tension, uint32_t nrOfIterations);
+    static auto getCurveSmoothingChaikin(const Polyline& line, double tension, uint32_t nrOfIterations) -> Polyline;
 
-    static Polyline getSmootherChaikin(const Polyline& line, double cuttingDist);
+    static auto getSmootherChaikin(const Polyline& line, double cuttingDist) -> Polyline;
 
 private:
     static void chaikinPointCompute(const Polyline& line, double cuttingDist, Polyline& nl);

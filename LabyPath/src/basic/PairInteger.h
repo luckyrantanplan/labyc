@@ -12,14 +12,14 @@
 #include <cstddef>
 #include <unordered_map>
 
-namespace laby {
-namespace basic {
+
+namespace laby::basic {
 
 // same as Intersection Class in Family.h
 class PairInteger {
 
 public:
-    PairInteger(const std::size_t first = 0, const std::size_t second = 0) {
+    explicit PairInteger(const std::size_t first = 0, const std::size_t second = 0) {
         if (first < second) {
             _first = first;
             _second = second;
@@ -30,23 +30,23 @@ public:
 
     }
 
-    bool operator==(const PairInteger& other) const {
+    auto operator==(const PairInteger& other) const -> bool {
         return (_first == other._first && _second == other._second);
     }
 
-    void set_first(const std::size_t first) {
+    void setFirst(const std::size_t first) {
         _first = first;
     }
 
-    void set_second(const std::size_t second) {
+    void setSecond(const std::size_t second) {
         _second = second;
     }
 
-    std::size_t first() const {
+    [[nodiscard]] auto first() const -> std::size_t {
         return _first;
     }
 
-    std::size_t second() const {
+    [[nodiscard]] auto second() const -> std::size_t {
         return _second;
     }
 
@@ -55,14 +55,14 @@ private:
     std::size_t _second;
 
 };
-} /* namespace basic */
-} /* namespace laby */
+} // namespace laby::basic
+
 
 namespace std {
 
 template<>
 struct hash<laby::basic::PairInteger> {
-    std::size_t operator()(const laby::basic::PairInteger& c) const {
+    auto operator()(const laby::basic::PairInteger& c) const -> std::size_t {
         // Start with a hash value of 0    .
         std::size_t seed = 0;
 

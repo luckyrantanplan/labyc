@@ -4,6 +4,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "Polyline.h"
 #include "Ribbon.h"
 
 namespace laby {
@@ -18,7 +19,7 @@ TEST(RibbonTest, DefaultConstruction) {
 }
 
 TEST(RibbonTest, ConstructWithFillColor) {
-    Ribbon r(5);
+    Ribbon const r(5);
     EXPECT_EQ(r.fillColor(), 5);
 }
 
@@ -71,7 +72,7 @@ TEST(RibbonTest, GetSegments) {
     pl.points.emplace_back(10, 0);
     pl.points.emplace_back(10, 10);
 
-    Ribbon r(0, {pl});
+    Ribbon const r(0, {pl});
     auto segs = r.getSegments();
     EXPECT_EQ(segs.size(), 2U);
 }
@@ -83,7 +84,7 @@ TEST(RibbonTest, CreateArrSkipsDegenerateSegments) {
     pl.points.emplace_back(0, 0);
     pl.points.emplace_back(10, 0);
 
-    Ribbon r(0, {pl});
+    Ribbon const r(0, {pl});
 
     EXPECT_NO_THROW({
         auto arr = r.createArr();
@@ -96,13 +97,13 @@ TEST(RibbonTest, GetPoints) {
     pl.points.emplace_back(0, 0);
     pl.points.emplace_back(5, 5);
 
-    Ribbon r(0, {pl});
+    Ribbon const r(0, {pl});
     auto pts = r.getPoints();
     EXPECT_EQ(pts.size(), 2U);
 }
 
 TEST(IndexRangeTest, Construction) {
-    IndexRange range{3, 10};
+    IndexRange const range{3, 10};
     EXPECT_EQ(range.min, 3U);
     EXPECT_EQ(range.max, 10U);
 }

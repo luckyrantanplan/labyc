@@ -3,28 +3,31 @@
  * @brief Unit tests for Polyline class
  */
 
+#include <CGAL/Polygon_2.h>
 #include <gtest/gtest.h>
+#include <vector>
+#include "GeomData.h"
 #include "Polyline.h"
 
 namespace laby {
 namespace {
 
 TEST(PolylineTest, DefaultConstruction) {
-    Polyline pl;
+    Polyline const pl;
     EXPECT_TRUE(pl.empty());
     EXPECT_EQ(pl.id, 0);
     EXPECT_FALSE(pl.closed);
 }
 
 TEST(PolylineTest, ConstructWithNumber) {
-    Polyline pl(42);
+    Polyline const pl(42);
     EXPECT_TRUE(pl.empty());
     EXPECT_EQ(pl.id, 42);
 }
 
 TEST(PolylineTest, ConstructWithPoints) {
-    std::vector<Point_2> pts = {Point_2(0, 0), Point_2(1, 0), Point_2(1, 1)};
-    Polyline pl(7, pts);
+    std::vector<Point_2> const pts = {Point_2(0, 0), Point_2(1, 0), Point_2(1, 1)};
+    Polyline const pl(7, pts);
     EXPECT_FALSE(pl.empty());
     EXPECT_EQ(pl.id, 7);
     EXPECT_EQ(pl.points.size(), 3U);
@@ -47,7 +50,7 @@ TEST(PolylineTest, TotalLengthSinglePoint) {
 }
 
 TEST(PolylineTest, TotalLengthEmpty) {
-    Polyline pl;
+    Polyline const pl;
     EXPECT_DOUBLE_EQ(pl.totalLength(), 0.0);
 }
 
@@ -57,7 +60,7 @@ TEST(PolylineTest, ConstructFromPolygon) {
     poly.push_back(Point_2(10, 0));
     poly.push_back(Point_2(10, 10));
 
-    Polyline pl(poly);
+    Polyline const pl(poly);
     EXPECT_TRUE(pl.closed);
     EXPECT_EQ(pl.points.size(), 3U);
 }

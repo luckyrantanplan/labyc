@@ -6,20 +6,21 @@
  */
 
 #include "PolygonTools.h"
+#include "GeomData.h"
+#include "basic/RangeHelper.h"
 
 #include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/Aff_transformation_2.h>
 #include <CGAL/Lazy_kernel.h>
 #include <CGAL/number_utils.h>
-#include <CGAL/Segment_2.h>
 #include <CGAL/Vector_2.h>
 #include <cmath>
-#include <iterator>
+#include <iostream>
+#include <ostream>
 
 namespace laby {
 
-Linear_polygon PolygonTools::makeTrapeze(const Point_2& a, const Point_2& b, const double& thickness1, const double& thickness2) {
+auto PolygonTools::makeTrapeze(const Point_2& a, const Point_2& b, const double& thickness1, const double& thickness2) -> Linear_polygon {
 
     Linear_polygon poly;
     makeTrapeze(poly, a, b, thickness1, thickness2);
@@ -28,26 +29,26 @@ Linear_polygon PolygonTools::makeTrapeze(const Point_2& a, const Point_2& b, con
 }
 
 void PolygonTools::makeTrapeze(Linear_polygon& poly, const Point_2& a, const Point_2& b, const double& thickness1, const double& thickness2) {
-    CGAL::Vector_2<Kernel> vec(a, b);
-    CGAL::Vector_2<Kernel> perp = vec.perpendicular(CGAL::LEFT_TURN);
+    CGAL::Vector_2<Kernel> const vec(a, b);
+    CGAL::Vector_2<Kernel> const perp = vec.perpendicular(CGAL::LEFT_TURN);
 
-    double f = 0.5 / std::sqrt(CGAL::to_double(perp.squared_length()));
+    double const f = 0.5 / std::sqrt(CGAL::to_double(perp.squared_length()));
 
-    double length1 = thickness1 * f;
-    CGAL::Vector_2<Kernel> perp1 = perp * length1;
+    double const length1 = thickness1 * f;
+    CGAL::Vector_2<Kernel> const perp1 = perp * length1;
 
     poly.push_back(a + perp1);
     poly.push_back(a - perp1);
 
-    double length2 = thickness2 * f;
-    CGAL::Vector_2<Kernel> perp2 = perp * length2;
+    double const length2 = thickness2 * f;
+    CGAL::Vector_2<Kernel> const perp2 = perp * length2;
     poly.push_back(b - perp2);
     poly.push_back(b + perp2);
 
 }
 
 void PolygonTools::insertPointPolygon(const Point_2& a2, const Point_2& a3, const Point_2& b0, const Point_2& b1, Linear_polygon& p1) {
-    Kernel::Orientation orientation = CGAL::orientation(a2, a3, b0);
+    Kernel::Orientation const orientation = CGAL::orientation(a2, a3, b0);
     if (orientation == CGAL::RIGHT_TURN) {
         if (CGAL::compare_squared_distance(a3, b0, 0) == CGAL::LARGER) {
             p1.insert(p1.vertices_begin() + 3, b0);
@@ -72,25 +73,25 @@ void PolygonTools::extendPolygon(Linear_polygon& p1, const Linear_polygon& p2) {
 
 }
 
-const Linear_polygon::Segment_2 PolygonTools::getSegmentContainingPoint(const Linear_polygon& p1, const Point_2& center) {
+auto PolygonTools::getSegmentContainingPoint(const Linear_polygon& p1, const Point_2& center) -> const Linear_polygon::Segment_2 {
     for (const Linear_polygon::Segment_2& seg : RangeHelper::make(p1.edges_begin(), p1.edges_end())) {
         if (seg.has_on(center)) {
             return seg;
         }
     }
-    std::cout << "ERROR seg of poly " << p1 << " does not have center point " << center << std::endl;
+    std::cout << "ERROR seg of poly " << p1 << " does not have center point " << center << '\n';
     return Linear_polygon::Segment_2();
 }
 
 
 
-Linear_polygon PolygonTools::createJoinTriangle(const Linear_polygon& p1, const Linear_polygon& p2, const Point_2& center) {
+auto PolygonTools::createJoinTriangle(const Linear_polygon& p1, const Linear_polygon& p2, const Point_2& center) -> Linear_polygon {
     Linear_polygon lp;
 
     const Linear_polygon::Segment_2 seg1 = getSegmentContainingPoint(p1, center);
     const Linear_polygon::Segment_2 seg2 = getSegmentContainingPoint(p2, center);
 
-    Kernel::Orientation orientation = CGAL::orientation(seg1.source(), seg2.source(), seg2.target());
+    Kernel::Orientation const orientation = CGAL::orientation(seg1.source(), seg2.source(), seg2.target());
 
     if (orientation == CGAL::LEFT_TURN) {
 

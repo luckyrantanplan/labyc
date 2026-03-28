@@ -5,6 +5,13 @@
  *      Author: florian
  */
 #include "StrokeArrangement.h"
+#include <cstdint>
+#include <utility>
+#include <CGAL/Intersections_2/Line_2_Line_2.h>
+#include <boost/variant/get.hpp>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Kernel/global_functions_2.h>
+#include <CGAL/enum.h>
 
 namespace laby::alter {
 
@@ -28,11 +35,11 @@ auto TrapezeEdgeInfo::intersection(const Kernel::Line_2& lineA,
 void TrapezeEdgeInfo::computeGeometry(const Kernel::Point_2& firstBoundaryPoint,
                                       const Kernel::Point_2& secondBoundaryPoint,
                                       CGAL::Polygon_2<Kernel>& geometry) const {
-    Kernel::Line_2 centerLine(_source.origin(), _target.origin());
-    Kernel::Line_2 firstPerpendicular = centerLine.perpendicular(firstBoundaryPoint);
-    Kernel::Line_2 secondPerpendicular = centerLine.perpendicular(secondBoundaryPoint);
-    Kernel::Line_2 outerLine(_source.offset2(), _target.offset2());
-    Kernel::Line_2 innerLine(_source.offset1(), _target.offset1());
+    Kernel::Line_2 const centerLine(_source.origin(), _target.origin());
+    Kernel::Line_2 const firstPerpendicular = centerLine.perpendicular(firstBoundaryPoint);
+    Kernel::Line_2 const secondPerpendicular = centerLine.perpendicular(secondBoundaryPoint);
+    Kernel::Line_2 const outerLine(_source.offset2(), _target.offset2());
+    Kernel::Line_2 const innerLine(_source.offset1(), _target.offset1());
     geometry.push_back(intersection(innerLine, firstPerpendicular));
     geometry.push_back(intersection(innerLine, secondPerpendicular));
     geometry.push_back(intersection(outerLine, secondPerpendicular));

@@ -3,7 +3,9 @@
  * @brief Unit tests for SegmentPS segment comparison
  */
 
+#include <CGAL/Point_set_2.h>
 #include <gtest/gtest.h>
+#include "GeomData.h"
 #include "SegmentPS.h"
 
 namespace laby {
@@ -21,11 +23,11 @@ TEST(SegmentPSTest, ComparisonBySquaredLength) {
     auto v1 = ps.nearest_neighbor(Point_2(1, 0));
     auto v2 = ps.nearest_neighbor(Point_2(10, 0));
 
-    SegmentPS short_seg(&*v0, &*v1);  // length^2 = 1
-    SegmentPS long_seg(&*v0, &*v2);   // length^2 = 100
+    SegmentPS const shortSeg(&*v0, &*v1);  // length^2 = 1
+    SegmentPS const longSeg(&*v0, &*v2);   // length^2 = 100
 
-    EXPECT_TRUE(short_seg < long_seg);
-    EXPECT_FALSE(long_seg < short_seg);
+    EXPECT_TRUE(shortSeg < longSeg);
+    EXPECT_FALSE(longSeg < shortSeg);
 }
 
 TEST(SegmentPSTest, EqualLengthNotLess) {
@@ -38,8 +40,8 @@ TEST(SegmentPSTest, EqualLengthNotLess) {
     auto v1 = ps.nearest_neighbor(Point_2(3, 4));   // dist^2 = 25
     auto v2 = ps.nearest_neighbor(Point_2(5, 0));   // dist^2 = 25
 
-    SegmentPS seg1(&*v0, &*v1);
-    SegmentPS seg2(&*v0, &*v2);
+    SegmentPS const seg1(&*v0, &*v1);
+    SegmentPS const seg2(&*v0, &*v2);
 
     // Equal squared length: neither should be less
     EXPECT_FALSE(seg1 < seg2);

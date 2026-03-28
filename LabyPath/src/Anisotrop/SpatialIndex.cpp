@@ -7,22 +7,26 @@
 
 #include "SpatialIndex.h"
 
+#include <CGAL/Segment_2.h>
+#include <CGAL/Distance_2/Segment_2_Segment_2.h>
+#include <CGAL/Distance_2/Point_2_Segment_2.h>
 #include <algorithm>
 #include <cmath>
 
 #include <boost/geometry/index/predicates.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/tuple/detail/tuple_basic.hpp>
 // #include <CGAL/Arr_dcel_base.h>
+#include "PolyConvex.h"
+#include "GeomData.h"
 #include "basic/EasyProfilerCompat.h"
-#include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
 #include <CGAL/Bbox_2.h>
 #include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Point_2.h>
-#include <CGAL/Polygon_2.h>
 #include <CGAL/Vector_2.h>
 #include <CGAL/number_utils.h>
-#include <CGAL/squared_distance_2.h>
+#include <vector>
+#include <cstdint>
+#include <cstddef>
+#include <unordered_set>
 
 #include "Net.h"
 #include "QueueCost.h"
@@ -42,7 +46,7 @@ SpatialIndex::SpatialIndex(std::vector<PolyConvex>& polyConvexList)
 
 void SpatialIndex::insert(const PolyConvex& polyConvex) {
     EASY_FUNCTION();
-    CGAL::Bbox_2 bbox = polyConvex._geometry.bbox();
+    CGAL::Bbox_2 const bbox = polyConvex._geometry.bbox();
     _rtree.insert(Value{getBox(bbox), polyConvex._id});
 }
 
@@ -53,9 +57,9 @@ auto SpatialIndex::getBox(const CGAL::Bbox_2& bbox) -> Box {
 
 auto SpatialIndex::getApproxSeg(const PolyConvex& polyConvex) -> CGAL::Segment_2<KApprox> {
     const CGAL::Segment_2<Kernel>& segment = polyConvex._supportHe->curve();
-    CGAL::Point_2<KApprox> sourcePoint(CGAL::to_double(segment.source().x()),
+    CGAL::Point_2<KApprox> const sourcePoint(CGAL::to_double(segment.source().x()),
                                        CGAL::to_double(segment.source().y()));
-    CGAL::Point_2<KApprox> targetPoint(CGAL::to_double(segment.target().x()),
+    CGAL::Point_2<KApprox> const targetPoint(CGAL::to_double(segment.target().x()),
                                        CGAL::to_double(segment.target().y()));
     return {sourcePoint, targetPoint};
 }
@@ -64,7 +68,7 @@ auto SpatialIndex::isPointInside(const PolyConvex& polyConvex, const Vertex& ver
                                  uint32_t& index) const -> bool {
     EASY_FUNCTION();
 
-    CGAL::Bbox_2 bbox = vertex.point().bbox();
+    CGAL::Bbox_2 const bbox = vertex.point().bbox();
 
     return _rtree.qbegin(boost::geometry::index::intersects(getBox(bbox)) && //
                          boost::geometry::index::satisfies([&polyConvex, &vertex, &index,
@@ -129,7 +133,7 @@ auto SpatialIndex::testPinProximity(const CGAL::Segment_2<KApprox>& segment, con
                                     const Net& /*net*/, double thickness) -> bool {
     if (vertex.data().getType() == VertexInfo::PIN) {
 
-        CGAL::Point_2<KApprox> point(CGAL::to_double(vertex.point().x()),
+        CGAL::Point_2<KApprox> const point(CGAL::to_double(vertex.point().x()),
                                      CGAL::to_double(vertex.point().y()));
         if (CGAL::to_double(CGAL::squared_distance(point, segment)) <= thickness * thickness) {
             return true;
@@ -141,9 +145,9 @@ auto SpatialIndex::testPinProximity(const CGAL::Segment_2<KApprox>& segment, con
 auto SpatialIndex::testIntersectionTest(const PolyConvex& polyConvex,
                                         const PolyConvex& otherPolyConvex) -> bool {
     const CGAL::Segment_2<KApprox> otherSegment = getApproxSeg(otherPolyConvex);
-    double otherThickness = otherPolyConvex.thickness();
+    double const otherThickness = otherPolyConvex.thickness();
     const CGAL::Segment_2<KApprox> segment = getApproxSeg(polyConvex);
-    double thickness = polyConvex.thickness();
+    double const thickness = polyConvex.thickness();
 
     return areSegmentsCloseEnough(segment, otherSegment, (otherThickness + thickness) / 2);
 }
@@ -159,8 +163,8 @@ auto SpatialIndex::intersectionTest(QueueCost& cost, const PolyConvex& /*polyCon
     //        return false;
     //    }
     const CGAL::Segment_2<KApprox> otherSegment = getApproxSeg(otherPolyConvex);
-    double otherThickness = otherPolyConvex.thickness();
-    double minSeparation = (otherThickness + thickness) / 2;
+    double const otherThickness = otherPolyConvex.thickness();
+    double const minSeparation = (otherThickness + thickness) / 2;
     if (areSegmentsCloseEnough(segment, otherSegment, minSeparation)) {
 
         const Vertex& sourceVertex = *otherPolyConvex._supportHe->source();
@@ -178,10 +182,10 @@ auto SpatialIndex::intersectionTest(QueueCost& cost, const PolyConvex& /*polyCon
             return true;
         }
 
-        double cosineValue = cosinus(segment, otherSegment);
+        double const cosineValue = cosinus(segment, otherSegment);
         // <45 degree : true if we should block
         if (cosineValue * cosineValue > kBlockingCosineThreshold) {
-            int32_t netId = otherPolyConvex._supportHe->curve().data().getNet();
+            int32_t const netId = otherPolyConvex._supportHe->curve().data().getNet();
             if (cost.memory_source.count(netId) != 0U) {
                 cost.future_memory_source.emplace(netId);
             } else if (targetNets.count(netId) != 0U) {
@@ -203,7 +207,7 @@ void SpatialIndex::updateCostIfIntersect(const PolyConvex& polyConvex, const Net
                                          QueueCost& cost) const {
     EASY_FUNCTION();
 
-    CGAL::Bbox_2 bbox = polyConvex._geometry.bbox();
+    CGAL::Bbox_2 const bbox = polyConvex._geometry.bbox();
     const CGAL::Segment_2<KApprox> segment = getApproxSeg(polyConvex);
     double thickness = polyConvex.thickness();
 

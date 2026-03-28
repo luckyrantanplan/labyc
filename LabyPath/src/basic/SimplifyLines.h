@@ -35,11 +35,11 @@ class SimplifyLines {
 
     using LineString = boost::geometry::model::linestring<xy>;
 
-    static LineString decimate(LineString& line, double dist);
+    static auto decimate(LineString& line, double dist) -> LineString;
 
     using LineStringIndexed = boost::geometry::model::linestring<IndexedPoint>;
 
-    static LineStringIndexed decimateIndex(LineStringIndexed& line, double dist);
+    static auto decimateIndex(LineStringIndexed& line, double dist) -> LineStringIndexed;
 };
 
 } /* namespace laby */

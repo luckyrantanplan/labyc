@@ -6,8 +6,22 @@
  */
 
 #include "AlternateRoute.h"
+#include <cstdint>
+#include <cstddef>
+#include <CGAL/number_utils.h>
+#include <iostream>
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
+#include <CGAL/Kernel/global_functions_2.h>
+#include <cmath>
+#include <CGAL/Intersections_2/Line_2_Line_2.h>
+#include <boost/variant/get.hpp>
+#include <CGAL/Bbox_2.h>
+#include <algorithm>
+#include <CGAL/enum.h>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "../Anisotrop/Routing.h"
 #include "../GridIndex.h"
@@ -16,10 +30,14 @@
 #include "../Rendering/GraphicRendering.h"
 #include "../SVGParser/Loader.h"
 #include "../VoronoiMedialSkeleton.h"
-#include "../basic/Color.h"
-#include "../basic/LinearGradient.h"
 #include "../basic/SimplifyLines.h"
 #include "../flatteningOverlap/PathRendering.h"
+#include "AlternaRoute/StrokeArrangement.h"
+#include "basic/RangeHelper.h"
+#include "GeomData.h"
+#include "Ribbon.h"
+#include "Polyline.h"
+#include "protoc/AllConfig.pb.h"
 
 namespace laby {
 
@@ -97,7 +115,7 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
             lineString.emplace_back(IndexedPoint(CGAL::to_double(pair.offset().x()),
                                                  CGAL::to_double(pair.offset().y()), i));
         }
-        SimplifyLines::LineStringIndexed simpleLine =
+        SimplifyLines::LineStringIndexed const simpleLine =
             SimplifyLines::decimateIndex(lineString, distance);
 
         std::vector<AlternateRoute::OffsetPair> result;
@@ -193,12 +211,12 @@ auto AlternateRoute::coupleList(const Halfedge& halfedge,
         throw std::runtime_error("direction of ccb face is not voronoi");
     }
 
-    Kernel::Line_2 supportLine(halfedge.curve());
+    Kernel::Line_2 const supportLine(halfedge.curve());
 
     {
         addPoint(left, {halfedgeIterator->source()->point(), halfedgeIterator->target()->point()});
         OffsetPair& pair = left.back();
-        Kernel::Vector_2 vect = pair.offset() - supportLine.projection(pair.offset());
+        Kernel::Vector_2 const vect = pair.offset() - supportLine.projection(pair.offset());
         pair.setOffset(pair.origin() + vect);
     }
 
@@ -212,7 +230,7 @@ auto AlternateRoute::coupleList(const Halfedge& halfedge,
             addPoint(left,
                      {halfedgeIterator->target()->point(), halfedgeIterator->source()->point()});
             OffsetPair& pair = left.back();
-            Kernel::Vector_2 vect = pair.offset() - supportLine.projection(pair.offset());
+            Kernel::Vector_2 const vect = pair.offset() - supportLine.projection(pair.offset());
             pair.setOffset(pair.origin() + vect);
             break;
         }
@@ -225,8 +243,8 @@ void AlternateRoute::addTriplet(alter::OffsetTriplet& triplet, const OffsetPair&
 
     triplet.setOrigin(offsetPair.origin());
     triplet.setOffset1(offsetPair.offset());
-    Kernel::Line_2 firstLine(lineStart, lineEnd);
-    Kernel::Line_2 secondLine(triplet.origin(), triplet.offset1());
+    Kernel::Line_2 const firstLine(lineStart, lineEnd);
+    Kernel::Line_2 const secondLine(triplet.origin(), triplet.offset1());
     auto variant2 = CGAL::intersection(firstLine, secondLine);
     if (variant2) {
         if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
@@ -266,9 +284,9 @@ auto AlternateRoute::voronoiArr(const Arrangement_2& arrangement, int32_t direct
                                       viewBox.ymax() + viewBoxLengthY);
     framePolyline.closed = true;
 
-    CGAL::Bbox_2 frameBox(viewBox.xmin() - 1, viewBox.ymin() - 1, viewBox.xmax() + 1,
+    CGAL::Bbox_2 const frameBox(viewBox.xmin() - 1, viewBox.ymin() - 1, viewBox.xmax() + 1,
                           viewBox.ymax() + 1);
-    VoronoiMedialSkeleton vor(ribContourFramed, frameBox);
+    VoronoiMedialSkeleton const vor(ribContourFramed, frameBox);
 
     std::cout << "vor.get_vor_segments().size() " << vor.get_vor_segments().size() << '\n';
 
@@ -293,7 +311,7 @@ auto AlternateRoute::createTripletList(const Halfedge& halfedge,
             tripletList.emplace_back();
             alter::OffsetTriplet& triplet = tripletList.back();
 
-            Kernel::Comparison_result predicat = CGAL::compare_distance_to_point(
+            Kernel::Comparison_result const predicat = CGAL::compare_distance_to_point(
                 halfedge.target()->point(), left.at(leftIndex).origin(),
                 right.at(rightIndex).origin());
             switch (predicat) {
@@ -332,7 +350,7 @@ void AlternateRoute::ribToTrapeze(const Ribbon& rib,
                                   const Arrangement_2& arrangement, const CGAL::Bbox_2& viewBox,
                                   const Ribbon& ribLimit) {
 
-    int32_t direction = rib.strokeColor();
+    int32_t const direction = rib.strokeColor();
     std::cout << "start voronoi_arr \n";
 
     Arrangement_2 arrDir = voronoiArr(arrangement, direction, viewBox, ribLimit);
@@ -428,7 +446,7 @@ AlternateRoute::AlternateRoute(proto::AlternateRouting config, const proto::File
     svgp::Loader load(filepaths.inputfile());
     std::vector<Ribbon>& ribList = load.ribList();
     copyStrokeColorToFillColor(ribList);
-    std::unordered_map<uint32_t, GridIndex> mapOfGrids = GridIndex::getIndexMap(ribList);
+    std::unordered_map<uint32_t, GridIndex> const mapOfGrids = GridIndex::getIndexMap(ribList);
     std::vector<alter::SegmentTrapezeInfo2> trapezeVect =
         buildTrapezeVector(mapOfGrids, ribList, load.viewBox());
     std::cout << "trapezeVect filled\n";

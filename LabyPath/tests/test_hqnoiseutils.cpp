@@ -60,24 +60,24 @@ TEST(HqNoiseUtilsTest, LerpBeyondOne) {
 // ── lerpC (complex) ────────────────────────────────────────────────────────
 
 TEST(HqNoiseUtilsTest, LerpComplexAtZero) {
-    std::complex<double> a(1.0, 2.0);
-    std::complex<double> b(3.0, 4.0);
+    std::complex<double> const a(1.0, 2.0);
+    std::complex<double> const b(3.0, 4.0);
     auto result = HqNoiseUtils::lerpC(a, b, 0.0);
     EXPECT_DOUBLE_EQ(result.real(), 1.0);
     EXPECT_DOUBLE_EQ(result.imag(), 2.0);
 }
 
 TEST(HqNoiseUtilsTest, LerpComplexAtOne) {
-    std::complex<double> a(1.0, 2.0);
-    std::complex<double> b(3.0, 4.0);
+    std::complex<double> const a(1.0, 2.0);
+    std::complex<double> const b(3.0, 4.0);
     auto result = HqNoiseUtils::lerpC(a, b, 1.0);
     EXPECT_DOUBLE_EQ(result.real(), 3.0);
     EXPECT_DOUBLE_EQ(result.imag(), 4.0);
 }
 
 TEST(HqNoiseUtilsTest, LerpComplexAtHalf) {
-    std::complex<double> a(0.0, 0.0);
-    std::complex<double> b(10.0, 20.0);
+    std::complex<double> const a(0.0, 0.0);
+    std::complex<double> const b(10.0, 20.0);
     auto result = HqNoiseUtils::lerpC(a, b, 0.5);
     EXPECT_DOUBLE_EQ(result.real(), 5.0);
     EXPECT_DOUBLE_EQ(result.imag(), 10.0);

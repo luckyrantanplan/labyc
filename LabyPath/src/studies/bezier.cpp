@@ -6,8 +6,11 @@
  */
 
 // Constructing an arrangement of Bezier curves.
-#include <CGAL/basic.h>
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <iostream>
+#include <list>
+#include <vector>
+#include <utility>
 
 #ifndef CGAL_USE_CORE
 
@@ -18,36 +21,34 @@ int main ()
 }
 #else
 
-#include <CGAL/CORE/Gmp.h>
 
 #include <CGAL/Cartesian.h>
 #include <CGAL/CORE_algebraic_number_traits.h>
 #include <CGAL/Arr_Bezier_curve_traits_2.h>
 #include <CGAL/Arrangement_2.h>
-typedef CGAL::CORE_algebraic_number_traits Nt_traits;
-typedef Nt_traits::Rational NT;
-typedef Nt_traits::Rational Rational;
-typedef Nt_traits::Algebraic Algebraic;
-typedef CGAL::Cartesian<Rational> Rat_kernel;
-typedef CGAL::Cartesian<Algebraic> Alg_kernel;
-typedef Rat_kernel::Point_2 Rat_point_2;
-typedef CGAL::Arr_Bezier_curve_traits_2<Rat_kernel, Alg_kernel, Nt_traits> Traits_2;
-typedef Traits_2::Point_2 Point_2;
-typedef Traits_2::Curve_2 Bezier_curve_2;
-typedef CGAL::Arrangement_2<Traits_2> Arrangement_2;
+using Nt_traits = CGAL::CORE_algebraic_number_traits;
+using NT = Nt_traits::Rational;
+using Rational = Nt_traits::Rational;
+using Algebraic = Nt_traits::Algebraic;
+using Rat_kernel = CGAL::Cartesian<Rational>;
+using Alg_kernel = CGAL::Cartesian<Algebraic>;
+using Rat_point_2 = Rat_kernel::Point_2;
+using Traits_2 = CGAL::Arr_Bezier_curve_traits_2<Rat_kernel, Alg_kernel, Nt_traits>;
+using Point_2 = Traits_2::Point_2;
+using Bezier_curve_2 = Traits_2::Curve_2;
+using Arrangement_2 = CGAL::Arrangement_2<Traits_2>;
 
-#include <CGAL/Exact_rational.h>
 
-int main3(int argc, char *argv[]) {
+auto main3(int  /*argc*/, char * /*argv*/[]) -> int {
 
     std::list<Bezier_curve_2> curves;
 
     std::vector<Point_2> v { { 0, 0 }, { 200, 200 }, { 100, 0 }, { 0, 100 } };
 
-    Bezier_curve_2 B(v.begin(), v.end());
+    Bezier_curve_2 const b(v.begin(), v.end());
 
-    curves.push_back(B);
-    std::cout << "B = {" << B << "}" << std::endl;
+    curves.push_back(b);
+    std::cout << "B = {" << b << "}" << '\n';
 
     // Construct the arrangement.
     Arrangement_2 arr;
@@ -56,12 +57,12 @@ int main3(int argc, char *argv[]) {
     for (Arrangement_2::Face_const_iterator f = arr.faces_begin(); f != arr.faces_end(); ++f) {
 
         for (Arrangement_2::Inner_ccb_const_iterator ccbIt = f->inner_ccbs_begin(); ccbIt != f->inner_ccbs_end(); ++ccbIt) {
-            Arrangement_2::Ccb_halfedge_const_circulator ccb = *ccbIt;
+            Arrangement_2::Ccb_halfedge_const_circulator const ccb = *ccbIt;
             Arrangement_2::Ccb_halfedge_const_circulator current = ccb;
 
             do {
-                Arrangement_2::Halfedge_const_handle he =current;
-                std::pair<double, double> pair1= he->curve().parameter_range();
+                Arrangement_2::Halfedge_const_handle const he =current;
+                std::pair<double, double> const pair1= he->curve().parameter_range();
 
 
                 std::cout << "pair " << pair1.first << ";" << pair1.second << "\n";
@@ -72,7 +73,7 @@ int main3(int argc, char *argv[]) {
     }
 
     // Print the arrangement size.
-    std::cout << "The arrangement size:" << std::endl << "   V = " << arr.number_of_vertices() << ",  E = " << arr.number_of_edges() << ",  F = " << arr.number_of_faces() << std::endl;
+    std::cout << "The arrangement size:" << '\n' << "   V = " << arr.number_of_vertices() << ",  E = " << arr.number_of_edges() << ",  F = " << arr.number_of_faces() << '\n';
     return 0;
 }
 #endif

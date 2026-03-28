@@ -14,87 +14,87 @@
 #include <fftw3.h>
 #include <stdexcept>
 
-namespace laby {
-namespace fft {
+
+namespace laby::fft {
 
 /**
  * @brief 1-D complex array backed by fftw_malloc (SIMD-aligned).
  */
 class Array1D {
-    fftw_complex* data_ = nullptr;
-    uint32_t nx_ = 0;
+    fftw_complex* _data = nullptr;
+    uint32_t _nx = 0;
 
   public:
     explicit Array1D(uint32_t nx)
-        : data_{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx))}, nx_{nx} {
-        if (data_ == nullptr) {
+        : _data{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx))}, _nx{nx} {
+        if (_data == nullptr) {
             throw std::bad_alloc();
         }
     }
 
     ~Array1D() {
-        if (data_ != nullptr) {
-            fftw_free(data_);
+        if (_data != nullptr) {
+            fftw_free(_data);
         }
     }
 
     Array1D(const Array1D&) = delete;
-    Array1D& operator=(const Array1D&) = delete;
+    auto operator=(const Array1D&) -> Array1D& = delete;
 
-    Array1D(Array1D&& other) noexcept : data_{other.data_}, nx_{other.nx_} {
-        other.data_ = nullptr;
-        other.nx_ = 0;
+    Array1D(Array1D&& other) noexcept : _data{other._data}, _nx{other._nx} {
+        other._data = nullptr;
+        other._nx = 0;
     }
 
-    Array1D& operator=(Array1D&& other) noexcept {
+    auto operator=(Array1D&& other) noexcept -> Array1D& {
         if (this != &other) {
-            if (data_ != nullptr) {
-                fftw_free(data_);
+            if (_data != nullptr) {
+                fftw_free(_data);
             }
-            data_ = other.data_;
-            nx_ = other.nx_;
-            other.data_ = nullptr;
-            other.nx_ = 0;
+            _data = other._data;
+            _nx = other._nx;
+            other._data = nullptr;
+            other._nx = 0;
         }
         return *this;
     }
 
-    uint32_t size() const {
-        return nx_;
+    [[nodiscard]] auto size() const -> uint32_t {
+        return _nx;
     }
-    fftw_complex* raw() {
-        return data_;
+    auto raw() -> fftw_complex* {
+        return _data;
     }
-    const fftw_complex* raw() const {
-        return data_;
-    }
-
-    std::complex<double>& operator[](uint32_t i) {
-        return reinterpret_cast<std::complex<double>*>(data_)[i];
-    }
-    const std::complex<double>& operator[](uint32_t i) const {
-        return reinterpret_cast<const std::complex<double>*>(data_)[i];
-    }
-    std::complex<double>& operator[](int32_t i) {
-        assert(i >= 0);
-        return reinterpret_cast<std::complex<double>*>(data_)[i];
-    }
-    const std::complex<double>& operator[](int32_t i) const {
-        assert(i >= 0);
-        return reinterpret_cast<const std::complex<double>*>(data_)[i];
+    [[nodiscard]] auto raw() const -> const fftw_complex* {
+        return _data;
     }
 
-    std::complex<double>& operator()(uint32_t i) {
+    auto operator[](uint32_t i) -> std::complex<double>& {
+        return reinterpret_cast<std::complex<double>*>(_data)[i];
+    }
+    auto operator[](uint32_t i) const -> const std::complex<double>& {
+        return reinterpret_cast<const std::complex<double>*>(_data)[i];
+    }
+    auto operator[](int32_t i) -> std::complex<double>& {
+        assert(i >= 0);
+        return reinterpret_cast<std::complex<double>*>(_data)[i];
+    }
+    auto operator[](int32_t i) const -> const std::complex<double>& {
+        assert(i >= 0);
+        return reinterpret_cast<const std::complex<double>*>(_data)[i];
+    }
+
+    auto operator()(uint32_t i) -> std::complex<double>& {
         return (*this)[i];
     }
-    const std::complex<double>& operator()(uint32_t i) const {
+    auto operator()(uint32_t i) const -> const std::complex<double>& {
         return (*this)[i];
     }
-    std::complex<double>& operator()(int32_t i) {
+    auto operator()(int32_t i) -> std::complex<double>& {
         assert(i >= 0);
         return (*this)[static_cast<uint32_t>(i)];
     }
-    const std::complex<double>& operator()(int32_t i) const {
+    auto operator()(int32_t i) const -> const std::complex<double>& {
         assert(i >= 0);
         return (*this)[static_cast<uint32_t>(i)];
     }
@@ -104,96 +104,96 @@ class Array1D {
  * @brief 2-D complex array backed by fftw_malloc (SIMD-aligned, row-major).
  */
 class Array2D {
-    fftw_complex* data_ = nullptr;
-    uint32_t nx_ = 0;
-    uint32_t ny_ = 0;
+    fftw_complex* _data = nullptr;
+    uint32_t _nx = 0;
+    uint32_t _ny = 0;
 
   public:
     Array2D(uint32_t nx, uint32_t ny)
-        : data_{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx * ny))}, nx_{nx},
-          ny_{ny} {
-        if (data_ == nullptr) {
+        : _data{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx * ny))}, _nx{nx},
+          _ny{ny} {
+        if (_data == nullptr) {
             throw std::bad_alloc();
         }
     }
 
     ~Array2D() {
-        if (data_ != nullptr) {
-            fftw_free(data_);
+        if (_data != nullptr) {
+            fftw_free(_data);
         }
     }
 
     Array2D(const Array2D&) = delete;
-    Array2D& operator=(const Array2D&) = delete;
+    auto operator=(const Array2D&) -> Array2D& = delete;
 
-    Array2D(Array2D&& other) noexcept : data_{other.data_}, nx_{other.nx_}, ny_{other.ny_} {
-        other.data_ = nullptr;
-        other.nx_ = 0;
-        other.ny_ = 0;
+    Array2D(Array2D&& other) noexcept : _data{other._data}, _nx{other._nx}, _ny{other._ny} {
+        other._data = nullptr;
+        other._nx = 0;
+        other._ny = 0;
     }
 
-    Array2D& operator=(Array2D&& other) noexcept {
+    auto operator=(Array2D&& other) noexcept -> Array2D& {
         if (this != &other) {
-            if (data_ != nullptr) {
-                fftw_free(data_);
+            if (_data != nullptr) {
+                fftw_free(_data);
             }
-            data_ = other.data_;
-            nx_ = other.nx_;
-            ny_ = other.ny_;
-            other.data_ = nullptr;
-            other.nx_ = 0;
-            other.ny_ = 0;
+            _data = other._data;
+            _nx = other._nx;
+            _ny = other._ny;
+            other._data = nullptr;
+            other._nx = 0;
+            other._ny = 0;
         }
         return *this;
     }
 
-    uint32_t nx() const {
-        return nx_;
+    [[nodiscard]] auto nx() const -> uint32_t {
+        return _nx;
     }
-    uint32_t ny() const {
-        return ny_;
+    [[nodiscard]] auto ny() const -> uint32_t {
+        return _ny;
     }
-    fftw_complex* raw() {
-        return data_;
+    auto raw() -> fftw_complex* {
+        return _data;
     }
-    const fftw_complex* raw() const {
-        return data_;
+    [[nodiscard]] auto raw() const -> const fftw_complex* {
+        return _data;
     }
 
     /** arr[i] returns pointer to row i, so arr[i][j] works. */
-    std::complex<double>* operator[](uint32_t i) {
-        return reinterpret_cast<std::complex<double>*>(data_) + static_cast<std::size_t>(i) * ny_;
+    auto operator[](uint32_t i) -> std::complex<double>* {
+        return reinterpret_cast<std::complex<double>*>(_data) + static_cast<std::size_t>(i) * _ny;
     }
-    const std::complex<double>* operator[](uint32_t i) const {
-        return reinterpret_cast<const std::complex<double>*>(data_) +
-               static_cast<std::size_t>(i) * ny_;
+    auto operator[](uint32_t i) const -> const std::complex<double>* {
+        return reinterpret_cast<const std::complex<double>*>(_data) +
+               static_cast<std::size_t>(i) * _ny;
     }
-    std::complex<double>* operator[](int32_t i) {
+    auto operator[](int32_t i) -> std::complex<double>* {
         assert(i >= 0);
-        return reinterpret_cast<std::complex<double>*>(data_) +
-               static_cast<std::size_t>(static_cast<uint32_t>(i)) * ny_;
+        return reinterpret_cast<std::complex<double>*>(_data) +
+               static_cast<std::size_t>(static_cast<uint32_t>(i)) * _ny;
     }
-    const std::complex<double>* operator[](int32_t i) const {
+    auto operator[](int32_t i) const -> const std::complex<double>* {
         assert(i >= 0);
-        return reinterpret_cast<const std::complex<double>*>(data_) +
-               static_cast<std::size_t>(static_cast<uint32_t>(i)) * ny_;
+        return reinterpret_cast<const std::complex<double>*>(_data) +
+               static_cast<std::size_t>(static_cast<uint32_t>(i)) * _ny;
     }
 
-    std::complex<double>& operator()(uint32_t i, uint32_t j) {
-        return reinterpret_cast<std::complex<double>*>(data_)[i * ny_ + j];
+    auto operator()(uint32_t i, uint32_t j) -> std::complex<double>& {
+        return reinterpret_cast<std::complex<double>*>(_data)[i * _ny + j];
     }
-    const std::complex<double>& operator()(uint32_t i, uint32_t j) const {
-        return reinterpret_cast<const std::complex<double>*>(data_)[i * ny_ + j];
+    auto operator()(uint32_t i, uint32_t j) const -> const std::complex<double>& {
+        return reinterpret_cast<const std::complex<double>*>(_data)[i * _ny + j];
     }
-    std::complex<double>& operator()(int32_t i, int32_t j) {
+    auto operator()(int32_t i, int32_t j) -> std::complex<double>& {
         assert(i >= 0 && j >= 0);
         return reinterpret_cast<std::complex<double>*>(
-            data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
+            _data)[static_cast<uint32_t>(i) * _ny + static_cast<uint32_t>(j)];
     }
-    const std::complex<double>& operator()(int32_t i, int32_t j) const {
+    auto operator()(int32_t i, int32_t j) const -> const std::complex<double>& {
         assert(i >= 0 && j >= 0);
         return reinterpret_cast<const std::complex<double>*>(
-            data_)[static_cast<uint32_t>(i) * ny_ + static_cast<uint32_t>(j)];
+            _data)[static_cast<uint32_t>(i) * _ny + static_cast<uint32_t>(j)];
     }
 };
 
@@ -201,47 +201,47 @@ class Array2D {
  * @brief RAII wrapper for fftw_plan.
  */
 class Plan {
-    fftw_plan plan_ = nullptr;
+    fftw_plan _plan = nullptr;
 
   public:
     Plan() = default;
 
-    explicit Plan(fftw_plan p) : plan_{p} {
-        if (plan_ == nullptr) {
+    explicit Plan(fftw_plan p) : _plan{p} {
+        if (_plan == nullptr) {
             throw std::runtime_error("fftw_plan creation failed");
         }
     }
 
     ~Plan() {
-        if (plan_ != nullptr) {
-            fftw_destroy_plan(plan_);
+        if (_plan != nullptr) {
+            fftw_destroy_plan(_plan);
         }
     }
 
     Plan(const Plan&) = delete;
-    Plan& operator=(const Plan&) = delete;
+    auto operator=(const Plan&) -> Plan& = delete;
 
-    Plan(Plan&& other) noexcept : plan_{other.plan_} {
-        other.plan_ = nullptr;
+    Plan(Plan&& other) noexcept : _plan{other._plan} {
+        other._plan = nullptr;
     }
 
-    Plan& operator=(Plan&& other) noexcept {
+    auto operator=(Plan&& other) noexcept -> Plan& {
         if (this != &other) {
-            if (plan_ != nullptr) {
-                fftw_destroy_plan(plan_);
+            if (_plan != nullptr) {
+                fftw_destroy_plan(_plan);
             }
-            plan_ = other.plan_;
-            other.plan_ = nullptr;
+            _plan = other._plan;
+            other._plan = nullptr;
         }
         return *this;
     }
 
     void execute() {
-        if (plan_ != nullptr) {
-            fftw_execute(plan_);
+        if (_plan != nullptr) {
+            fftw_execute(_plan);
         }
     }
 };
 
-} // namespace fft
-} // namespace laby
+} // namespace laby::fft
+
