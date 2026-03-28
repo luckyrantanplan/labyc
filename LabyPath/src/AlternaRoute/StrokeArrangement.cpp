@@ -8,9 +8,9 @@
 #include <CGAL/Distance_2/Point_2_Point_2.h>
 #include <CGAL/Intersections_2/Line_2_Line_2.h>
 #include <CGAL/Polygon_2.h>
-#include <boost/variant/get.hpp>
 #include <cstdint>
 #include <utility>
+#include <variant>
 
 namespace laby::alter {
 
@@ -24,7 +24,7 @@ auto TrapezeEdgeInfo::intersection(const Kernel::Line_2& lineA,
 
     auto variant2 = CGAL::intersection(lineA, lineB);
     if (variant2) {
-        if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
+        if (const Kernel::Point_2* intersectionPoint = std::get_if<Kernel::Point_2>(&*variant2)) {
             return *intersectionPoint;
         }
     }

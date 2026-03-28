@@ -35,6 +35,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 
 #include "Ribbon.h"
 #include "agg/agg_curves.h"
@@ -72,10 +73,10 @@ CroppedVoronoiFromDelaunay::CustomParabola::computeBezier() {
         return CGAL::midpoint(p1, p2);
     }
     if (const Kernel_sqrt::Point_2* bezier_control_point =
-            boost::get<Kernel_sqrt::Point_2>(&*result4)) {
+            std::get_if<Kernel_sqrt::Point_2>(&*result4)) {
         return *bezier_control_point;
     } else {
-        std::cout << "no bezier_control_point " << *result4 << std::endl;
+        std::cout << "no bezier_control_point" << std::endl;
     };
     return CGAL::midpoint(p1, p2);
 }

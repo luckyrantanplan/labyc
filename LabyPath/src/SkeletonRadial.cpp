@@ -10,7 +10,6 @@
 #include <CGAL/Intersections_2/Line_2_Segment_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
-#include <boost/variant/get.hpp>
 
 #include "basic/RangeHelper.h"
 #include <CGAL/box_intersection_d.h>
@@ -21,6 +20,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace laby {
@@ -79,7 +79,7 @@ auto SkeletonRadial::traverseCorner(const Incidence& incidence, const FaceHelper
     for (const basic::HalfedgeNode& he2 : RangeHelper::make(incidence._hedge->ccb())) {
         auto variant2 = CGAL::intersection(line, Kernel::Segment_2(he2.curve()));
         if (variant2) {
-            if (const Kernel::Point_2* p2 = boost::get<Kernel::Point_2>(&*variant2)) {
+            if (const Kernel::Point_2* p2 = std::get_if<Kernel::Point_2>(&*variant2)) {
                 if (CGAL::squared_distance(*p2, faceHelper._o) > 0. and //
                     CGAL::squared_distance(*p2, incidence._test) > 0) {
                     if (filterNewVertex(result, *p2)) {
@@ -105,7 +105,7 @@ auto SkeletonRadial::traverseRay(const basic::HalfedgeNode& hedge, const Kernel:
     for (const basic::HalfedgeNode& he : RangeHelper::make(hedge.next()->ccb())) {
         auto variant = CGAL::intersection(line, Kernel::Segment_2(he.curve()));
         if (variant) {
-            if (const Kernel::Point_2* s = boost::get<Kernel::Point_2>(&*variant)) {
+            if (const Kernel::Point_2* s = std::get_if<Kernel::Point_2>(&*variant)) {
                 if (*s != test) {
                     if (filterNewVertex(result, *s)) {
                         result.emplace_back(*s);
@@ -185,7 +185,7 @@ auto SkeletonRadial::filterNewVertex(const std::vector<Kernel::Point_2>& result,
                 auto variant = CGAL::intersection(pseg, seg);
                 if (variant) {
 
-                    if (boost::get<Kernel::Segment_2>(&*variant) != nullptr) {
+                    if (std::get_if<Kernel::Segment_2>(&*variant) != nullptr) {
                         return false;
                     }
                 }
@@ -358,7 +358,7 @@ void SkeletonRadial::cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2&
                               std::vector<Kernel::Segment_2>& result2) const {
     auto obj = CGAL::intersection(line, bbox);
     if (obj) {
-        const Kernel::Segment_2* s = boost::get<Kernel::Segment_2>(&*obj);
+        const Kernel::Segment_2* s = std::get_if<Kernel::Segment_2>(&*obj);
 
         if (s != nullptr) {
             Kernel::Segment_2 ss = Kernel::Segment_2(s->source() + vect, s->target() + vect);
@@ -441,7 +441,7 @@ auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>&
 
             auto variant2 = CGAL::intersection(radial, poly);
             if (variant2) {
-                if (const Kernel::Point_2* p2 = boost::get<Kernel::Point_2>(&*variant2)) {
+                if (const Kernel::Point_2* p2 = std::get_if<Kernel::Point_2>(&*variant2)) {
                     pt_set.insert(*p2);
                 }
             }

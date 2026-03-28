@@ -8,8 +8,6 @@
 #ifndef SVGSHAPETOGRID_H_
 #define SVGSHAPETOGRID_H_
 
-#include <cstdint>
-#include <boost/smart_ptr/shared_ptr.hpp>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_simple_point_location.h>
@@ -19,6 +17,8 @@
 #include <CGAL/In_place_list.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Straight_skeleton_2.h>
+#include <cstdint>
+#include <memory>
 #include <queue>
 #include <vector>
 
@@ -29,8 +29,7 @@ namespace laby {
 
 class SVGShapeToGrid {
 
-public:
-
+  public:
     struct FaceNonZeroData {
 
         int32_t _winding_number = 0;
@@ -51,7 +50,7 @@ public:
     using Point_location = CGAL::Arr_simple_point_location<Arr_with_hist_2>;
     using InexactK = CGAL::Exact_predicates_inexact_constructions_kernel;
     using Ss = CGAL::Straight_skeleton_2<InexactK>;
-    using SsPtr = boost::shared_ptr<Ss>;
+    using SsPtr = std::shared_ptr<Ss>;
 
     static auto getGrid(const Ribbon& ribb) -> std::vector<Segment_2>;
 
@@ -59,13 +58,15 @@ public:
 
     static auto addToSegments(const Ribbon& ribb) -> std::vector<Segment_2>;
 
-    static auto getPolygons(const Ribbon& ribb) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> >;
+    static auto getPolygons(const Ribbon& ribb) -> std::vector<CGAL::Polygon_with_holes_2<Kernel>>;
 
-private:
+  private:
     static void markFace(Halfedge& twin, Face& face, std::queue<Face*>& q);
     static void markWindingRule(Arr_with_hist_2& arr);
-    static auto getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> >;
-    static auto createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>>& res, double l) -> std::vector<Segment_2>;
+    static auto
+    getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Polygon_with_holes_2<Kernel>>;
+    static auto createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>>& res,
+                             double l) -> std::vector<Segment_2>;
     static void debugPoly(const CGAL::Polygon_2<Kernel>& outP);
 };
 

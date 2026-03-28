@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <iostream>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "GeomData.h"
@@ -166,7 +167,7 @@ auto SkeletonOffset::getLineSegmentIntersect(
     IntersectType result;
     auto variant = CGAL::intersection(line, segment);
     if (variant) {
-        if (const Kernel::Point_2* point = boost::get<Kernel::Point_2>(&*variant)) {
+        if (const Kernel::Point_2* point = std::get_if<Kernel::Point_2>(&*variant)) {
             result.emplace_back(*point);
         }
     }

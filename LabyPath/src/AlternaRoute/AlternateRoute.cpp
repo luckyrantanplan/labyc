@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "../Anisotrop/Routing.h"
@@ -240,7 +241,7 @@ void AlternateRoute::addTriplet(alter::OffsetTriplet& triplet, const OffsetPair&
     const auto intersectionVariant = CGAL::intersection(firstLine, secondLine);
     if (intersectionVariant) {
         if (const Kernel::Point_2* intersectionPoint =
-                boost::get<Kernel::Point_2>(&*intersectionVariant)) {
+                std::get_if<Kernel::Point_2>(&*intersectionVariant)) {
             triplet.setOffset2(*intersectionPoint);
         }
     }

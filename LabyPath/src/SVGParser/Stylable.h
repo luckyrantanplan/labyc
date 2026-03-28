@@ -431,7 +431,7 @@ class Stylable : public PaintContext<svgpp::tag::attribute::stroke>,
     using stroke_paint = PaintContext<svgpp::tag::attribute::stroke>;
     using fill_paint = PaintContext<svgpp::tag::attribute::fill>;
 
-    Stylable() : PaintContext(), PaintContext() {
+    Stylable() : stroke_paint(), fill_paint() {
         stroke_paint::bind(_style.strokePaintRef());
         fill_paint::bind(_style.fillPaintRef());
     }
