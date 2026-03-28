@@ -5,24 +5,32 @@
 
 #include <algorithm>
 
+#include <google/protobuf/arenastring.h>
+#include <cstdint>
+#include <cstddef>
+#include <cstring>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/extension_set.h>
+#include <google/protobuf/port.h>
+#include <google/protobuf/stubs/once.h>
+#include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/parse_context.h>
+#include <google/protobuf/unknown_field_set.h>
 #include <google/protobuf/wire_format_lite.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/generated_message_reflection.h>
-#include <google/protobuf/reflection_ops.h>
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 
 PROTOBUF_PRAGMA_INIT_SEG
 
-namespace _pb = ::PROTOBUF_NAMESPACE_ID;
-namespace _pbi = _pb::internal;
+namespace pb = ::PROTOBUF_NAMESPACE_ID;
+namespace pbi = _pb::internal;
 
 namespace proto {
 PROTOBUF_CONSTEXPR Filepaths::Filepaths(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.outputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.inputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_._cached_size_)*/{}} {}
@@ -36,7 +44,7 @@ struct FilepathsDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 FilepathsDefaultTypeInternal _Filepaths_default_instance_;
 PROTOBUF_CONSTEXPR PenStroke::PenStroke(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.thickness_)*/0
   , /*decltype(_impl_.antisymmetric_amplitude_)*/0
   , /*decltype(_impl_.antisymmetric_freq_)*/0
@@ -56,7 +64,7 @@ struct PenStrokeDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PenStrokeDefaultTypeInternal _PenStroke_default_instance_;
 PROTOBUF_CONSTEXPR GraphicRendering::GraphicRendering(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.outputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.inputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.penconfig_)*/nullptr
@@ -73,13 +81,13 @@ struct GraphicRenderingDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GraphicRenderingDefaultTypeInternal _GraphicRendering_default_instance_;
 PROTOBUF_CONSTEXPR SkeletonGrid::SkeletonGrid(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.outputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.inputfile_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.simplificationoforiginalsvg_)*/0
   , /*decltype(_impl_.max_sep_)*/0
   , /*decltype(_impl_.min_sep_)*/0
-  , /*decltype(_impl_.seed_)*/0u
+  , /*decltype(_impl_.seed_)*/0U
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct SkeletonGridDefaultTypeInternal {
   PROTOBUF_CONSTEXPR SkeletonGridDefaultTypeInternal()
@@ -91,8 +99,8 @@ struct SkeletonGridDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkeletonGridDefaultTypeInternal _SkeletonGrid_default_instance_;
 PROTOBUF_CONSTEXPR RoutingCost::RoutingCost(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.seed_)*/0u
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
+    /*decltype(_impl_.seed_)*/0U
   , /*decltype(_impl_.max_random_)*/0
   , /*decltype(_impl_.distance_unit_cost_)*/0
   , /*decltype(_impl_.via_unit_cost_)*/0
@@ -107,11 +115,11 @@ struct RoutingCostDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutingCostDefaultTypeInternal _RoutingCost_default_instance_;
 PROTOBUF_CONSTEXPR Cell::Cell(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.seed_)*/0u
-  , /*decltype(_impl_.maxpin_)*/0u
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
+    /*decltype(_impl_.seed_)*/0U
+  , /*decltype(_impl_.maxpin_)*/0U
   , /*decltype(_impl_.resolution_)*/0
-  , /*decltype(_impl_.startnet_)*/0u
+  , /*decltype(_impl_.startnet_)*/0U
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct CellDefaultTypeInternal {
   PROTOBUF_CONSTEXPR CellDefaultTypeInternal()
@@ -123,15 +131,15 @@ struct CellDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CellDefaultTypeInternal _Cell_default_instance_;
 PROTOBUF_CONSTEXPR Placement::Placement(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.routing_)*/nullptr
   , /*decltype(_impl_.cell_)*/nullptr
   , /*decltype(_impl_.initial_thickness_)*/0
   , /*decltype(_impl_.decrement_factor_)*/0
   , /*decltype(_impl_.minimal_thickness_)*/0
   , /*decltype(_impl_.smoothing_tension_)*/0
-  , /*decltype(_impl_.max_routing_attempt_)*/uint64_t{0u}
-  , /*decltype(_impl_.smoothing_iteration_)*/0u
+  , /*decltype(_impl_.max_routing_attempt_)*/uint64_t{0U}
+  , /*decltype(_impl_.smoothing_iteration_)*/0U
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct PlacementDefaultTypeInternal {
   PROTOBUF_CONSTEXPR PlacementDefaultTypeInternal()
@@ -143,12 +151,12 @@ struct PlacementDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlacementDefaultTypeInternal _Placement_default_instance_;
 PROTOBUF_CONSTEXPR AlternateRouting::AlternateRouting(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.maxthickness_)*/0
   , /*decltype(_impl_.minthickness_)*/0
   , /*decltype(_impl_.thicknesspercent_)*/0
   , /*decltype(_impl_.simplifydist_)*/0
-  , /*decltype(_impl_.pruning_)*/0u
+  , /*decltype(_impl_.pruning_)*/0U
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct AlternateRoutingDefaultTypeInternal {
   PROTOBUF_CONSTEXPR AlternateRoutingDefaultTypeInternal()
@@ -160,7 +168,7 @@ struct AlternateRoutingDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AlternateRoutingDefaultTypeInternal _AlternateRouting_default_instance_;
 PROTOBUF_CONSTEXPR Routing::Routing(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.filepaths_)*/nullptr
   , /*decltype(_impl_.placement_)*/nullptr
   , /*decltype(_impl_.alternaterouting_)*/nullptr
@@ -175,7 +183,7 @@ struct RoutingDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoutingDefaultTypeInternal _Routing_default_instance_;
 PROTOBUF_CONSTEXPR AllConfig::AllConfig(
-    ::_pbi::ConstantInitialized): _impl_{
+    ::_pbi::ConstantInitialized /*unused*/): _impl_{
     /*decltype(_impl_.routing_)*/nullptr
   , /*decltype(_impl_.ggraphicrendering_)*/nullptr
   , /*decltype(_impl_.skeletongrid_)*/nullptr
@@ -190,25 +198,25 @@ struct AllConfigDefaultTypeInternal {
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AllConfigDefaultTypeInternal _AllConfig_default_instance_;
 }  // namespace proto
-static ::_pb::Metadata file_level_metadata_AllConfig_2eproto[10];
-static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_AllConfig_2eproto = nullptr;
-static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_AllConfig_2eproto = nullptr;
+static ::_pb::Metadata fileLevelMetadataAllConfig2eproto[10];
+static constexpr ::_pb::EnumDescriptor const** fileLevelEnumDescriptorsAllConfig2eproto = nullptr;
+static constexpr ::_pb::ServiceDescriptor const** fileLevelServiceDescriptorsAllConfig2eproto = nullptr;
 
 const uint32_t TableStruct_AllConfig_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::Filepaths, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::Filepaths, _impl_.outputfile_),
   PROTOBUF_FIELD_OFFSET(::proto::Filepaths, _impl_.inputfile_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.thickness_),
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.antisymmetric_amplitude_),
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.antisymmetric_freq_),
@@ -217,55 +225,55 @@ const uint32_t TableStruct_AllConfig_2eproto::offsets[] PROTOBUF_SECTION_VARIABL
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.symmetric_freq_),
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.symmetric_seed_),
   PROTOBUF_FIELD_OFFSET(::proto::PenStroke, _impl_.resolution_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _impl_.outputfile_),
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _impl_.inputfile_),
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _impl_.smoothing_tension_),
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _impl_.smoothing_iterations_),
   PROTOBUF_FIELD_OFFSET(::proto::GraphicRendering, _impl_.penconfig_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.outputfile_),
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.inputfile_),
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.simplificationoforiginalsvg_),
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.max_sep_),
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.min_sep_),
   PROTOBUF_FIELD_OFFSET(::proto::SkeletonGrid, _impl_.seed_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::RoutingCost, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::RoutingCost, _impl_.seed_),
   PROTOBUF_FIELD_OFFSET(::proto::RoutingCost, _impl_.max_random_),
   PROTOBUF_FIELD_OFFSET(::proto::RoutingCost, _impl_.distance_unit_cost_),
   PROTOBUF_FIELD_OFFSET(::proto::RoutingCost, _impl_.via_unit_cost_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::Cell, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::Cell, _impl_.seed_),
   PROTOBUF_FIELD_OFFSET(::proto::Cell, _impl_.maxpin_),
   PROTOBUF_FIELD_OFFSET(::proto::Cell, _impl_.startnet_),
   PROTOBUF_FIELD_OFFSET(::proto::Cell, _impl_.resolution_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.initial_thickness_),
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.decrement_factor_),
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.minimal_thickness_),
@@ -274,32 +282,32 @@ const uint32_t TableStruct_AllConfig_2eproto::offsets[] PROTOBUF_SECTION_VARIABL
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.max_routing_attempt_),
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.routing_),
   PROTOBUF_FIELD_OFFSET(::proto::Placement, _impl_.cell_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _impl_.maxthickness_),
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _impl_.minthickness_),
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _impl_.pruning_),
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _impl_.thicknesspercent_),
   PROTOBUF_FIELD_OFFSET(::proto::AlternateRouting, _impl_.simplifydist_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::Routing, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::Routing, _impl_.filepaths_),
   PROTOBUF_FIELD_OFFSET(::proto::Routing, _impl_.placement_),
   PROTOBUF_FIELD_OFFSET(::proto::Routing, _impl_.alternaterouting_),
-  ~0u,  // no _has_bits_
+  ~0U,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::proto::AllConfig, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
+  ~0U,  // no _extensions_
+  ~0U,  // no _oneof_case_
+  ~0U,  // no _weak_field_map_
+  ~0U,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::proto::AllConfig, _impl_.routing_),
   PROTOBUF_FIELD_OFFSET(::proto::AllConfig, _impl_.ggraphicrendering_),
   PROTOBUF_FIELD_OFFSET(::proto::AllConfig, _impl_.skeletongrid_),
@@ -317,7 +325,7 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 99, -1, -1, sizeof(::proto::AllConfig)},
 };
 
-static const ::_pb::Message* const file_default_instances[] = {
+static const ::_pb::Message* const fileDefaultInstances[] = {
   &::proto::_Filepaths_default_instance_._instance,
   &::proto::_PenStroke_default_instance_._instance,
   &::proto::_GraphicRendering_default_instance_._instance,
@@ -330,7 +338,7 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::proto::_AllConfig_default_instance_._instance,
 };
 
-const char descriptor_table_protodef_AllConfig_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
+const char descriptorTableProtodefAllConfig2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\017AllConfig.proto\022\005proto\"2\n\tFilepaths\022\022\n"
   "\noutputfile\030\001 \001(\t\022\021\n\tinputfile\030\002 \001(\t\"\330\001\n"
   "\tPenStroke\022\021\n\tthickness\030\001 \001(\001\022\037\n\027antisym"
@@ -368,21 +376,21 @@ const char descriptor_table_protodef_AllConfig_2eproto[] PROTOBUF_SECTION_VARIAB
   "aphicRendering\022)\n\014skeletonGrid\030\003 \001(\0132\023.p"
   "roto.SkeletonGridb\006proto3"
   ;
-static ::_pbi::once_flag descriptor_table_AllConfig_2eproto_once;
+static ::_pbi::once_flag descriptorTableAllConfig2eprotoOnce;
 const ::_pbi::DescriptorTable descriptor_table_AllConfig_2eproto = {
-    false, false, 1425, descriptor_table_protodef_AllConfig_2eproto,
+    false, false, 1425, descriptorTableProtodefAllConfig2eproto,
     "AllConfig.proto",
-    &descriptor_table_AllConfig_2eproto_once, nullptr, 0, 10,
-    schemas, file_default_instances, TableStruct_AllConfig_2eproto::offsets,
-    file_level_metadata_AllConfig_2eproto, file_level_enum_descriptors_AllConfig_2eproto,
-    file_level_service_descriptors_AllConfig_2eproto,
+    &descriptorTableAllConfig2eprotoOnce, nullptr, 0, 10,
+    schemas, fileDefaultInstances, TableStruct_AllConfig_2eproto::offsets,
+    fileLevelMetadataAllConfig2eproto, fileLevelEnumDescriptorsAllConfig2eproto,
+    fileLevelServiceDescriptorsAllConfig2eproto,
 };
-PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_AllConfig_2eproto_getter() {
+PROTOBUF_ATTRIBUTE_WEAK auto descriptorTableAllConfig2eprotoGetter() -> const ::_pbi::DescriptorTable* {
   return &descriptor_table_AllConfig_2eproto;
 }
 
 // Force running AddDescriptors() at dynamic initialization time.
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::_pbi::AddDescriptorsRunner dynamic_init_dummy_AllConfig_2eproto(&descriptor_table_AllConfig_2eproto);
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::_pbi::AddDescriptorsRunner dynamicInitDummyAllConfig2eproto(&descriptor_table_AllConfig_2eproto);
 namespace proto {
 
 // ===================================================================
@@ -398,7 +406,7 @@ Filepaths::Filepaths(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.Filepaths)
 }
 Filepaths::Filepaths(const Filepaths& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   Filepaths* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.outputfile_){}
@@ -465,40 +473,42 @@ void Filepaths::SetCachedSize(int size) const {
 
 void Filepaths::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.Filepaths)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   _impl_.outputfile_.ClearToEmpty();
   _impl_.inputfile_.ClearToEmpty();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* Filepaths::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto Filepaths::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // string outputfile = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_outputfile();
+          auto *str = _internal_mutable_outputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.Filepaths.outputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // string inputfile = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
-          auto str = _internal_mutable_inputfile();
+          auto *str = _internal_mutable_inputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.Filepaths.inputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -523,11 +533,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* Filepaths::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto Filepaths::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.Filepaths)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
@@ -557,45 +567,45 @@ uint8_t* Filepaths::_InternalSerialize(
   return target;
 }
 
-size_t Filepaths::ByteSizeLong() const {
+auto Filepaths::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.Filepaths)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_outputfile());
   }
 
   // string inputfile = 2;
   if (!this->_internal_inputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_inputfile());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData Filepaths::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     Filepaths::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*Filepaths::GetClassData() const { return &_class_data_; }
+auto Filepaths::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void Filepaths::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<Filepaths*>(&to_msg);
-  auto& from = static_cast<const Filepaths&>(from_msg);
+  auto* const _this = dynamic_cast<Filepaths*>(&to_msg);
+  const auto& from = dynamic_cast<const Filepaths&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.Filepaths)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (!from._internal_outputfile().empty()) {
     _this->_internal_set_outputfile(from._internal_outputfile());
@@ -608,34 +618,35 @@ void Filepaths::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
 
 void Filepaths::CopyFrom(const Filepaths& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.Filepaths)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool Filepaths::IsInitialized() const {
+auto Filepaths::IsInitialized() const -> bool {
   return true;
 }
 
 void Filepaths::InternalSwap(Filepaths* other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* lhsArena = GetArenaForAllocation();
+  auto* rhsArena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.outputfile_, lhs_arena,
-      &other->_impl_.outputfile_, rhs_arena
+      &_impl_.outputfile_, lhsArena,
+      &other->_impl_.outputfile_, rhsArena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.inputfile_, lhs_arena,
-      &other->_impl_.inputfile_, rhs_arena
+      &_impl_.inputfile_, lhsArena,
+      &other->_impl_.inputfile_, rhsArena
   );
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata Filepaths::GetMetadata() const {
+auto Filepaths::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[0]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[0]);
 }
 
 // ===================================================================
@@ -651,7 +662,7 @@ PenStroke::PenStroke(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.PenStroke)
 }
 PenStroke::PenStroke(const PenStroke& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   PenStroke* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.thickness_){}
@@ -707,9 +718,9 @@ void PenStroke::SetCachedSize(int size) const {
 
 void PenStroke::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.PenStroke)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   ::memset(&_impl_.thickness_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.resolution_) -
@@ -717,10 +728,10 @@ void PenStroke::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* PenStroke::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto PenStroke::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // double thickness = 1;
@@ -728,64 +739,72 @@ const char* PenStroke::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 9)) {
           _impl_.thickness_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double antisymmetric_amplitude = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 17)) {
           _impl_.antisymmetric_amplitude_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double antisymmetric_freq = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 25)) {
           _impl_.antisymmetric_freq_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double antisymmetric_seed = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.antisymmetric_seed_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double symmetric_amplitude = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 41)) {
           _impl_.symmetric_amplitude_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double symmetric_freq = 6;
       case 6:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 49)) {
           _impl_.symmetric_freq_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double symmetric_seed = 7;
       case 7:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 57)) {
           _impl_.symmetric_seed_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double resolution = 8;
       case 8:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 65)) {
           _impl_.resolution_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -810,88 +829,88 @@ failure:
 #undef CHK_
 }
 
-uint8_t* PenStroke::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto PenStroke::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.PenStroke)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // double thickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thickness = this->_internal_thickness();
-  uint64_t raw_thickness;
-  memcpy(&raw_thickness, &tmp_thickness, sizeof(tmp_thickness));
-  if (raw_thickness != 0) {
+  double tmpThickness = this->_internal_thickness();
+  uint64_t rawThickness = 0;
+  memcpy(&rawThickness, &tmpThickness, sizeof(tmpThickness));
+  if (rawThickness != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(1, this->_internal_thickness(), target);
   }
 
   // double antisymmetric_amplitude = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_amplitude = this->_internal_antisymmetric_amplitude();
-  uint64_t raw_antisymmetric_amplitude;
-  memcpy(&raw_antisymmetric_amplitude, &tmp_antisymmetric_amplitude, sizeof(tmp_antisymmetric_amplitude));
-  if (raw_antisymmetric_amplitude != 0) {
+  double tmpAntisymmetricAmplitude = this->_internal_antisymmetric_amplitude();
+  uint64_t rawAntisymmetricAmplitude = 0;
+  memcpy(&rawAntisymmetricAmplitude, &tmpAntisymmetricAmplitude, sizeof(tmpAntisymmetricAmplitude));
+  if (rawAntisymmetricAmplitude != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(2, this->_internal_antisymmetric_amplitude(), target);
   }
 
   // double antisymmetric_freq = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_freq = this->_internal_antisymmetric_freq();
-  uint64_t raw_antisymmetric_freq;
-  memcpy(&raw_antisymmetric_freq, &tmp_antisymmetric_freq, sizeof(tmp_antisymmetric_freq));
-  if (raw_antisymmetric_freq != 0) {
+  double tmpAntisymmetricFreq = this->_internal_antisymmetric_freq();
+  uint64_t rawAntisymmetricFreq = 0;
+  memcpy(&rawAntisymmetricFreq, &tmpAntisymmetricFreq, sizeof(tmpAntisymmetricFreq));
+  if (rawAntisymmetricFreq != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(3, this->_internal_antisymmetric_freq(), target);
   }
 
   // double antisymmetric_seed = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_seed = this->_internal_antisymmetric_seed();
-  uint64_t raw_antisymmetric_seed;
-  memcpy(&raw_antisymmetric_seed, &tmp_antisymmetric_seed, sizeof(tmp_antisymmetric_seed));
-  if (raw_antisymmetric_seed != 0) {
+  double tmpAntisymmetricSeed = this->_internal_antisymmetric_seed();
+  uint64_t rawAntisymmetricSeed = 0;
+  memcpy(&rawAntisymmetricSeed, &tmpAntisymmetricSeed, sizeof(tmpAntisymmetricSeed));
+  if (rawAntisymmetricSeed != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_antisymmetric_seed(), target);
   }
 
   // double symmetric_amplitude = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_amplitude = this->_internal_symmetric_amplitude();
-  uint64_t raw_symmetric_amplitude;
-  memcpy(&raw_symmetric_amplitude, &tmp_symmetric_amplitude, sizeof(tmp_symmetric_amplitude));
-  if (raw_symmetric_amplitude != 0) {
+  double tmpSymmetricAmplitude = this->_internal_symmetric_amplitude();
+  uint64_t rawSymmetricAmplitude = 0;
+  memcpy(&rawSymmetricAmplitude, &tmpSymmetricAmplitude, sizeof(tmpSymmetricAmplitude));
+  if (rawSymmetricAmplitude != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(5, this->_internal_symmetric_amplitude(), target);
   }
 
   // double symmetric_freq = 6;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_freq = this->_internal_symmetric_freq();
-  uint64_t raw_symmetric_freq;
-  memcpy(&raw_symmetric_freq, &tmp_symmetric_freq, sizeof(tmp_symmetric_freq));
-  if (raw_symmetric_freq != 0) {
+  double tmpSymmetricFreq = this->_internal_symmetric_freq();
+  uint64_t rawSymmetricFreq = 0;
+  memcpy(&rawSymmetricFreq, &tmpSymmetricFreq, sizeof(tmpSymmetricFreq));
+  if (rawSymmetricFreq != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(6, this->_internal_symmetric_freq(), target);
   }
 
   // double symmetric_seed = 7;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_seed = this->_internal_symmetric_seed();
-  uint64_t raw_symmetric_seed;
-  memcpy(&raw_symmetric_seed, &tmp_symmetric_seed, sizeof(tmp_symmetric_seed));
-  if (raw_symmetric_seed != 0) {
+  double tmpSymmetricSeed = this->_internal_symmetric_seed();
+  uint64_t rawSymmetricSeed = 0;
+  memcpy(&rawSymmetricSeed, &tmpSymmetricSeed, sizeof(tmpSymmetricSeed));
+  if (rawSymmetricSeed != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(7, this->_internal_symmetric_seed(), target);
   }
 
   // double resolution = 8;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = this->_internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
+  double tmpResolution = this->_internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(8, this->_internal_resolution(), target);
   }
@@ -904,158 +923,158 @@ uint8_t* PenStroke::_InternalSerialize(
   return target;
 }
 
-size_t PenStroke::ByteSizeLong() const {
+auto PenStroke::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.PenStroke)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // double thickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thickness = this->_internal_thickness();
-  uint64_t raw_thickness;
-  memcpy(&raw_thickness, &tmp_thickness, sizeof(tmp_thickness));
-  if (raw_thickness != 0) {
-    total_size += 1 + 8;
+  double tmpThickness = this->_internal_thickness();
+  uint64_t rawThickness = 0;
+  memcpy(&rawThickness, &tmpThickness, sizeof(tmpThickness));
+  if (rawThickness != 0) {
+    totalSize += 1 + 8;
   }
 
   // double antisymmetric_amplitude = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_amplitude = this->_internal_antisymmetric_amplitude();
-  uint64_t raw_antisymmetric_amplitude;
-  memcpy(&raw_antisymmetric_amplitude, &tmp_antisymmetric_amplitude, sizeof(tmp_antisymmetric_amplitude));
-  if (raw_antisymmetric_amplitude != 0) {
-    total_size += 1 + 8;
+  double tmpAntisymmetricAmplitude = this->_internal_antisymmetric_amplitude();
+  uint64_t rawAntisymmetricAmplitude = 0;
+  memcpy(&rawAntisymmetricAmplitude, &tmpAntisymmetricAmplitude, sizeof(tmpAntisymmetricAmplitude));
+  if (rawAntisymmetricAmplitude != 0) {
+    totalSize += 1 + 8;
   }
 
   // double antisymmetric_freq = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_freq = this->_internal_antisymmetric_freq();
-  uint64_t raw_antisymmetric_freq;
-  memcpy(&raw_antisymmetric_freq, &tmp_antisymmetric_freq, sizeof(tmp_antisymmetric_freq));
-  if (raw_antisymmetric_freq != 0) {
-    total_size += 1 + 8;
+  double tmpAntisymmetricFreq = this->_internal_antisymmetric_freq();
+  uint64_t rawAntisymmetricFreq = 0;
+  memcpy(&rawAntisymmetricFreq, &tmpAntisymmetricFreq, sizeof(tmpAntisymmetricFreq));
+  if (rawAntisymmetricFreq != 0) {
+    totalSize += 1 + 8;
   }
 
   // double antisymmetric_seed = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_seed = this->_internal_antisymmetric_seed();
-  uint64_t raw_antisymmetric_seed;
-  memcpy(&raw_antisymmetric_seed, &tmp_antisymmetric_seed, sizeof(tmp_antisymmetric_seed));
-  if (raw_antisymmetric_seed != 0) {
-    total_size += 1 + 8;
+  double tmpAntisymmetricSeed = this->_internal_antisymmetric_seed();
+  uint64_t rawAntisymmetricSeed = 0;
+  memcpy(&rawAntisymmetricSeed, &tmpAntisymmetricSeed, sizeof(tmpAntisymmetricSeed));
+  if (rawAntisymmetricSeed != 0) {
+    totalSize += 1 + 8;
   }
 
   // double symmetric_amplitude = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_amplitude = this->_internal_symmetric_amplitude();
-  uint64_t raw_symmetric_amplitude;
-  memcpy(&raw_symmetric_amplitude, &tmp_symmetric_amplitude, sizeof(tmp_symmetric_amplitude));
-  if (raw_symmetric_amplitude != 0) {
-    total_size += 1 + 8;
+  double tmpSymmetricAmplitude = this->_internal_symmetric_amplitude();
+  uint64_t rawSymmetricAmplitude = 0;
+  memcpy(&rawSymmetricAmplitude, &tmpSymmetricAmplitude, sizeof(tmpSymmetricAmplitude));
+  if (rawSymmetricAmplitude != 0) {
+    totalSize += 1 + 8;
   }
 
   // double symmetric_freq = 6;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_freq = this->_internal_symmetric_freq();
-  uint64_t raw_symmetric_freq;
-  memcpy(&raw_symmetric_freq, &tmp_symmetric_freq, sizeof(tmp_symmetric_freq));
-  if (raw_symmetric_freq != 0) {
-    total_size += 1 + 8;
+  double tmpSymmetricFreq = this->_internal_symmetric_freq();
+  uint64_t rawSymmetricFreq = 0;
+  memcpy(&rawSymmetricFreq, &tmpSymmetricFreq, sizeof(tmpSymmetricFreq));
+  if (rawSymmetricFreq != 0) {
+    totalSize += 1 + 8;
   }
 
   // double symmetric_seed = 7;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_seed = this->_internal_symmetric_seed();
-  uint64_t raw_symmetric_seed;
-  memcpy(&raw_symmetric_seed, &tmp_symmetric_seed, sizeof(tmp_symmetric_seed));
-  if (raw_symmetric_seed != 0) {
-    total_size += 1 + 8;
+  double tmpSymmetricSeed = this->_internal_symmetric_seed();
+  uint64_t rawSymmetricSeed = 0;
+  memcpy(&rawSymmetricSeed, &tmpSymmetricSeed, sizeof(tmpSymmetricSeed));
+  if (rawSymmetricSeed != 0) {
+    totalSize += 1 + 8;
   }
 
   // double resolution = 8;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = this->_internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
-    total_size += 1 + 8;
+  double tmpResolution = this->_internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
+    totalSize += 1 + 8;
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData PenStroke::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     PenStroke::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*PenStroke::GetClassData() const { return &_class_data_; }
+auto PenStroke::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void PenStroke::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<PenStroke*>(&to_msg);
-  auto& from = static_cast<const PenStroke&>(from_msg);
+  auto* const _this = dynamic_cast<PenStroke*>(&to_msg);
+  const auto& from = dynamic_cast<const PenStroke&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.PenStroke)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thickness = from._internal_thickness();
-  uint64_t raw_thickness;
-  memcpy(&raw_thickness, &tmp_thickness, sizeof(tmp_thickness));
-  if (raw_thickness != 0) {
+  double tmpThickness = from._internal_thickness();
+  uint64_t rawThickness = 0;
+  memcpy(&rawThickness, &tmpThickness, sizeof(tmpThickness));
+  if (rawThickness != 0) {
     _this->_internal_set_thickness(from._internal_thickness());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_amplitude = from._internal_antisymmetric_amplitude();
-  uint64_t raw_antisymmetric_amplitude;
-  memcpy(&raw_antisymmetric_amplitude, &tmp_antisymmetric_amplitude, sizeof(tmp_antisymmetric_amplitude));
-  if (raw_antisymmetric_amplitude != 0) {
+  double tmpAntisymmetricAmplitude = from._internal_antisymmetric_amplitude();
+  uint64_t rawAntisymmetricAmplitude = 0;
+  memcpy(&rawAntisymmetricAmplitude, &tmpAntisymmetricAmplitude, sizeof(tmpAntisymmetricAmplitude));
+  if (rawAntisymmetricAmplitude != 0) {
     _this->_internal_set_antisymmetric_amplitude(from._internal_antisymmetric_amplitude());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_freq = from._internal_antisymmetric_freq();
-  uint64_t raw_antisymmetric_freq;
-  memcpy(&raw_antisymmetric_freq, &tmp_antisymmetric_freq, sizeof(tmp_antisymmetric_freq));
-  if (raw_antisymmetric_freq != 0) {
+  double tmpAntisymmetricFreq = from._internal_antisymmetric_freq();
+  uint64_t rawAntisymmetricFreq = 0;
+  memcpy(&rawAntisymmetricFreq, &tmpAntisymmetricFreq, sizeof(tmpAntisymmetricFreq));
+  if (rawAntisymmetricFreq != 0) {
     _this->_internal_set_antisymmetric_freq(from._internal_antisymmetric_freq());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_antisymmetric_seed = from._internal_antisymmetric_seed();
-  uint64_t raw_antisymmetric_seed;
-  memcpy(&raw_antisymmetric_seed, &tmp_antisymmetric_seed, sizeof(tmp_antisymmetric_seed));
-  if (raw_antisymmetric_seed != 0) {
+  double tmpAntisymmetricSeed = from._internal_antisymmetric_seed();
+  uint64_t rawAntisymmetricSeed = 0;
+  memcpy(&rawAntisymmetricSeed, &tmpAntisymmetricSeed, sizeof(tmpAntisymmetricSeed));
+  if (rawAntisymmetricSeed != 0) {
     _this->_internal_set_antisymmetric_seed(from._internal_antisymmetric_seed());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_amplitude = from._internal_symmetric_amplitude();
-  uint64_t raw_symmetric_amplitude;
-  memcpy(&raw_symmetric_amplitude, &tmp_symmetric_amplitude, sizeof(tmp_symmetric_amplitude));
-  if (raw_symmetric_amplitude != 0) {
+  double tmpSymmetricAmplitude = from._internal_symmetric_amplitude();
+  uint64_t rawSymmetricAmplitude = 0;
+  memcpy(&rawSymmetricAmplitude, &tmpSymmetricAmplitude, sizeof(tmpSymmetricAmplitude));
+  if (rawSymmetricAmplitude != 0) {
     _this->_internal_set_symmetric_amplitude(from._internal_symmetric_amplitude());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_freq = from._internal_symmetric_freq();
-  uint64_t raw_symmetric_freq;
-  memcpy(&raw_symmetric_freq, &tmp_symmetric_freq, sizeof(tmp_symmetric_freq));
-  if (raw_symmetric_freq != 0) {
+  double tmpSymmetricFreq = from._internal_symmetric_freq();
+  uint64_t rawSymmetricFreq = 0;
+  memcpy(&rawSymmetricFreq, &tmpSymmetricFreq, sizeof(tmpSymmetricFreq));
+  if (rawSymmetricFreq != 0) {
     _this->_internal_set_symmetric_freq(from._internal_symmetric_freq());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_symmetric_seed = from._internal_symmetric_seed();
-  uint64_t raw_symmetric_seed;
-  memcpy(&raw_symmetric_seed, &tmp_symmetric_seed, sizeof(tmp_symmetric_seed));
-  if (raw_symmetric_seed != 0) {
+  double tmpSymmetricSeed = from._internal_symmetric_seed();
+  uint64_t rawSymmetricSeed = 0;
+  memcpy(&rawSymmetricSeed, &tmpSymmetricSeed, sizeof(tmpSymmetricSeed));
+  if (rawSymmetricSeed != 0) {
     _this->_internal_set_symmetric_seed(from._internal_symmetric_seed());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = from._internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
+  double tmpResolution = from._internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
     _this->_internal_set_resolution(from._internal_resolution());
   }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
@@ -1063,12 +1082,13 @@ void PenStroke::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
 
 void PenStroke::CopyFrom(const PenStroke& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.PenStroke)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool PenStroke::IsInitialized() const {
+auto PenStroke::IsInitialized() const -> bool {
   return true;
 }
 
@@ -1083,21 +1103,21 @@ void PenStroke::InternalSwap(PenStroke* other) {
           reinterpret_cast<char*>(&other->_impl_.thickness_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata PenStroke::GetMetadata() const {
+auto PenStroke::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[1]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[1]);
 }
 
 // ===================================================================
 
 class GraphicRendering::_Internal {
  public:
-  static const ::proto::PenStroke& penconfig(const GraphicRendering* msg);
+  static auto penconfig(const GraphicRendering* msg) -> const ::proto::PenStroke&;
 };
 
-const ::proto::PenStroke&
-GraphicRendering::_Internal::penconfig(const GraphicRendering* msg) {
+auto
+GraphicRendering::_Internal::penconfig(const GraphicRendering* msg) -> const ::proto::PenStroke& {
   return *msg->_impl_.penconfig_;
 }
 GraphicRendering::GraphicRendering(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -1107,7 +1127,7 @@ GraphicRendering::GraphicRendering(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.GraphicRendering)
 }
 GraphicRendering::GraphicRendering(const GraphicRendering& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   GraphicRendering* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.outputfile_){}
@@ -1178,7 +1198,8 @@ inline void GraphicRendering::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   _impl_.outputfile_.Destroy();
   _impl_.inputfile_.Destroy();
-  if (this != internal_default_instance()) delete _impl_.penconfig_;
+  if (this != internal_default_instance()) { delete _impl_.penconfig_;
+}
 }
 
 void GraphicRendering::SetCachedSize(int size) const {
@@ -1187,9 +1208,9 @@ void GraphicRendering::SetCachedSize(int size) const {
 
 void GraphicRendering::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.GraphicRendering)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   _impl_.outputfile_.ClearToEmpty();
   _impl_.inputfile_.ClearToEmpty();
@@ -1203,55 +1224,60 @@ void GraphicRendering::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* GraphicRendering::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto GraphicRendering::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // string outputfile = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_outputfile();
+          auto *str = _internal_mutable_outputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.GraphicRendering.outputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // string inputfile = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
-          auto str = _internal_mutable_inputfile();
+          auto *str = _internal_mutable_inputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.GraphicRendering.inputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double smoothing_tension = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 25)) {
           _impl_.smoothing_tension_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double smoothing_iterations = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.smoothing_iterations_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.PenStroke penConfig = 9;
       case 9:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 74)) {
           ptr = ctx->ParseMessage(_internal_mutable_penconfig(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -1276,11 +1302,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* GraphicRendering::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto GraphicRendering::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.GraphicRendering)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
@@ -1304,20 +1330,20 @@ uint8_t* GraphicRendering::_InternalSerialize(
 
   // double smoothing_tension = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = this->_internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
+  double tmpSmoothingTension = this->_internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(3, this->_internal_smoothing_tension(), target);
   }
 
   // double smoothing_iterations = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_iterations = this->_internal_smoothing_iterations();
-  uint64_t raw_smoothing_iterations;
-  memcpy(&raw_smoothing_iterations, &tmp_smoothing_iterations, sizeof(tmp_smoothing_iterations));
-  if (raw_smoothing_iterations != 0) {
+  double tmpSmoothingIterations = this->_internal_smoothing_iterations();
+  uint64_t rawSmoothingIterations = 0;
+  memcpy(&rawSmoothingIterations, &tmpSmoothingIterations, sizeof(tmpSmoothingIterations));
+  if (rawSmoothingIterations != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_smoothing_iterations(), target);
   }
@@ -1337,70 +1363,70 @@ uint8_t* GraphicRendering::_InternalSerialize(
   return target;
 }
 
-size_t GraphicRendering::ByteSizeLong() const {
+auto GraphicRendering::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.GraphicRendering)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_outputfile());
   }
 
   // string inputfile = 2;
   if (!this->_internal_inputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_inputfile());
   }
 
   // .proto.PenStroke penConfig = 9;
   if (this->_internal_has_penconfig()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.penconfig_);
   }
 
   // double smoothing_tension = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = this->_internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
-    total_size += 1 + 8;
+  double tmpSmoothingTension = this->_internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
+    totalSize += 1 + 8;
   }
 
   // double smoothing_iterations = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_iterations = this->_internal_smoothing_iterations();
-  uint64_t raw_smoothing_iterations;
-  memcpy(&raw_smoothing_iterations, &tmp_smoothing_iterations, sizeof(tmp_smoothing_iterations));
-  if (raw_smoothing_iterations != 0) {
-    total_size += 1 + 8;
+  double tmpSmoothingIterations = this->_internal_smoothing_iterations();
+  uint64_t rawSmoothingIterations = 0;
+  memcpy(&rawSmoothingIterations, &tmpSmoothingIterations, sizeof(tmpSmoothingIterations));
+  if (rawSmoothingIterations != 0) {
+    totalSize += 1 + 8;
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData GraphicRendering::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     GraphicRendering::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GraphicRendering::GetClassData() const { return &_class_data_; }
+auto GraphicRendering::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void GraphicRendering::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<GraphicRendering*>(&to_msg);
-  auto& from = static_cast<const GraphicRendering&>(from_msg);
+  auto* const _this = dynamic_cast<GraphicRendering*>(&to_msg);
+  const auto& from = dynamic_cast<const GraphicRendering&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.GraphicRendering)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (!from._internal_outputfile().empty()) {
     _this->_internal_set_outputfile(from._internal_outputfile());
@@ -1413,17 +1439,17 @@ void GraphicRendering::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const
         from._internal_penconfig());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = from._internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
+  double tmpSmoothingTension = from._internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
     _this->_internal_set_smoothing_tension(from._internal_smoothing_tension());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_iterations = from._internal_smoothing_iterations();
-  uint64_t raw_smoothing_iterations;
-  memcpy(&raw_smoothing_iterations, &tmp_smoothing_iterations, sizeof(tmp_smoothing_iterations));
-  if (raw_smoothing_iterations != 0) {
+  double tmpSmoothingIterations = from._internal_smoothing_iterations();
+  uint64_t rawSmoothingIterations = 0;
+  memcpy(&rawSmoothingIterations, &tmpSmoothingIterations, sizeof(tmpSmoothingIterations));
+  if (rawSmoothingIterations != 0) {
     _this->_internal_set_smoothing_iterations(from._internal_smoothing_iterations());
   }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
@@ -1431,27 +1457,28 @@ void GraphicRendering::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const
 
 void GraphicRendering::CopyFrom(const GraphicRendering& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.GraphicRendering)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool GraphicRendering::IsInitialized() const {
+auto GraphicRendering::IsInitialized() const -> bool {
   return true;
 }
 
 void GraphicRendering::InternalSwap(GraphicRendering* other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* lhsArena = GetArenaForAllocation();
+  auto* rhsArena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.outputfile_, lhs_arena,
-      &other->_impl_.outputfile_, rhs_arena
+      &_impl_.outputfile_, lhsArena,
+      &other->_impl_.outputfile_, rhsArena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.inputfile_, lhs_arena,
-      &other->_impl_.inputfile_, rhs_arena
+      &_impl_.inputfile_, lhsArena,
+      &other->_impl_.inputfile_, rhsArena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(GraphicRendering, _impl_.smoothing_iterations_)
@@ -1461,10 +1488,10 @@ void GraphicRendering::InternalSwap(GraphicRendering* other) {
           reinterpret_cast<char*>(&other->_impl_.penconfig_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata GraphicRendering::GetMetadata() const {
+auto GraphicRendering::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[2]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[2]);
 }
 
 // ===================================================================
@@ -1480,7 +1507,7 @@ SkeletonGrid::SkeletonGrid(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.SkeletonGrid)
 }
 SkeletonGrid::SkeletonGrid(const SkeletonGrid& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   SkeletonGrid* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.outputfile_){}
@@ -1524,7 +1551,7 @@ inline void SkeletonGrid::SharedCtor(
     , decltype(_impl_.simplificationoforiginalsvg_){0}
     , decltype(_impl_.max_sep_){0}
     , decltype(_impl_.min_sep_){0}
-    , decltype(_impl_.seed_){0u}
+    , decltype(_impl_.seed_){0U}
     , /*decltype(_impl_._cached_size_)*/{}
   };
   _impl_.outputfile_.InitDefault();
@@ -1558,9 +1585,9 @@ void SkeletonGrid::SetCachedSize(int size) const {
 
 void SkeletonGrid::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.SkeletonGrid)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   _impl_.outputfile_.ClearToEmpty();
   _impl_.inputfile_.ClearToEmpty();
@@ -1570,63 +1597,69 @@ void SkeletonGrid::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* SkeletonGrid::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto SkeletonGrid::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // string outputfile = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_outputfile();
+          auto *str = _internal_mutable_outputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.SkeletonGrid.outputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // string inputfile = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
-          auto str = _internal_mutable_inputfile();
+          auto *str = _internal_mutable_inputfile();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "proto.SkeletonGrid.inputfile"));
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double simplificationOfOriginalSVG = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 25)) {
           _impl_.simplificationoforiginalsvg_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double max_sep = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.max_sep_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double min_sep = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 41)) {
           _impl_.min_sep_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint32 seed = 6;
       case 6:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
           _impl_.seed_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -1651,11 +1684,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* SkeletonGrid::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto SkeletonGrid::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.SkeletonGrid)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
@@ -1679,30 +1712,30 @@ uint8_t* SkeletonGrid::_InternalSerialize(
 
   // double simplificationOfOriginalSVG = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplificationoforiginalsvg = this->_internal_simplificationoforiginalsvg();
-  uint64_t raw_simplificationoforiginalsvg;
-  memcpy(&raw_simplificationoforiginalsvg, &tmp_simplificationoforiginalsvg, sizeof(tmp_simplificationoforiginalsvg));
-  if (raw_simplificationoforiginalsvg != 0) {
+  double tmpSimplificationoforiginalsvg = this->_internal_simplificationoforiginalsvg();
+  uint64_t rawSimplificationoforiginalsvg = 0;
+  memcpy(&rawSimplificationoforiginalsvg, &tmpSimplificationoforiginalsvg, sizeof(tmpSimplificationoforiginalsvg));
+  if (rawSimplificationoforiginalsvg != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(3, this->_internal_simplificationoforiginalsvg(), target);
   }
 
   // double max_sep = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_max_sep = this->_internal_max_sep();
-  uint64_t raw_max_sep;
-  memcpy(&raw_max_sep, &tmp_max_sep, sizeof(tmp_max_sep));
-  if (raw_max_sep != 0) {
+  double tmpMaxSep = this->_internal_max_sep();
+  uint64_t rawMaxSep = 0;
+  memcpy(&rawMaxSep, &tmpMaxSep, sizeof(tmpMaxSep));
+  if (rawMaxSep != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_max_sep(), target);
   }
 
   // double min_sep = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_min_sep = this->_internal_min_sep();
-  uint64_t raw_min_sep;
-  memcpy(&raw_min_sep, &tmp_min_sep, sizeof(tmp_min_sep));
-  if (raw_min_sep != 0) {
+  double tmpMinSep = this->_internal_min_sep();
+  uint64_t rawMinSep = 0;
+  memcpy(&rawMinSep, &tmpMinSep, sizeof(tmpMinSep));
+  if (rawMinSep != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(5, this->_internal_min_sep(), target);
   }
@@ -1721,77 +1754,77 @@ uint8_t* SkeletonGrid::_InternalSerialize(
   return target;
 }
 
-size_t SkeletonGrid::ByteSizeLong() const {
+auto SkeletonGrid::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.SkeletonGrid)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // string outputfile = 1;
   if (!this->_internal_outputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_outputfile());
   }
 
   // string inputfile = 2;
   if (!this->_internal_inputfile().empty()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_inputfile());
   }
 
   // double simplificationOfOriginalSVG = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplificationoforiginalsvg = this->_internal_simplificationoforiginalsvg();
-  uint64_t raw_simplificationoforiginalsvg;
-  memcpy(&raw_simplificationoforiginalsvg, &tmp_simplificationoforiginalsvg, sizeof(tmp_simplificationoforiginalsvg));
-  if (raw_simplificationoforiginalsvg != 0) {
-    total_size += 1 + 8;
+  double tmpSimplificationoforiginalsvg = this->_internal_simplificationoforiginalsvg();
+  uint64_t rawSimplificationoforiginalsvg = 0;
+  memcpy(&rawSimplificationoforiginalsvg, &tmpSimplificationoforiginalsvg, sizeof(tmpSimplificationoforiginalsvg));
+  if (rawSimplificationoforiginalsvg != 0) {
+    totalSize += 1 + 8;
   }
 
   // double max_sep = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_max_sep = this->_internal_max_sep();
-  uint64_t raw_max_sep;
-  memcpy(&raw_max_sep, &tmp_max_sep, sizeof(tmp_max_sep));
-  if (raw_max_sep != 0) {
-    total_size += 1 + 8;
+  double tmpMaxSep = this->_internal_max_sep();
+  uint64_t rawMaxSep = 0;
+  memcpy(&rawMaxSep, &tmpMaxSep, sizeof(tmpMaxSep));
+  if (rawMaxSep != 0) {
+    totalSize += 1 + 8;
   }
 
   // double min_sep = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_min_sep = this->_internal_min_sep();
-  uint64_t raw_min_sep;
-  memcpy(&raw_min_sep, &tmp_min_sep, sizeof(tmp_min_sep));
-  if (raw_min_sep != 0) {
-    total_size += 1 + 8;
+  double tmpMinSep = this->_internal_min_sep();
+  uint64_t rawMinSep = 0;
+  memcpy(&rawMinSep, &tmpMinSep, sizeof(tmpMinSep));
+  if (rawMinSep != 0) {
+    totalSize += 1 + 8;
   }
 
   // uint32 seed = 6;
   if (this->_internal_seed() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData SkeletonGrid::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     SkeletonGrid::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*SkeletonGrid::GetClassData() const { return &_class_data_; }
+auto SkeletonGrid::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void SkeletonGrid::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<SkeletonGrid*>(&to_msg);
-  auto& from = static_cast<const SkeletonGrid&>(from_msg);
+  auto* const _this = dynamic_cast<SkeletonGrid*>(&to_msg);
+  const auto& from = dynamic_cast<const SkeletonGrid&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.SkeletonGrid)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (!from._internal_outputfile().empty()) {
     _this->_internal_set_outputfile(from._internal_outputfile());
@@ -1800,24 +1833,24 @@ void SkeletonGrid::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::P
     _this->_internal_set_inputfile(from._internal_inputfile());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplificationoforiginalsvg = from._internal_simplificationoforiginalsvg();
-  uint64_t raw_simplificationoforiginalsvg;
-  memcpy(&raw_simplificationoforiginalsvg, &tmp_simplificationoforiginalsvg, sizeof(tmp_simplificationoforiginalsvg));
-  if (raw_simplificationoforiginalsvg != 0) {
+  double tmpSimplificationoforiginalsvg = from._internal_simplificationoforiginalsvg();
+  uint64_t rawSimplificationoforiginalsvg = 0;
+  memcpy(&rawSimplificationoforiginalsvg, &tmpSimplificationoforiginalsvg, sizeof(tmpSimplificationoforiginalsvg));
+  if (rawSimplificationoforiginalsvg != 0) {
     _this->_internal_set_simplificationoforiginalsvg(from._internal_simplificationoforiginalsvg());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_max_sep = from._internal_max_sep();
-  uint64_t raw_max_sep;
-  memcpy(&raw_max_sep, &tmp_max_sep, sizeof(tmp_max_sep));
-  if (raw_max_sep != 0) {
+  double tmpMaxSep = from._internal_max_sep();
+  uint64_t rawMaxSep = 0;
+  memcpy(&rawMaxSep, &tmpMaxSep, sizeof(tmpMaxSep));
+  if (rawMaxSep != 0) {
     _this->_internal_set_max_sep(from._internal_max_sep());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_min_sep = from._internal_min_sep();
-  uint64_t raw_min_sep;
-  memcpy(&raw_min_sep, &tmp_min_sep, sizeof(tmp_min_sep));
-  if (raw_min_sep != 0) {
+  double tmpMinSep = from._internal_min_sep();
+  uint64_t rawMinSep = 0;
+  memcpy(&rawMinSep, &tmpMinSep, sizeof(tmpMinSep));
+  if (rawMinSep != 0) {
     _this->_internal_set_min_sep(from._internal_min_sep());
   }
   if (from._internal_seed() != 0) {
@@ -1828,27 +1861,28 @@ void SkeletonGrid::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::P
 
 void SkeletonGrid::CopyFrom(const SkeletonGrid& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.SkeletonGrid)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool SkeletonGrid::IsInitialized() const {
+auto SkeletonGrid::IsInitialized() const -> bool {
   return true;
 }
 
 void SkeletonGrid::InternalSwap(SkeletonGrid* other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* lhsArena = GetArenaForAllocation();
+  auto* rhsArena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.outputfile_, lhs_arena,
-      &other->_impl_.outputfile_, rhs_arena
+      &_impl_.outputfile_, lhsArena,
+      &other->_impl_.outputfile_, rhsArena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.inputfile_, lhs_arena,
-      &other->_impl_.inputfile_, rhs_arena
+      &_impl_.inputfile_, lhsArena,
+      &other->_impl_.inputfile_, rhsArena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SkeletonGrid, _impl_.seed_)
@@ -1858,10 +1892,10 @@ void SkeletonGrid::InternalSwap(SkeletonGrid* other) {
           reinterpret_cast<char*>(&other->_impl_.simplificationoforiginalsvg_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata SkeletonGrid::GetMetadata() const {
+auto SkeletonGrid::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[3]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[3]);
 }
 
 // ===================================================================
@@ -1877,7 +1911,7 @@ RoutingCost::RoutingCost(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.RoutingCost)
 }
 RoutingCost::RoutingCost(const RoutingCost& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   RoutingCost* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.seed_){}
@@ -1898,7 +1932,7 @@ inline void RoutingCost::SharedCtor(
   (void)arena;
   (void)is_message_owned;
   new (&_impl_) Impl_{
-      decltype(_impl_.seed_){0u}
+      decltype(_impl_.seed_){0U}
     , decltype(_impl_.max_random_){0}
     , decltype(_impl_.distance_unit_cost_){0}
     , decltype(_impl_.via_unit_cost_){0}
@@ -1925,9 +1959,9 @@ void RoutingCost::SetCachedSize(int size) const {
 
 void RoutingCost::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.RoutingCost)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   ::memset(&_impl_.seed_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.via_unit_cost_) -
@@ -1935,10 +1969,10 @@ void RoutingCost::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* RoutingCost::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto RoutingCost::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // uint32 seed = 1;
@@ -1946,32 +1980,36 @@ const char* RoutingCost::_InternalParse(const char* ptr, ::_pbi::ParseContext* c
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
           _impl_.seed_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // int32 max_random = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           _impl_.max_random_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // int32 distance_unit_cost = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
           _impl_.distance_unit_cost_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // int32 via_unit_cost = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
           _impl_.via_unit_cost_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -1996,11 +2034,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* RoutingCost::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto RoutingCost::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.RoutingCost)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // uint32 seed = 1;
   if (this->_internal_seed() != 0) {
@@ -2034,51 +2072,51 @@ uint8_t* RoutingCost::_InternalSerialize(
   return target;
 }
 
-size_t RoutingCost::ByteSizeLong() const {
+auto RoutingCost::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.RoutingCost)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // uint32 seed = 1;
   if (this->_internal_seed() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
   }
 
   // int32 max_random = 2;
   if (this->_internal_max_random() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_max_random());
+    totalSize += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_max_random());
   }
 
   // int32 distance_unit_cost = 3;
   if (this->_internal_distance_unit_cost() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_distance_unit_cost());
+    totalSize += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_distance_unit_cost());
   }
 
   // int32 via_unit_cost = 4;
   if (this->_internal_via_unit_cost() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_via_unit_cost());
+    totalSize += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_via_unit_cost());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData RoutingCost::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     RoutingCost::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*RoutingCost::GetClassData() const { return &_class_data_; }
+auto RoutingCost::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void RoutingCost::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<RoutingCost*>(&to_msg);
-  auto& from = static_cast<const RoutingCost&>(from_msg);
+  auto* const _this = dynamic_cast<RoutingCost*>(&to_msg);
+  const auto& from = dynamic_cast<const RoutingCost&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.RoutingCost)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (from._internal_seed() != 0) {
     _this->_internal_set_seed(from._internal_seed());
@@ -2097,12 +2135,13 @@ void RoutingCost::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PR
 
 void RoutingCost::CopyFrom(const RoutingCost& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.RoutingCost)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool RoutingCost::IsInitialized() const {
+auto RoutingCost::IsInitialized() const -> bool {
   return true;
 }
 
@@ -2117,10 +2156,10 @@ void RoutingCost::InternalSwap(RoutingCost* other) {
           reinterpret_cast<char*>(&other->_impl_.seed_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata RoutingCost::GetMetadata() const {
+auto RoutingCost::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[4]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[4]);
 }
 
 // ===================================================================
@@ -2136,7 +2175,7 @@ Cell::Cell(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.Cell)
 }
 Cell::Cell(const Cell& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   Cell* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.seed_){}
@@ -2157,10 +2196,10 @@ inline void Cell::SharedCtor(
   (void)arena;
   (void)is_message_owned;
   new (&_impl_) Impl_{
-      decltype(_impl_.seed_){0u}
-    , decltype(_impl_.maxpin_){0u}
+      decltype(_impl_.seed_){0U}
+    , decltype(_impl_.maxpin_){0U}
     , decltype(_impl_.resolution_){0}
-    , decltype(_impl_.startnet_){0u}
+    , decltype(_impl_.startnet_){0U}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2184,9 +2223,9 @@ void Cell::SetCachedSize(int size) const {
 
 void Cell::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.Cell)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   ::memset(&_impl_.seed_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.startnet_) -
@@ -2194,10 +2233,10 @@ void Cell::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* Cell::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto Cell::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // uint32 seed = 1;
@@ -2205,32 +2244,36 @@ const char* Cell::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
           _impl_.seed_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint32 maxPin = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
           _impl_.maxpin_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint32 startNet = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
           _impl_.startnet_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double resolution = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.resolution_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -2255,11 +2298,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* Cell::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto Cell::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.Cell)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // uint32 seed = 1;
   if (this->_internal_seed() != 0) {
@@ -2281,10 +2324,10 @@ uint8_t* Cell::_InternalSerialize(
 
   // double resolution = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = this->_internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
+  double tmpResolution = this->_internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_resolution(), target);
   }
@@ -2297,55 +2340,55 @@ uint8_t* Cell::_InternalSerialize(
   return target;
 }
 
-size_t Cell::ByteSizeLong() const {
+auto Cell::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.Cell)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // uint32 seed = 1;
   if (this->_internal_seed() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_seed());
   }
 
   // uint32 maxPin = 2;
   if (this->_internal_maxpin() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_maxpin());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_maxpin());
   }
 
   // double resolution = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = this->_internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
-    total_size += 1 + 8;
+  double tmpResolution = this->_internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
+    totalSize += 1 + 8;
   }
 
   // uint32 startNet = 3;
   if (this->_internal_startnet() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_startnet());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_startnet());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData Cell::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     Cell::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*Cell::GetClassData() const { return &_class_data_; }
+auto Cell::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void Cell::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<Cell*>(&to_msg);
-  auto& from = static_cast<const Cell&>(from_msg);
+  auto* const _this = dynamic_cast<Cell*>(&to_msg);
+  const auto& from = dynamic_cast<const Cell&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.Cell)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (from._internal_seed() != 0) {
     _this->_internal_set_seed(from._internal_seed());
@@ -2354,10 +2397,10 @@ void Cell::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_
     _this->_internal_set_maxpin(from._internal_maxpin());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_resolution = from._internal_resolution();
-  uint64_t raw_resolution;
-  memcpy(&raw_resolution, &tmp_resolution, sizeof(tmp_resolution));
-  if (raw_resolution != 0) {
+  double tmpResolution = from._internal_resolution();
+  uint64_t rawResolution = 0;
+  memcpy(&rawResolution, &tmpResolution, sizeof(tmpResolution));
+  if (rawResolution != 0) {
     _this->_internal_set_resolution(from._internal_resolution());
   }
   if (from._internal_startnet() != 0) {
@@ -2368,12 +2411,13 @@ void Cell::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_
 
 void Cell::CopyFrom(const Cell& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.Cell)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool Cell::IsInitialized() const {
+auto Cell::IsInitialized() const -> bool {
   return true;
 }
 
@@ -2388,26 +2432,26 @@ void Cell::InternalSwap(Cell* other) {
           reinterpret_cast<char*>(&other->_impl_.seed_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata Cell::GetMetadata() const {
+auto Cell::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[5]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[5]);
 }
 
 // ===================================================================
 
 class Placement::_Internal {
  public:
-  static const ::proto::RoutingCost& routing(const Placement* msg);
-  static const ::proto::Cell& cell(const Placement* msg);
+  static auto routing(const Placement* msg) -> const ::proto::RoutingCost&;
+  static auto cell(const Placement* msg) -> const ::proto::Cell&;
 };
 
-const ::proto::RoutingCost&
-Placement::_Internal::routing(const Placement* msg) {
+auto
+Placement::_Internal::routing(const Placement* msg) -> const ::proto::RoutingCost& {
   return *msg->_impl_.routing_;
 }
-const ::proto::Cell&
-Placement::_Internal::cell(const Placement* msg) {
+auto
+Placement::_Internal::cell(const Placement* msg) -> const ::proto::Cell& {
   return *msg->_impl_.cell_;
 }
 Placement::Placement(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -2417,7 +2461,7 @@ Placement::Placement(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.Placement)
 }
 Placement::Placement(const Placement& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   Placement* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.routing_){nullptr}
@@ -2454,8 +2498,8 @@ inline void Placement::SharedCtor(
     , decltype(_impl_.decrement_factor_){0}
     , decltype(_impl_.minimal_thickness_){0}
     , decltype(_impl_.smoothing_tension_){0}
-    , decltype(_impl_.max_routing_attempt_){uint64_t{0u}}
-    , decltype(_impl_.smoothing_iteration_){0u}
+    , decltype(_impl_.max_routing_attempt_){uint64_t{0U}}
+    , decltype(_impl_.smoothing_iteration_){0U}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2471,8 +2515,10 @@ Placement::~Placement() {
 
 inline void Placement::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-  if (this != internal_default_instance()) delete _impl_.routing_;
-  if (this != internal_default_instance()) delete _impl_.cell_;
+  if (this != internal_default_instance()) { delete _impl_.routing_;
+}
+  if (this != internal_default_instance()) { delete _impl_.cell_;
+}
 }
 
 void Placement::SetCachedSize(int size) const {
@@ -2481,9 +2527,9 @@ void Placement::SetCachedSize(int size) const {
 
 void Placement::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.Placement)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   if (GetArenaForAllocation() == nullptr && _impl_.routing_ != nullptr) {
     delete _impl_.routing_;
@@ -2499,10 +2545,10 @@ void Placement::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* Placement::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto Placement::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // double initial_thickness = 1;
@@ -2510,64 +2556,72 @@ const char* Placement::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 9)) {
           _impl_.initial_thickness_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double decrement_factor = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 17)) {
           _impl_.decrement_factor_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double minimal_thickness = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 25)) {
           _impl_.minimal_thickness_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double smoothing_tension = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.smoothing_tension_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint32 smoothing_iteration = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
           _impl_.smoothing_iteration_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint64 max_routing_attempt = 6;
       case 6:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
           _impl_.max_routing_attempt_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.RoutingCost routing = 7;
       case 7:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 58)) {
           ptr = ctx->ParseMessage(_internal_mutable_routing(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.Cell cell = 8;
       case 8:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 66)) {
           ptr = ctx->ParseMessage(_internal_mutable_cell(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -2592,48 +2646,48 @@ failure:
 #undef CHK_
 }
 
-uint8_t* Placement::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto Placement::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.Placement)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // double initial_thickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_initial_thickness = this->_internal_initial_thickness();
-  uint64_t raw_initial_thickness;
-  memcpy(&raw_initial_thickness, &tmp_initial_thickness, sizeof(tmp_initial_thickness));
-  if (raw_initial_thickness != 0) {
+  double tmpInitialThickness = this->_internal_initial_thickness();
+  uint64_t rawInitialThickness = 0;
+  memcpy(&rawInitialThickness, &tmpInitialThickness, sizeof(tmpInitialThickness));
+  if (rawInitialThickness != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(1, this->_internal_initial_thickness(), target);
   }
 
   // double decrement_factor = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_decrement_factor = this->_internal_decrement_factor();
-  uint64_t raw_decrement_factor;
-  memcpy(&raw_decrement_factor, &tmp_decrement_factor, sizeof(tmp_decrement_factor));
-  if (raw_decrement_factor != 0) {
+  double tmpDecrementFactor = this->_internal_decrement_factor();
+  uint64_t rawDecrementFactor = 0;
+  memcpy(&rawDecrementFactor, &tmpDecrementFactor, sizeof(tmpDecrementFactor));
+  if (rawDecrementFactor != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(2, this->_internal_decrement_factor(), target);
   }
 
   // double minimal_thickness = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minimal_thickness = this->_internal_minimal_thickness();
-  uint64_t raw_minimal_thickness;
-  memcpy(&raw_minimal_thickness, &tmp_minimal_thickness, sizeof(tmp_minimal_thickness));
-  if (raw_minimal_thickness != 0) {
+  double tmpMinimalThickness = this->_internal_minimal_thickness();
+  uint64_t rawMinimalThickness = 0;
+  memcpy(&rawMinimalThickness, &tmpMinimalThickness, sizeof(tmpMinimalThickness));
+  if (rawMinimalThickness != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(3, this->_internal_minimal_thickness(), target);
   }
 
   // double smoothing_tension = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = this->_internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
+  double tmpSmoothingTension = this->_internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_smoothing_tension(), target);
   }
@@ -2672,91 +2726,91 @@ uint8_t* Placement::_InternalSerialize(
   return target;
 }
 
-size_t Placement::ByteSizeLong() const {
+auto Placement::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.Placement)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // .proto.RoutingCost routing = 7;
   if (this->_internal_has_routing()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.routing_);
   }
 
   // .proto.Cell cell = 8;
   if (this->_internal_has_cell()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.cell_);
   }
 
   // double initial_thickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_initial_thickness = this->_internal_initial_thickness();
-  uint64_t raw_initial_thickness;
-  memcpy(&raw_initial_thickness, &tmp_initial_thickness, sizeof(tmp_initial_thickness));
-  if (raw_initial_thickness != 0) {
-    total_size += 1 + 8;
+  double tmpInitialThickness = this->_internal_initial_thickness();
+  uint64_t rawInitialThickness = 0;
+  memcpy(&rawInitialThickness, &tmpInitialThickness, sizeof(tmpInitialThickness));
+  if (rawInitialThickness != 0) {
+    totalSize += 1 + 8;
   }
 
   // double decrement_factor = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_decrement_factor = this->_internal_decrement_factor();
-  uint64_t raw_decrement_factor;
-  memcpy(&raw_decrement_factor, &tmp_decrement_factor, sizeof(tmp_decrement_factor));
-  if (raw_decrement_factor != 0) {
-    total_size += 1 + 8;
+  double tmpDecrementFactor = this->_internal_decrement_factor();
+  uint64_t rawDecrementFactor = 0;
+  memcpy(&rawDecrementFactor, &tmpDecrementFactor, sizeof(tmpDecrementFactor));
+  if (rawDecrementFactor != 0) {
+    totalSize += 1 + 8;
   }
 
   // double minimal_thickness = 3;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minimal_thickness = this->_internal_minimal_thickness();
-  uint64_t raw_minimal_thickness;
-  memcpy(&raw_minimal_thickness, &tmp_minimal_thickness, sizeof(tmp_minimal_thickness));
-  if (raw_minimal_thickness != 0) {
-    total_size += 1 + 8;
+  double tmpMinimalThickness = this->_internal_minimal_thickness();
+  uint64_t rawMinimalThickness = 0;
+  memcpy(&rawMinimalThickness, &tmpMinimalThickness, sizeof(tmpMinimalThickness));
+  if (rawMinimalThickness != 0) {
+    totalSize += 1 + 8;
   }
 
   // double smoothing_tension = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = this->_internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
-    total_size += 1 + 8;
+  double tmpSmoothingTension = this->_internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
+    totalSize += 1 + 8;
   }
 
   // uint64 max_routing_attempt = 6;
   if (this->_internal_max_routing_attempt() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_max_routing_attempt());
+    totalSize += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_max_routing_attempt());
   }
 
   // uint32 smoothing_iteration = 5;
   if (this->_internal_smoothing_iteration() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_smoothing_iteration());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_smoothing_iteration());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData Placement::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     Placement::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*Placement::GetClassData() const { return &_class_data_; }
+auto Placement::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void Placement::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<Placement*>(&to_msg);
-  auto& from = static_cast<const Placement&>(from_msg);
+  auto* const _this = dynamic_cast<Placement*>(&to_msg);
+  const auto& from = dynamic_cast<const Placement&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.Placement)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (from._internal_has_routing()) {
     _this->_internal_mutable_routing()->::proto::RoutingCost::MergeFrom(
@@ -2767,31 +2821,31 @@ void Placement::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
         from._internal_cell());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_initial_thickness = from._internal_initial_thickness();
-  uint64_t raw_initial_thickness;
-  memcpy(&raw_initial_thickness, &tmp_initial_thickness, sizeof(tmp_initial_thickness));
-  if (raw_initial_thickness != 0) {
+  double tmpInitialThickness = from._internal_initial_thickness();
+  uint64_t rawInitialThickness = 0;
+  memcpy(&rawInitialThickness, &tmpInitialThickness, sizeof(tmpInitialThickness));
+  if (rawInitialThickness != 0) {
     _this->_internal_set_initial_thickness(from._internal_initial_thickness());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_decrement_factor = from._internal_decrement_factor();
-  uint64_t raw_decrement_factor;
-  memcpy(&raw_decrement_factor, &tmp_decrement_factor, sizeof(tmp_decrement_factor));
-  if (raw_decrement_factor != 0) {
+  double tmpDecrementFactor = from._internal_decrement_factor();
+  uint64_t rawDecrementFactor = 0;
+  memcpy(&rawDecrementFactor, &tmpDecrementFactor, sizeof(tmpDecrementFactor));
+  if (rawDecrementFactor != 0) {
     _this->_internal_set_decrement_factor(from._internal_decrement_factor());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minimal_thickness = from._internal_minimal_thickness();
-  uint64_t raw_minimal_thickness;
-  memcpy(&raw_minimal_thickness, &tmp_minimal_thickness, sizeof(tmp_minimal_thickness));
-  if (raw_minimal_thickness != 0) {
+  double tmpMinimalThickness = from._internal_minimal_thickness();
+  uint64_t rawMinimalThickness = 0;
+  memcpy(&rawMinimalThickness, &tmpMinimalThickness, sizeof(tmpMinimalThickness));
+  if (rawMinimalThickness != 0) {
     _this->_internal_set_minimal_thickness(from._internal_minimal_thickness());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_smoothing_tension = from._internal_smoothing_tension();
-  uint64_t raw_smoothing_tension;
-  memcpy(&raw_smoothing_tension, &tmp_smoothing_tension, sizeof(tmp_smoothing_tension));
-  if (raw_smoothing_tension != 0) {
+  double tmpSmoothingTension = from._internal_smoothing_tension();
+  uint64_t rawSmoothingTension = 0;
+  memcpy(&rawSmoothingTension, &tmpSmoothingTension, sizeof(tmpSmoothingTension));
+  if (rawSmoothingTension != 0) {
     _this->_internal_set_smoothing_tension(from._internal_smoothing_tension());
   }
   if (from._internal_max_routing_attempt() != 0) {
@@ -2805,12 +2859,13 @@ void Placement::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
 
 void Placement::CopyFrom(const Placement& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.Placement)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool Placement::IsInitialized() const {
+auto Placement::IsInitialized() const -> bool {
   return true;
 }
 
@@ -2825,10 +2880,10 @@ void Placement::InternalSwap(Placement* other) {
           reinterpret_cast<char*>(&other->_impl_.routing_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata Placement::GetMetadata() const {
+auto Placement::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[6]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[6]);
 }
 
 // ===================================================================
@@ -2844,7 +2899,7 @@ AlternateRouting::AlternateRouting(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.AlternateRouting)
 }
 AlternateRouting::AlternateRouting(const AlternateRouting& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   AlternateRouting* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.maxthickness_){}
@@ -2870,7 +2925,7 @@ inline void AlternateRouting::SharedCtor(
     , decltype(_impl_.minthickness_){0}
     , decltype(_impl_.thicknesspercent_){0}
     , decltype(_impl_.simplifydist_){0}
-    , decltype(_impl_.pruning_){0u}
+    , decltype(_impl_.pruning_){0U}
     , /*decltype(_impl_._cached_size_)*/{}
   };
 }
@@ -2894,9 +2949,9 @@ void AlternateRouting::SetCachedSize(int size) const {
 
 void AlternateRouting::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.AlternateRouting)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   ::memset(&_impl_.maxthickness_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.pruning_) -
@@ -2904,10 +2959,10 @@ void AlternateRouting::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* AlternateRouting::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto AlternateRouting::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // double maxThickness = 1;
@@ -2915,40 +2970,45 @@ const char* AlternateRouting::_InternalParse(const char* ptr, ::_pbi::ParseConte
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 9)) {
           _impl_.maxthickness_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double minThickness = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 17)) {
           _impl_.minthickness_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // uint32 pruning = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
           _impl_.pruning_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double thicknessPercent = 4;
       case 4:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 33)) {
           _impl_.thicknesspercent_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // double simplifyDist = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 41)) {
           _impl_.simplifydist_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<double>(ptr);
           ptr += sizeof(double);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -2973,28 +3033,28 @@ failure:
 #undef CHK_
 }
 
-uint8_t* AlternateRouting::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto AlternateRouting::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.AlternateRouting)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // double maxThickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_maxthickness = this->_internal_maxthickness();
-  uint64_t raw_maxthickness;
-  memcpy(&raw_maxthickness, &tmp_maxthickness, sizeof(tmp_maxthickness));
-  if (raw_maxthickness != 0) {
+  double tmpMaxthickness = this->_internal_maxthickness();
+  uint64_t rawMaxthickness = 0;
+  memcpy(&rawMaxthickness, &tmpMaxthickness, sizeof(tmpMaxthickness));
+  if (rawMaxthickness != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(1, this->_internal_maxthickness(), target);
   }
 
   // double minThickness = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minthickness = this->_internal_minthickness();
-  uint64_t raw_minthickness;
-  memcpy(&raw_minthickness, &tmp_minthickness, sizeof(tmp_minthickness));
-  if (raw_minthickness != 0) {
+  double tmpMinthickness = this->_internal_minthickness();
+  uint64_t rawMinthickness = 0;
+  memcpy(&rawMinthickness, &tmpMinthickness, sizeof(tmpMinthickness));
+  if (rawMinthickness != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(2, this->_internal_minthickness(), target);
   }
@@ -3007,20 +3067,20 @@ uint8_t* AlternateRouting::_InternalSerialize(
 
   // double thicknessPercent = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thicknesspercent = this->_internal_thicknesspercent();
-  uint64_t raw_thicknesspercent;
-  memcpy(&raw_thicknesspercent, &tmp_thicknesspercent, sizeof(tmp_thicknesspercent));
-  if (raw_thicknesspercent != 0) {
+  double tmpThicknesspercent = this->_internal_thicknesspercent();
+  uint64_t rawThicknesspercent = 0;
+  memcpy(&rawThicknesspercent, &tmpThicknesspercent, sizeof(tmpThicknesspercent));
+  if (rawThicknesspercent != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(4, this->_internal_thicknesspercent(), target);
   }
 
   // double simplifyDist = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplifydist = this->_internal_simplifydist();
-  uint64_t raw_simplifydist;
-  memcpy(&raw_simplifydist, &tmp_simplifydist, sizeof(tmp_simplifydist));
-  if (raw_simplifydist != 0) {
+  double tmpSimplifydist = this->_internal_simplifydist();
+  uint64_t rawSimplifydist = 0;
+  memcpy(&rawSimplifydist, &tmpSimplifydist, sizeof(tmpSimplifydist));
+  if (rawSimplifydist != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteDoubleToArray(5, this->_internal_simplifydist(), target);
   }
@@ -3033,99 +3093,99 @@ uint8_t* AlternateRouting::_InternalSerialize(
   return target;
 }
 
-size_t AlternateRouting::ByteSizeLong() const {
+auto AlternateRouting::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.AlternateRouting)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // double maxThickness = 1;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_maxthickness = this->_internal_maxthickness();
-  uint64_t raw_maxthickness;
-  memcpy(&raw_maxthickness, &tmp_maxthickness, sizeof(tmp_maxthickness));
-  if (raw_maxthickness != 0) {
-    total_size += 1 + 8;
+  double tmpMaxthickness = this->_internal_maxthickness();
+  uint64_t rawMaxthickness = 0;
+  memcpy(&rawMaxthickness, &tmpMaxthickness, sizeof(tmpMaxthickness));
+  if (rawMaxthickness != 0) {
+    totalSize += 1 + 8;
   }
 
   // double minThickness = 2;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minthickness = this->_internal_minthickness();
-  uint64_t raw_minthickness;
-  memcpy(&raw_minthickness, &tmp_minthickness, sizeof(tmp_minthickness));
-  if (raw_minthickness != 0) {
-    total_size += 1 + 8;
+  double tmpMinthickness = this->_internal_minthickness();
+  uint64_t rawMinthickness = 0;
+  memcpy(&rawMinthickness, &tmpMinthickness, sizeof(tmpMinthickness));
+  if (rawMinthickness != 0) {
+    totalSize += 1 + 8;
   }
 
   // double thicknessPercent = 4;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thicknesspercent = this->_internal_thicknesspercent();
-  uint64_t raw_thicknesspercent;
-  memcpy(&raw_thicknesspercent, &tmp_thicknesspercent, sizeof(tmp_thicknesspercent));
-  if (raw_thicknesspercent != 0) {
-    total_size += 1 + 8;
+  double tmpThicknesspercent = this->_internal_thicknesspercent();
+  uint64_t rawThicknesspercent = 0;
+  memcpy(&rawThicknesspercent, &tmpThicknesspercent, sizeof(tmpThicknesspercent));
+  if (rawThicknesspercent != 0) {
+    totalSize += 1 + 8;
   }
 
   // double simplifyDist = 5;
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplifydist = this->_internal_simplifydist();
-  uint64_t raw_simplifydist;
-  memcpy(&raw_simplifydist, &tmp_simplifydist, sizeof(tmp_simplifydist));
-  if (raw_simplifydist != 0) {
-    total_size += 1 + 8;
+  double tmpSimplifydist = this->_internal_simplifydist();
+  uint64_t rawSimplifydist = 0;
+  memcpy(&rawSimplifydist, &tmpSimplifydist, sizeof(tmpSimplifydist));
+  if (rawSimplifydist != 0) {
+    totalSize += 1 + 8;
   }
 
   // uint32 pruning = 3;
   if (this->_internal_pruning() != 0) {
-    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_pruning());
+    totalSize += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_pruning());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AlternateRouting::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     AlternateRouting::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AlternateRouting::GetClassData() const { return &_class_data_; }
+auto AlternateRouting::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void AlternateRouting::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<AlternateRouting*>(&to_msg);
-  auto& from = static_cast<const AlternateRouting&>(from_msg);
+  auto* const _this = dynamic_cast<AlternateRouting*>(&to_msg);
+  const auto& from = dynamic_cast<const AlternateRouting&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.AlternateRouting)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_maxthickness = from._internal_maxthickness();
-  uint64_t raw_maxthickness;
-  memcpy(&raw_maxthickness, &tmp_maxthickness, sizeof(tmp_maxthickness));
-  if (raw_maxthickness != 0) {
+  double tmpMaxthickness = from._internal_maxthickness();
+  uint64_t rawMaxthickness = 0;
+  memcpy(&rawMaxthickness, &tmpMaxthickness, sizeof(tmpMaxthickness));
+  if (rawMaxthickness != 0) {
     _this->_internal_set_maxthickness(from._internal_maxthickness());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_minthickness = from._internal_minthickness();
-  uint64_t raw_minthickness;
-  memcpy(&raw_minthickness, &tmp_minthickness, sizeof(tmp_minthickness));
-  if (raw_minthickness != 0) {
+  double tmpMinthickness = from._internal_minthickness();
+  uint64_t rawMinthickness = 0;
+  memcpy(&rawMinthickness, &tmpMinthickness, sizeof(tmpMinthickness));
+  if (rawMinthickness != 0) {
     _this->_internal_set_minthickness(from._internal_minthickness());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_thicknesspercent = from._internal_thicknesspercent();
-  uint64_t raw_thicknesspercent;
-  memcpy(&raw_thicknesspercent, &tmp_thicknesspercent, sizeof(tmp_thicknesspercent));
-  if (raw_thicknesspercent != 0) {
+  double tmpThicknesspercent = from._internal_thicknesspercent();
+  uint64_t rawThicknesspercent = 0;
+  memcpy(&rawThicknesspercent, &tmpThicknesspercent, sizeof(tmpThicknesspercent));
+  if (rawThicknesspercent != 0) {
     _this->_internal_set_thicknesspercent(from._internal_thicknesspercent());
   }
   static_assert(sizeof(uint64_t) == sizeof(double), "Code assumes uint64_t and double are the same size.");
-  double tmp_simplifydist = from._internal_simplifydist();
-  uint64_t raw_simplifydist;
-  memcpy(&raw_simplifydist, &tmp_simplifydist, sizeof(tmp_simplifydist));
-  if (raw_simplifydist != 0) {
+  double tmpSimplifydist = from._internal_simplifydist();
+  uint64_t rawSimplifydist = 0;
+  memcpy(&rawSimplifydist, &tmpSimplifydist, sizeof(tmpSimplifydist));
+  if (rawSimplifydist != 0) {
     _this->_internal_set_simplifydist(from._internal_simplifydist());
   }
   if (from._internal_pruning() != 0) {
@@ -3136,12 +3196,13 @@ void AlternateRouting::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const
 
 void AlternateRouting::CopyFrom(const AlternateRouting& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.AlternateRouting)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool AlternateRouting::IsInitialized() const {
+auto AlternateRouting::IsInitialized() const -> bool {
   return true;
 }
 
@@ -3156,31 +3217,31 @@ void AlternateRouting::InternalSwap(AlternateRouting* other) {
           reinterpret_cast<char*>(&other->_impl_.maxthickness_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata AlternateRouting::GetMetadata() const {
+auto AlternateRouting::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[7]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[7]);
 }
 
 // ===================================================================
 
 class Routing::_Internal {
  public:
-  static const ::proto::Filepaths& filepaths(const Routing* msg);
-  static const ::proto::Placement& placement(const Routing* msg);
-  static const ::proto::AlternateRouting& alternaterouting(const Routing* msg);
+  static auto filepaths(const Routing* msg) -> const ::proto::Filepaths&;
+  static auto placement(const Routing* msg) -> const ::proto::Placement&;
+  static auto alternaterouting(const Routing* msg) -> const ::proto::AlternateRouting&;
 };
 
-const ::proto::Filepaths&
-Routing::_Internal::filepaths(const Routing* msg) {
+auto
+Routing::_Internal::filepaths(const Routing* msg) -> const ::proto::Filepaths& {
   return *msg->_impl_.filepaths_;
 }
-const ::proto::Placement&
-Routing::_Internal::placement(const Routing* msg) {
+auto
+Routing::_Internal::placement(const Routing* msg) -> const ::proto::Placement& {
   return *msg->_impl_.placement_;
 }
-const ::proto::AlternateRouting&
-Routing::_Internal::alternaterouting(const Routing* msg) {
+auto
+Routing::_Internal::alternaterouting(const Routing* msg) -> const ::proto::AlternateRouting& {
   return *msg->_impl_.alternaterouting_;
 }
 Routing::Routing(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -3190,7 +3251,7 @@ Routing::Routing(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.Routing)
 }
 Routing::Routing(const Routing& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   Routing* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.filepaths_){nullptr}
@@ -3234,9 +3295,12 @@ Routing::~Routing() {
 
 inline void Routing::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-  if (this != internal_default_instance()) delete _impl_.filepaths_;
-  if (this != internal_default_instance()) delete _impl_.placement_;
-  if (this != internal_default_instance()) delete _impl_.alternaterouting_;
+  if (this != internal_default_instance()) { delete _impl_.filepaths_;
+}
+  if (this != internal_default_instance()) { delete _impl_.placement_;
+}
+  if (this != internal_default_instance()) { delete _impl_.alternaterouting_;
+}
 }
 
 void Routing::SetCachedSize(int size) const {
@@ -3245,9 +3309,9 @@ void Routing::SetCachedSize(int size) const {
 
 void Routing::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.Routing)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   if (GetArenaForAllocation() == nullptr && _impl_.filepaths_ != nullptr) {
     delete _impl_.filepaths_;
@@ -3264,10 +3328,10 @@ void Routing::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* Routing::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto Routing::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // .proto.Filepaths filepaths = 1;
@@ -3275,24 +3339,27 @@ const char* Routing::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) 
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_filepaths(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.Placement placement = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_placement(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.AlternateRouting alternateRouting = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_alternaterouting(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -3317,11 +3384,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* Routing::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto Routing::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.Routing)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // .proto.Filepaths filepaths = 1;
   if (this->_internal_has_filepaths()) {
@@ -3352,52 +3419,52 @@ uint8_t* Routing::_InternalSerialize(
   return target;
 }
 
-size_t Routing::ByteSizeLong() const {
+auto Routing::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.Routing)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // .proto.Filepaths filepaths = 1;
   if (this->_internal_has_filepaths()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.filepaths_);
   }
 
   // .proto.Placement placement = 2;
   if (this->_internal_has_placement()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.placement_);
   }
 
   // .proto.AlternateRouting alternateRouting = 3;
   if (this->_internal_has_alternaterouting()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.alternaterouting_);
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData Routing::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     Routing::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*Routing::GetClassData() const { return &_class_data_; }
+auto Routing::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void Routing::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<Routing*>(&to_msg);
-  auto& from = static_cast<const Routing&>(from_msg);
+  auto* const _this = dynamic_cast<Routing*>(&to_msg);
+  const auto& from = dynamic_cast<const Routing&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.Routing)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (from._internal_has_filepaths()) {
     _this->_internal_mutable_filepaths()->::proto::Filepaths::MergeFrom(
@@ -3416,12 +3483,13 @@ void Routing::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOB
 
 void Routing::CopyFrom(const Routing& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.Routing)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool Routing::IsInitialized() const {
+auto Routing::IsInitialized() const -> bool {
   return true;
 }
 
@@ -3436,31 +3504,31 @@ void Routing::InternalSwap(Routing* other) {
           reinterpret_cast<char*>(&other->_impl_.filepaths_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata Routing::GetMetadata() const {
+auto Routing::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[8]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[8]);
 }
 
 // ===================================================================
 
 class AllConfig::_Internal {
  public:
-  static const ::proto::Routing& routing(const AllConfig* msg);
-  static const ::proto::GraphicRendering& ggraphicrendering(const AllConfig* msg);
-  static const ::proto::SkeletonGrid& skeletongrid(const AllConfig* msg);
+  static auto routing(const AllConfig* msg) -> const ::proto::Routing&;
+  static auto ggraphicrendering(const AllConfig* msg) -> const ::proto::GraphicRendering&;
+  static auto skeletongrid(const AllConfig* msg) -> const ::proto::SkeletonGrid&;
 };
 
-const ::proto::Routing&
-AllConfig::_Internal::routing(const AllConfig* msg) {
+auto
+AllConfig::_Internal::routing(const AllConfig* msg) -> const ::proto::Routing& {
   return *msg->_impl_.routing_;
 }
-const ::proto::GraphicRendering&
-AllConfig::_Internal::ggraphicrendering(const AllConfig* msg) {
+auto
+AllConfig::_Internal::ggraphicrendering(const AllConfig* msg) -> const ::proto::GraphicRendering& {
   return *msg->_impl_.ggraphicrendering_;
 }
-const ::proto::SkeletonGrid&
-AllConfig::_Internal::skeletongrid(const AllConfig* msg) {
+auto
+AllConfig::_Internal::skeletongrid(const AllConfig* msg) -> const ::proto::SkeletonGrid& {
   return *msg->_impl_.skeletongrid_;
 }
 AllConfig::AllConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -3470,7 +3538,7 @@ AllConfig::AllConfig(::PROTOBUF_NAMESPACE_ID::Arena* arena,
   // @@protoc_insertion_point(arena_constructor:proto.AllConfig)
 }
 AllConfig::AllConfig(const AllConfig& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+   {
   AllConfig* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.routing_){nullptr}
@@ -3514,9 +3582,12 @@ AllConfig::~AllConfig() {
 
 inline void AllConfig::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-  if (this != internal_default_instance()) delete _impl_.routing_;
-  if (this != internal_default_instance()) delete _impl_.ggraphicrendering_;
-  if (this != internal_default_instance()) delete _impl_.skeletongrid_;
+  if (this != internal_default_instance()) { delete _impl_.routing_;
+}
+  if (this != internal_default_instance()) { delete _impl_.ggraphicrendering_;
+}
+  if (this != internal_default_instance()) { delete _impl_.skeletongrid_;
+}
 }
 
 void AllConfig::SetCachedSize(int size) const {
@@ -3525,9 +3596,9 @@ void AllConfig::SetCachedSize(int size) const {
 
 void AllConfig::Clear() {
 // @@protoc_insertion_point(message_clear_start:proto.AllConfig)
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   if (GetArenaForAllocation() == nullptr && _impl_.routing_ != nullptr) {
     delete _impl_.routing_;
@@ -3544,10 +3615,10 @@ void AllConfig::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* AllConfig::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+auto AllConfig::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) -> const char* {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
-    uint32_t tag;
+    uint32_t tag = 0;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
       // .proto.Routing routing = 1;
@@ -3555,24 +3626,27 @@ const char* AllConfig::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_routing(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.GraphicRendering gGraphicRendering = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_ggraphicrendering(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       // .proto.SkeletonGrid skeletonGrid = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_skeletongrid(), ptr);
           CHK_(ptr);
-        } else
+        } else {
           goto handle_unusual;
+}
         continue;
       default:
         goto handle_unusual;
@@ -3597,11 +3671,11 @@ failure:
 #undef CHK_
 }
 
-uint8_t* AllConfig::_InternalSerialize(
-    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+auto AllConfig::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const -> uint8_t* {
   // @@protoc_insertion_point(serialize_to_array_start:proto.AllConfig)
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   // .proto.Routing routing = 1;
   if (this->_internal_has_routing()) {
@@ -3632,52 +3706,52 @@ uint8_t* AllConfig::_InternalSerialize(
   return target;
 }
 
-size_t AllConfig::ByteSizeLong() const {
+auto AllConfig::ByteSizeLong() const -> size_t {
 // @@protoc_insertion_point(message_byte_size_start:proto.AllConfig)
-  size_t total_size = 0;
+  size_t totalSize = 0;
 
-  uint32_t cached_has_bits = 0;
+  uint32_t const cachedHasBits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void) cachedHasBits;
 
   // .proto.Routing routing = 1;
   if (this->_internal_has_routing()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.routing_);
   }
 
   // .proto.GraphicRendering gGraphicRendering = 2;
   if (this->_internal_has_ggraphicrendering()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.ggraphicrendering_);
   }
 
   // .proto.SkeletonGrid skeletonGrid = 3;
   if (this->_internal_has_skeletongrid()) {
-    total_size += 1 +
+    totalSize += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.skeletongrid_);
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  return MaybeComputeUnknownFieldsSize(totalSize, &_impl_._cached_size_);
 }
 
 const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AllConfig::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     AllConfig::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AllConfig::GetClassData() const { return &_class_data_; }
+auto AllConfig::GetClassData() const -> const ::PROTOBUF_NAMESPACE_ID::Message::ClassData* { return &_class_data_; }
 
 
 void AllConfig::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<AllConfig*>(&to_msg);
-  auto& from = static_cast<const AllConfig&>(from_msg);
+  auto* const _this = dynamic_cast<AllConfig*>(&to_msg);
+  const auto& from = dynamic_cast<const AllConfig&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:proto.AllConfig)
   GOOGLE_DCHECK_NE(&from, _this);
-  uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  uint32_t const cachedHasBits = 0;
+  (void) cachedHasBits;
 
   if (from._internal_has_routing()) {
     _this->_internal_mutable_routing()->::proto::Routing::MergeFrom(
@@ -3696,12 +3770,13 @@ void AllConfig::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
 
 void AllConfig::CopyFrom(const AllConfig& from) {
 // @@protoc_insertion_point(class_specific_copy_from_start:proto.AllConfig)
-  if (&from == this) return;
+  if (&from == this) { return;
+}
   Clear();
   MergeFrom(from);
 }
 
-bool AllConfig::IsInitialized() const {
+auto AllConfig::IsInitialized() const -> bool {
   return true;
 }
 
@@ -3716,53 +3791,53 @@ void AllConfig::InternalSwap(AllConfig* other) {
           reinterpret_cast<char*>(&other->_impl_.routing_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata AllConfig::GetMetadata() const {
+auto AllConfig::GetMetadata() const -> ::PROTOBUF_NAMESPACE_ID::Metadata {
   return ::_pbi::AssignDescriptors(
-      &descriptor_table_AllConfig_2eproto_getter, &descriptor_table_AllConfig_2eproto_once,
-      file_level_metadata_AllConfig_2eproto[9]);
+      &descriptorTableAllConfig2eprotoGetter, &descriptorTableAllConfig2eprotoOnce,
+      fileLevelMetadataAllConfig2eproto[9]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace proto
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::proto::Filepaths*
-Arena::CreateMaybeMessage< ::proto::Filepaths >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::Filepaths >(Arena* arena) -> ::proto::Filepaths* {
   return Arena::CreateMessageInternal< ::proto::Filepaths >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::PenStroke*
-Arena::CreateMaybeMessage< ::proto::PenStroke >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::PenStroke >(Arena* arena) -> ::proto::PenStroke* {
   return Arena::CreateMessageInternal< ::proto::PenStroke >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::GraphicRendering*
-Arena::CreateMaybeMessage< ::proto::GraphicRendering >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::GraphicRendering >(Arena* arena) -> ::proto::GraphicRendering* {
   return Arena::CreateMessageInternal< ::proto::GraphicRendering >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::SkeletonGrid*
-Arena::CreateMaybeMessage< ::proto::SkeletonGrid >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::SkeletonGrid >(Arena* arena) -> ::proto::SkeletonGrid* {
   return Arena::CreateMessageInternal< ::proto::SkeletonGrid >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::RoutingCost*
-Arena::CreateMaybeMessage< ::proto::RoutingCost >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::RoutingCost >(Arena* arena) -> ::proto::RoutingCost* {
   return Arena::CreateMessageInternal< ::proto::RoutingCost >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::Cell*
-Arena::CreateMaybeMessage< ::proto::Cell >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::Cell >(Arena* arena) -> ::proto::Cell* {
   return Arena::CreateMessageInternal< ::proto::Cell >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::Placement*
-Arena::CreateMaybeMessage< ::proto::Placement >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::Placement >(Arena* arena) -> ::proto::Placement* {
   return Arena::CreateMessageInternal< ::proto::Placement >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::AlternateRouting*
-Arena::CreateMaybeMessage< ::proto::AlternateRouting >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::AlternateRouting >(Arena* arena) -> ::proto::AlternateRouting* {
   return Arena::CreateMessageInternal< ::proto::AlternateRouting >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::Routing*
-Arena::CreateMaybeMessage< ::proto::Routing >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::Routing >(Arena* arena) -> ::proto::Routing* {
   return Arena::CreateMessageInternal< ::proto::Routing >(arena);
 }
-template<> PROTOBUF_NOINLINE ::proto::AllConfig*
-Arena::CreateMaybeMessage< ::proto::AllConfig >(Arena* arena) {
+template<> PROTOBUF_NOINLINE auto
+Arena::CreateMaybeMessage< ::proto::AllConfig >(Arena* arena) -> ::proto::AllConfig* {
   return Arena::CreateMessageInternal< ::proto::AllConfig >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE

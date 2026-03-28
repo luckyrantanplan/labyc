@@ -7,16 +7,22 @@
 
 #include "PolyConvex.h"
 
-#include <CGAL/Arrangement_on_surface_2.h>
+#include <CGAL/Intersections_2/Segment_2_Segment_2.h>
 #include <CGAL/Segment_2.h>
-#include <CGAL/intersection_2.h>
+#include "GeomData.h"
+#include <cstddef>
+#include <vector>
+
+#include <utility>
 #include "basic/EasyProfilerCompat.h"
 
 #include "basic/LinearGradient.h"
+#include "basic/PolygonTools.h"
+#include "basic/RangeHelper.h"
 
 namespace laby {
 
-bool PolyConvex::testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) {
+auto PolyConvex::testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) -> bool {
     EASY_FUNCTION();
 
     for (const CGAL::Segment_2<Kernel>& ea : RangeHelper::make(a.edges_begin(), a.edges_end())) {
@@ -83,23 +89,23 @@ PolyConvex::PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgra
 }
 
 void PolyConvex::init(const Point_2& ps, const Point_2& pt, basic::LinearGradient& lgrad) {
-    double t1 = lgrad.thickness(ps);
-    double t2 = lgrad.thickness(pt);
+    double const t1 = lgrad.thickness(ps);
+    double const t2 = lgrad.thickness(pt);
     _geometry = PolygonTools::makeTrapeze(ps, pt, t1, t2);
     _originalTrapeze = _geometry;
-    set_average_thickness((t1 + t2) / 2.);
+    setAverageThickness((t1 + t2) / 2.);
 }
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, const Linear_polygon& geometry) : _geometry(geometry), _id(id) {
-    _ps = ps;
-    _pt = pt;
-    _has_points = true;
-    _originalTrapeze = _geometry;
+PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, Linear_polygon  geometry) : _geometry(std::move(geometry)), _originalTrapeze(_geometry), _id(id), _ps(ps), _pt(pt), _has_points(true) {
+    
+    
+    
+    
 }
-PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad) : _id(id) {
+PolyConvex::PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad) : _id(id), _ps(ps), _pt(pt), _has_points(true) {
     EASY_FUNCTION();
     init(ps, pt, lgrad);
-    _ps = ps;
-    _pt = pt;
-    _has_points = true;
+    
+    
+    
 }
 } /* namespace laby */

@@ -11,6 +11,8 @@
 #include "basic/RandomUniDist.h"
 #include "GeomData.h"
 #include <CGAL/Point_set_2.h>
+
+#include <utility>
 #include "SkeletonGrid.h"
 
 namespace laby {
@@ -33,17 +35,16 @@ class SkeletonRadial {
 
     struct Incidence {
 
-        Incidence() {
-        }
+        Incidence() = default;
 
-        Incidence(const Point_2& test, const basic::HalfedgeNode& hedge) :
-                isEmpty(false), _test(test), _hedge(&hedge) {
+        Incidence(Point_2  test, const basic::HalfedgeNode& hedge) :
+                isEmpty(false), _test(std::move(test)), _hedge(&hedge) {
         }
         bool isEmpty = true;
         Point_2 _test;
         const basic::HalfedgeNode* _hedge = nullptr;
 
-        Incidence get_twin() {
+        auto getTwin() -> Incidence {
             Incidence i(*this);
             if (i._hedge != nullptr) {
                 i._hedge = &*i._hedge->twin();
@@ -66,43 +67,43 @@ public:
         uint32_t seed = 0;
     };
 
-    SkeletonRadial(const Config& config) :
+    explicit SkeletonRadial(const Config& config) :
             _config(config), _random(0, 100.0, _config.seed) {
     }
 
-    void create_radial(const basic::Arrangement_2Node& arr3, const CGAL::Polygon_with_holes_2<Kernel>& poly_hole);
+    void createRadial(const basic::Arrangement_2Node& arr3, const CGAL::Polygon_with_holes_2<Kernel>& poly_hole);
 
-    CGAL::Point_set_2<Kernel> get_point_intersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) const;
-    const std::vector<Kernel::Segment_2> radialList() const;
+    auto getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) const -> CGAL::Point_set_2<Kernel>;
+    auto radialList() const -> const std::vector<Kernel::Segment_2>;
 
-    const Ribbon& get_ribbon() const {
+    auto getRibbon() const -> const Ribbon& {
         return _radial_list;
     }
 
 private:
     void registerFace(const basic::HalfedgeNode& he, std::unordered_map<const basic::FaceNode*, FaceHelper>& vertices_cache) const;
-    SkeletonRadial::Incidence traverse_face(const Incidence& incidence, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, //
-            std::vector<Kernel::Point_2>& result) const;
-    Incidence traverse_corner(const Incidence& incidence, const FaceHelper& faceHelper, std::vector<Kernel::Point_2>& result) const;
-    void iterate_edge(const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
-    void iterate_corner(const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
+    auto traverseFace(const Incidence& incidence, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, //
+            std::vector<Kernel::Point_2>& result) const -> SkeletonRadial::Incidence;
+    auto traverseCorner(const Incidence& incidence, const FaceHelper& faceHelper, std::vector<Kernel::Point_2>& result) const -> Incidence;
+    void iterateEdge(const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
+    void iterateCorner(const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
 
-    void cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2& line, const Kernel::Iso_rectangle_2 bbox, std::vector<Kernel::Segment_2>& result2) const;
-    Incidence traverse_ray(const basic::HalfedgeNode& hedge, const Kernel::Point_2& test, //
-            const Kernel::Vector_2& dir, std::vector<Kernel::Point_2>& result) const;
+    void cropLine(Kernel::Vector_2 vect, const Kernel::Line_2& line, Kernel::Iso_rectangle_2 bbox, std::vector<Kernel::Segment_2>& result2) const;
+    auto traverseRay(const basic::HalfedgeNode& hedge, const Kernel::Point_2& test, //
+            const Kernel::Vector_2& dir, std::vector<Kernel::Point_2>& result) const -> Incidence;
 
-    bool filter_new_vertex(const std::vector<Kernel::Point_2>& result, const Kernel::Point_2& vertex) const;
-    double polyline_length(const std::vector<Kernel::Point_2>& result) const;
-    void polygon_contour(const basic::Arrangement_2Node& arr3, //
+    auto filterNewVertex(const std::vector<Kernel::Point_2>& result, const Kernel::Point_2& vertex) const -> bool;
+    auto polylineLength(const std::vector<Kernel::Point_2>& result) const -> double;
+    void polygonContour(const basic::Arrangement_2Node& arr3, //
             const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,   //
             CGAL::Point_set_2<Kernel>& pt_set);
 
-    void fill_corner(const basic::Arrangement_2Node& arr3, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
-    void fill_radial_list(std::vector<Kernel::Point_2>& result, CGAL::Point_set_2<Kernel>& pt_set);
-    void start_traverse_edge(const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
+    void fillCorner(const basic::Arrangement_2Node& arr3, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache);
+    void fillRadialList(std::vector<Kernel::Point_2>& result, CGAL::Point_set_2<Kernel>& pt_set);
+    void startTraverseEdge(const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2, const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
             CGAL::Point_set_2<Kernel>& pt_set);
-    std::vector<Kernel::Point_2> start_traverse_corner(const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
-            const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, CGAL::Point_set_2<Kernel>& pt_set);
+    auto startTraverseCorner(const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
+            const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, CGAL::Point_set_2<Kernel>& pt_set) -> std::vector<Kernel::Point_2>;
 
     const Config _config;
     mutable basic::RandomUniDist _random;

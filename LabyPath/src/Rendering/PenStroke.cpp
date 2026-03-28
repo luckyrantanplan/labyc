@@ -8,9 +8,18 @@
 #include "PenStroke.h"
 
 #include "../agg/agg_arc.h"
+#include "Polyline.h"
+#include "GeomData.h"
+#include "SVGWriter/DocumentSVG.h"
+#include <CGAL/Bbox_2.h>
+#include "Ribbon.h"
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
+#include "basic/RangeHelper.h"
+#include "PolyConvex.h"
+#include "basic/PolygonTools.h"
 #include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/Point_2.h>
 #include <CGAL/Polygon_set_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Vector_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
@@ -18,7 +27,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <random>
+#include <iterator>
+#include <iostream>
+#include <unordered_set>
 #include <vector>
 
 namespace laby {
@@ -200,7 +211,7 @@ auto PenStroke::faceWithoutAntenna(Arrangement_2& arrangement, const Face& face)
     CGAL::insert(arrangement, segmentList.begin(), segmentList.end());
 
     const Face& unboundedFace = *arrangement.unbounded_face();
-    Arrangement_2::Inner_ccb_const_iterator holeIterator = unboundedFace.holes_begin();
+    Arrangement_2::Inner_ccb_const_iterator const holeIterator = unboundedFace.holes_begin();
     return *((*holeIterator)->twin()->face());
 }
 
@@ -277,7 +288,7 @@ void PenStroke::drawOutline(svg::Path& path) const {
         PolyConvex::connect(beginIndex, polyConvexVector);
         {
             const PolyConvex& firstPolyConvex = polyConvexVector.front();
-            agg::Arc arc(medianLine.getMedian(0), medianLine.getBorder(0) / kHalfWidthScale,
+            agg::Arc const arc(medianLine.getMedian(0), medianLine.getBorder(0) / kHalfWidthScale,
                          firstPolyConvex._geometry.vertex(0), firstPolyConvex._geometry.vertex(1));
             polyConvexVector.emplace_back();
             polyConvexVector.back()._geometry.insert(
@@ -286,7 +297,7 @@ void PenStroke::drawOutline(svg::Path& path) const {
         }
         {
             const PolyConvex& lastPolyConvex = polyConvexVector.at(lastIndex);
-            agg::Arc arc(medianLine.getMedian(pointCount - 1),
+            agg::Arc const arc(medianLine.getMedian(pointCount - 1),
                          medianLine.getBorder(pointCount - 1) / kHalfWidthScale,
                          lastPolyConvex._geometry.vertex(2), lastPolyConvex._geometry.vertex(3));
             polyConvexVector.emplace_back();
@@ -315,7 +326,7 @@ void PenStroke::createStroke(const Polyline& polyline) {
     LineConstruct& medianLine = _medrib.back();
     for (std::size_t pointIndex = 1; pointIndex < polyline.points().size(); ++pointIndex) {
 
-        CGAL::Vector_2<Kernel> segmentVector =
+        CGAL::Vector_2<Kernel> const segmentVector =
             polyline.points().at(pointIndex) - polyline.points().at(pointIndex - 1);
 
         const double length = sqrt(CGAL::to_double(segmentVector.squared_length()));

@@ -12,7 +12,11 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <utility>
+#include <unordered_set>
+#include <vector>
 
+#include "GeomData.h"
 #include "PenStroke.h"
 #include "../Polyline.h"
 #include "../Ribbon.h"
@@ -21,6 +25,7 @@
 #include "../Smoothing.h"
 #include "../basic/Color.h"
 #include "../protoc/AllConfig.pb.h"
+#include "basic/RangeHelper.h"
 
 namespace laby {
 
@@ -47,7 +52,7 @@ GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std
     }
 
     for (const Polyline& line : ribbon.lines()) {
-        Polyline smoothedPolyline = Smoothing::getCurveSmoothingChaikin(
+        Polyline const smoothedPolyline = Smoothing::getCurveSmoothingChaikin(
             line, _config.smoothing_tension(),
             static_cast<uint32_t>(_config.smoothing_iterations()));
         gpt.createStroke(smoothedPolyline);
@@ -113,7 +118,7 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
 
         using laby::basic::Color;
         const auto fillColorValue = static_cast<uint32_t>(cleanRibbon.fillColor());
-        svg::Stroke stroke(thickness,
+        svg::Stroke const stroke(thickness,
                            svg::Color(svg::Color::Rgb{
                                static_cast<int32_t>(Color::getRed(fillColorValue)),
                                static_cast<int32_t>(Color::getGreen(fillColorValue)),

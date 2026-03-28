@@ -7,12 +7,15 @@
 
 #include "SkeletonGrid.h"
 
-#include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include <svgpp/factory/integer_color.hpp>
+#include <cstdint>
+#include <CGAL/Polygon_with_holes_2.h>
 #include <iostream>
 #include <utility>
+#include <vector>
 
+#include "SVGParser/Loader.h"
+#include "GeomData.h"
 #include "basic/AugmentedPolygonSet.h"
 #include "basic/Color.h"
 #include "Rendering/GraphicRendering.h"
@@ -21,6 +24,7 @@
 #include "SkeletonRadial.h"
 #include "SVGShapeToGrid.h"
 #include "VoronoiMedialSkeleton.h"
+#include "protoc/AllConfig.pb.h"
 
 namespace laby {
 
@@ -41,7 +45,7 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     int32_t ribNumber = 0;
 
     for (const Ribbon& rib : load.ribList()) {
-        std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons = SVGShapeToGrid::getPolygons(rib);
+        std::vector<CGAL::Polygon_with_holes_2<Kernel>> const polygons = SVGShapeToGrid::getPolygons(rib);
 
         const double blue = laby::basic::Color::getBlueNormalized(static_cast<uint32_t>(rib.fillColor()));
 
@@ -54,8 +58,9 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
 
         {
             std::vector<Segment_info_2> segResult;
-            for (const Kernel::Segment_2& seg : _circularList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo{static_cast<int32_t>(fillColor), EdgeInfo::Coordinate{0}}));
+            segResult.reserve(_circularList.size());
+for (const Kernel::Segment_2& seg : _circularList) {
+                segResult.emplace_back(seg, EdgeInfo{static_cast<int32_t>(fillColor), EdgeInfo::Coordinate{0}});
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
@@ -66,8 +71,9 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
         }
         {
             std::vector<Segment_info_2> segResult;
-            for (const Kernel::Segment_2& seg : _radialList) {
-                segResult.push_back(Segment_info_2(seg, EdgeInfo{static_cast<int32_t>(fillColor + 1), EdgeInfo::Coordinate{0}}));
+            segResult.reserve(_radialList.size());
+for (const Kernel::Segment_2& seg : _radialList) {
+                segResult.emplace_back(seg, EdgeInfo{static_cast<int32_t>(fillColor + 1), EdgeInfo::Coordinate{0}});
             }
             Arrangement_2 arr;
             CGAL::insert(arr, segResult.begin(), segResult.end());
@@ -79,7 +85,7 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
         result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::setGreen(fillColor, 150)));
     }
 
-    std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << std::endl;
+    std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << '\n';
     GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(), _config.min_sep() / 3., result);
 }
 
@@ -88,13 +94,13 @@ auto SkeletonGrid::medialGraph(
     const double& distance) -> void {
     _circularList.clear();
     _radialList.clear();
-    std::vector<Kernel::Segment_2> result2;
+    std::vector<Kernel::Segment_2> const result2;
 
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
-        VoronoiMedialSkeleton vor = VoronoiMedialSkeleton(polygon);
-        std::cout << " cut ok " << std::endl;
+        VoronoiMedialSkeleton const vor = VoronoiMedialSkeleton(polygon);
+        std::cout << " cut ok " << '\n';
 
-        laby::basic::Arrangement_2Node arr3 = vor.cutAndGetArrangementSkeleton(polygon);
+        laby::basic::Arrangement_2Node const arr3 = vor.cutAndGetArrangementSkeleton(polygon);
 
         SkeletonRadial::Config configRadial;
         configRadial.sep = distance;
@@ -103,13 +109,13 @@ auto SkeletonGrid::medialGraph(
         configRadial.seed = _config.seed();
         SkeletonRadial radial(configRadial);
 
-        radial.create_radial(arr3, polygon);
+        radial.createRadial(arr3, polygon);
 
-        SkeletonOffset::create_all_offsets(distance, arr3, _circularList);
+        SkeletonOffset::createAllOffsets(distance, arr3, _circularList);
         const auto listSeg = radial.radialList();
         _radialList.insert(_radialList.end(), listSeg.begin(), listSeg.end());
     }
-    std::cout << " result2 " << std::endl;
+    std::cout << " result2 " << '\n';
 }
 
 } /* namespace laby */

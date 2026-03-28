@@ -51,9 +51,9 @@ void printCcb(typename Arrangement::Ccb_halfedge_const_circulator circ) {
 }
 
 auto mainold() -> int{
-    Point p1(1, 1);
-    Point p2(1, 2);
-    Point p3(2, 1);
+    Point const p1(1, 1);
+    Point const p2(1, 2);
+    Point const p3(2, 1);
 
     std::array<Segment, 3> cv = { Segment(p1, p2), Segment(p2, p3), Segment(p3, p1) };
     Arrangement arr;

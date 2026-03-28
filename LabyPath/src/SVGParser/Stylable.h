@@ -402,13 +402,13 @@ public:
     using stroke_paint = PaintContext<svgpp::tag::attribute::stroke>;
     using fill_paint = PaintContext<svgpp::tag::attribute::fill>;
 
-    Stylable() {
+    Stylable() : PaintContext(), PaintContext() {
         stroke_paint::bind(_style.strokePaintRef());
         fill_paint::bind(_style.fillPaintRef());
     }
 
     Stylable(Stylable const& src)
-                : stroke_paint(), fill_paint(), _style(src._style, Style::InheritTag()),
+                : stroke_paint(src), fill_paint(src), _style(src._style, Style::InheritTag()),
                     _parentStyle(src._style) {
         stroke_paint::bind(_style.strokePaintRef());
         fill_paint::bind(_style.fillPaintRef());

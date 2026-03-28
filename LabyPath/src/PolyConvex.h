@@ -57,14 +57,14 @@ public:
     mutable CGAL::Union_find<std::size_t>::handle handle; 
     double _average_thickness = 0;                        
 
-    void set_average_thickness(double thickness) { 
+    void setAverageThickness(double thickness) { 
         _average_thickness = thickness;
     }
 
-    double thickness() const { return _average_thickness; }
+    auto thickness() const -> double { return _average_thickness; }
     PolyConvex() = default;
 
-    void remove_adjacence(std::size_t i) { 
+    void removeAdjacence(std::size_t i) { 
         auto ite = std::find(_adjacents.begin(), _adjacents.end(), i);
         std::swap(*ite, _adjacents.back());
         _adjacents.resize(_adjacents.size() - 1U);
@@ -84,11 +84,11 @@ public:
         _average_thickness = 0;
     }
 
-    bool empty() const { return _geometry.is_empty(); }
+    auto empty() const -> bool { return _geometry.is_empty(); }
 
     PolyConvex(Halfedge& he, std::size_t id, basic::LinearGradient& lgrad);
     PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, basic::LinearGradient& lgrad);
-    PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, const Linear_polygon& geometry);
+    PolyConvex(const Point_2& ps, const Point_2& pt, std::size_t id, Linear_polygon  geometry);
 
     void print(std::ostream& os) const {
 
@@ -99,28 +99,28 @@ public:
         os << " id " << _id;
     }
 
-    bool contains(const Node& n) const { return (std::find(_nodes.begin(), _nodes.end(), &n) != _nodes.end()); }
+    auto contains(const Node& n) const -> bool { return (std::find(_nodes.begin(), _nodes.end(), &n) != _nodes.end()); }
 
-    static bool testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b);
+    static auto testConvexPolyIntersect(const Linear_polygon& a, const Linear_polygon& b) -> bool;
     static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList, const Point_2& center);
     static void connect(std::size_t begin, std::vector<PolyConvex>& polyConvexList);
     static void connect(std::size_t first, std::size_t second, std::vector<PolyConvex>& polyConvexList);
 
-    const CGAL::Point_2<Kernel>& getSourcePoint() const {
+    auto getSourcePoint() const -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->source()->point();
         }
         return _ps;
     }
 
-    const CGAL::Point_2<Kernel>& getTargetPoint() const {
+    auto getTargetPoint() const -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->target()->point();
         }
         return _pt;
     }
 
-    bool has_points() const { 
+    auto hasPoints() const -> bool { 
         if (_supportHe != nullptr) {
             return true;
         }

@@ -7,27 +7,29 @@
 
 #include "Ribbon.h"
 
-#include "Rendering/GraphicRendering.h"
+#include "GeomData.h"
+#include "Polyline.h"
 #include "basic/EasyProfilerCompat.h"
-#include "basic/SimplifyLines.h"
+#include "basic/RangeHelper.h"
 #include <CGAL/Arr_dcel_base.h>
-#include <CGAL/Arr_geometry_traits/Curve_data_aux.h>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Compact_container.h>
-#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Distance_2/Point_2_Point_2.h>
 #include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/Point_2.h>
 #include <CGAL/Point_set_2.h>
 #include <CGAL/Triangulation_vertex_base_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
-#include <boost/geometry/geometries/point_xy.hpp>
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <map>
 #include <queue>
 #include <utility>
+#include <vector>
 
 namespace laby {
 
@@ -131,7 +133,7 @@ void Ribbon::addToSegments(std::vector<Segment_info_2>& segmentList) const {
             for (std::size_t pointIndex = 1; pointIndex < polyline.points().size(); ++pointIndex) {
                 const Point_2& point = polyline.points().at(pointIndex);
                 if (previousPoint != point) {
-                    Segment_2 segment{previousPoint, point};
+                    Segment_2 const segment{previousPoint, point};
                     const auto coordinate = static_cast<std::size_t>(polyline.id());
                     segmentList.emplace_back(
                         segment, EdgeInfo{_fillColor, EdgeInfo::Coordinate{coordinate}});
@@ -212,7 +214,7 @@ auto Ribbon::middleOrder(const std::size_t minIndex,
 
     while (!queue.empty()) {
 
-        IndexRange range = queue.front();
+        IndexRange const range = queue.front();
         queue.pop();
         const std::size_t middle = (range.min + range.max) / 2;
         result.push_back(middle);
@@ -233,7 +235,7 @@ auto Ribbon::isLongEnough(const std::vector<Point_2>& coarsePoints,
     if (coarsePoints.size() < 2) {
         return false;
     }
-    Polyline polyline(0, coarsePoints);
+    Polyline const polyline(0, coarsePoints);
     return polyline.totalLength() > thickness;
 }
 
@@ -307,14 +309,14 @@ auto Ribbon::subRibbon(const SubRibbonConfig config) const -> Ribbon {
         flattenedRibbon.emplace_back(pair.second);
     }
 
-    std::vector<std::size_t> order = middleOrder(0U, flattenedRibbon.size() - 1);
-    for (std::size_t index : order) {
+    std::vector<std::size_t> const order = middleOrder(0U, flattenedRibbon.size() - 1);
+    for (std::size_t const index : order) {
 
         for (const Polyline& polyline : flattenedRibbon.at(index)) {
             std::vector<Point_2> coarse;
 
             for (const Point_2& point : polyline.points()) {
-                VertexHandlePS vertexHandle = pointSet.nearest_neighbor(point);
+                VertexHandlePS const vertexHandle = pointSet.nearest_neighbor(point);
 
                 if (vertexHandle != nullptr and //
                     CGAL::compare_squared_distance(vertexHandle->point(), point,
