@@ -9,103 +9,118 @@
 #include "GeomData.h"
 #include "basic/RangeHelper.h"
 
-#include <CGAL/enum.h>
 #include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Lazy_kernel.h>
-#include <CGAL/number_utils.h>
 #include <CGAL/Vector_2.h>
+#include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
 #include <cmath>
 #include <iostream>
 #include <ostream>
 
 namespace laby {
 
-auto PolygonTools::makeTrapeze(const Point_2& a, const Point_2& b, const double& thickness1, const double& thickness2) -> Linear_polygon {
+auto PolygonTools::makeTrapeze(const Point_2& sourcePoint, const Point_2& targetPoint,
+                               const double& thickness1,
+                               const double& thickness2) -> Linear_polygon {
 
-    Linear_polygon poly;
-    makeTrapeze(poly, a, b, thickness1, thickness2);
+    Linear_polygon polygon;
+    makeTrapeze(polygon, sourcePoint, targetPoint, thickness1, thickness2);
 
-    return poly;
+    return polygon;
 }
 
-void PolygonTools::makeTrapeze(Linear_polygon& poly, const Point_2& a, const Point_2& b, const double& thickness1, const double& thickness2) {
-    CGAL::Vector_2<Kernel> const vec(a, b);
-    CGAL::Vector_2<Kernel> const perp = vec.perpendicular(CGAL::LEFT_TURN);
+void PolygonTools::makeTrapeze(Linear_polygon& polygon, const Point_2& sourcePoint,
+                               const Point_2& targetPoint, const double& thickness1,
+                               const double& thickness2) {
+    CGAL::Vector_2<Kernel> const direction(sourcePoint, targetPoint);
+    CGAL::Vector_2<Kernel> const perpendicular = direction.perpendicular(CGAL::LEFT_TURN);
 
-    double const f = 0.5 / std::sqrt(CGAL::to_double(perp.squared_length()));
+    double const scaleFactor = 0.5 / std::sqrt(CGAL::to_double(perpendicular.squared_length()));
 
-    double const length1 = thickness1 * f;
-    CGAL::Vector_2<Kernel> const perp1 = perp * length1;
+    double const firstOffsetLength = thickness1 * scaleFactor;
+    CGAL::Vector_2<Kernel> const firstOffset = perpendicular * firstOffsetLength;
 
-    poly.push_back(a + perp1);
-    poly.push_back(a - perp1);
+    polygon.push_back(sourcePoint + firstOffset);
+    polygon.push_back(sourcePoint - firstOffset);
 
-    double const length2 = thickness2 * f;
-    CGAL::Vector_2<Kernel> const perp2 = perp * length2;
-    poly.push_back(b - perp2);
-    poly.push_back(b + perp2);
-
+    double const secondOffsetLength = thickness2 * scaleFactor;
+    CGAL::Vector_2<Kernel> const secondOffset = perpendicular * secondOffsetLength;
+    polygon.push_back(targetPoint - secondOffset);
+    polygon.push_back(targetPoint + secondOffset);
 }
 
-void PolygonTools::insertPointPolygon(const Point_2& a2, const Point_2& a3, const Point_2& b0, const Point_2& b1, Linear_polygon& p1) {
-    Kernel::Orientation const orientation = CGAL::orientation(a2, a3, b0);
+void PolygonTools::insertPointPolygon(const Point_2& firstCurrentPoint,
+                                      const Point_2& secondCurrentPoint,
+                                      const Point_2& firstExtensionPoint,
+                                      const Point_2& secondExtensionPoint,
+                                      Linear_polygon& polygon) {
+    Kernel::Orientation const orientation =
+        CGAL::orientation(firstCurrentPoint, secondCurrentPoint, firstExtensionPoint);
     if (orientation == CGAL::RIGHT_TURN) {
-        if (CGAL::compare_squared_distance(a3, b0, 0) == CGAL::LARGER) {
-            p1.insert(p1.vertices_begin() + 3, b0);
+        if (CGAL::compare_squared_distance(secondCurrentPoint, firstExtensionPoint, 0) ==
+            CGAL::LARGER) {
+            polygon.insert(polygon.vertices_begin() + 3, firstExtensionPoint);
         }
     } else {
         if (orientation == CGAL::LEFT_TURN) {
-            if (CGAL::compare_squared_distance(a2, b1, 0) == CGAL::LARGER) {
-                p1.insert(p1.vertices_begin() + 3, b1);
+            if (CGAL::compare_squared_distance(firstCurrentPoint, secondExtensionPoint, 0) ==
+                CGAL::LARGER) {
+                polygon.insert(polygon.vertices_begin() + 3, secondExtensionPoint);
             }
         }
     }
 }
 
-void PolygonTools::extendPolygon(Linear_polygon& p1, const Linear_polygon& p2) {
-    const Point_2& b0 = p2.vertex(0);
-    const Point_2& b1 = p2.vertex(1);
+void PolygonTools::extendPolygon(Linear_polygon& polygon, const Linear_polygon& extensionPolygon) {
+    const Point_2& firstExtensionVertex = extensionPolygon.vertex(0);
+    const Point_2& secondExtensionVertex = extensionPolygon.vertex(1);
 
-    const Point_2& a3 = p1.vertex(3);
-    const Point_2& a2 = p1.vertex(2);
+    const Point_2& secondCurrentVertex = polygon.vertex(3);
+    const Point_2& firstCurrentVertex = polygon.vertex(2);
 
-    insertPointPolygon(a2, a3, b0, b1, p1);
-
+    insertPointPolygon(firstCurrentVertex, secondCurrentVertex, firstExtensionVertex,
+                       secondExtensionVertex, polygon);
 }
 
-auto PolygonTools::getSegmentContainingPoint(const Linear_polygon& p1, const Point_2& center) -> const Linear_polygon::Segment_2 {
-    for (const Linear_polygon::Segment_2& seg : RangeHelper::make(p1.edges_begin(), p1.edges_end())) {
-        if (seg.has_on(center)) {
-            return seg;
+auto PolygonTools::getSegmentContainingPoint(const Linear_polygon& polygon,
+                                             const Point_2& center) -> Linear_polygon::Segment_2 {
+    for (const Linear_polygon::Segment_2& segment :
+         RangeHelper::make(polygon.edges_begin(), polygon.edges_end())) {
+        if (segment.has_on(center)) {
+            return segment;
         }
     }
-    std::cout << "ERROR seg of poly " << p1 << " does not have center point " << center << '\n';
-    return Linear_polygon::Segment_2();
+    std::cout << "ERROR seg of poly " << polygon << " does not have center point " << center
+              << '\n';
+    return {};
 }
 
+auto PolygonTools::createJoinTriangle(const Linear_polygon& firstPolygon,
+                                      const Linear_polygon& secondPolygon,
+                                      const Point_2& center) -> Linear_polygon {
+    Linear_polygon joinTriangle;
 
+    const Linear_polygon::Segment_2 firstSegment = getSegmentContainingPoint(firstPolygon, center);
+    const Linear_polygon::Segment_2 secondSegment =
+        getSegmentContainingPoint(secondPolygon, center);
 
-auto PolygonTools::createJoinTriangle(const Linear_polygon& p1, const Linear_polygon& p2, const Point_2& center) -> Linear_polygon {
-    Linear_polygon lp;
-
-    const Linear_polygon::Segment_2 seg1 = getSegmentContainingPoint(p1, center);
-    const Linear_polygon::Segment_2 seg2 = getSegmentContainingPoint(p2, center);
-
-    Kernel::Orientation const orientation = CGAL::orientation(seg1.source(), seg2.source(), seg2.target());
+    Kernel::Orientation const orientation =
+        CGAL::orientation(firstSegment.source(), secondSegment.source(), secondSegment.target());
 
     if (orientation == CGAL::LEFT_TURN) {
 
-        lp.push_back(seg1.target());
-        lp.push_back(center);
-        lp.push_back(seg2.source());
+        joinTriangle.push_back(firstSegment.target());
+        joinTriangle.push_back(center);
+        joinTriangle.push_back(secondSegment.source());
 
     } else if (orientation == CGAL::RIGHT_TURN) {
-        lp.push_back(seg2.target());
-        lp.push_back(center);
-        lp.push_back(seg1.source());
+        joinTriangle.push_back(secondSegment.target());
+        joinTriangle.push_back(center);
+        joinTriangle.push_back(firstSegment.source());
     }
 
-    return lp;
+    return joinTriangle;
 }
 
 } /* namespace laby */

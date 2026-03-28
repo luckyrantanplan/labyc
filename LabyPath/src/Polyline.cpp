@@ -7,9 +7,9 @@
 
 #include "Polyline.h"
 
+#include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cstddef>
-#include <CGAL/number_utils.h>
 #include <utility>
 #include <vector>
 
@@ -45,15 +45,17 @@ void Polyline::simplify(double distance) {
         SimplifyLines::LineStringIndexed lineString;
         for (std::size_t i = 0; i < points.size(); ++i) {
             const Point_2& point = points.at(i);
-            lineString.emplace_back(IndexedPoint(CGAL::to_double(point.x()), CGAL::to_double(point.y()), i));
+            lineString.emplace_back(IndexedPoint::fromCoordinates(
+                {CGAL::to_double(point.x()), CGAL::to_double(point.y())}, i));
         }
-        const SimplifyLines::LineStringIndexed simpleLine = SimplifyLines::decimateIndex(lineString, distance);
+        const SimplifyLines::LineStringIndexed simpleLine =
+            SimplifyLines::decimateIndex(lineString, distance);
         if (simpleLine.size() < lineString.size()) {
             std::vector<Point_2> result;
             result.reserve(simpleLine.size());
             for (const IndexedPoint& offset : simpleLine) {
 
-                result.emplace_back(points.at(offset.index));
+                result.emplace_back(points.at(offset.index()));
             }
             points = result;
         }

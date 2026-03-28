@@ -6,18 +6,18 @@
  */
 
 #include "AlternateRoute.h"
-#include <cstdint>
-#include <cstddef>
-#include <CGAL/number_utils.h>
-#include <iostream>
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include <CGAL/Kernel/global_functions_2.h>
-#include <cmath>
-#include <CGAL/Intersections_2/Line_2_Line_2.h>
-#include <boost/variant/get.hpp>
 #include <CGAL/Bbox_2.h>
-#include <algorithm>
+#include <CGAL/Intersections_2/Line_2_Line_2.h>
+#include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
+#include <algorithm>
+#include <boost/variant/get.hpp>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -33,10 +33,10 @@
 #include "../basic/SimplifyLines.h"
 #include "../flatteningOverlap/PathRendering.h"
 #include "AlternaRoute/StrokeArrangement.h"
-#include "basic/RangeHelper.h"
 #include "GeomData.h"
-#include "Ribbon.h"
 #include "Polyline.h"
+#include "Ribbon.h"
+#include "basic/RangeHelper.h"
 #include "protoc/AllConfig.pb.h"
 
 namespace laby {
@@ -112,8 +112,8 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
         SimplifyLines::LineStringIndexed lineString;
         for (std::size_t i = 0; i < list.size(); ++i) {
             const OffsetPair& pair = list.at(i);
-            lineString.emplace_back(IndexedPoint(CGAL::to_double(pair.offset().x()),
-                                                 CGAL::to_double(pair.offset().y()), i));
+            lineString.emplace_back(IndexedPoint::fromCoordinates(
+                {CGAL::to_double(pair.offset().x()), CGAL::to_double(pair.offset().y())}, i));
         }
         SimplifyLines::LineStringIndexed const simpleLine =
             SimplifyLines::decimateIndex(lineString, distance);
@@ -122,7 +122,7 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
         result.reserve(simpleLine.size());
         for (const IndexedPoint& offset : simpleLine) {
 
-            result.emplace_back(list.at(offset.index));
+            result.emplace_back(list.at(offset.index()));
         }
         return result;
     }
@@ -136,7 +136,6 @@ auto AlternateRoute::pruneArrangement(const laby::Arrangement_2& arrangement) co
     uint32_t counter = 0;
     for (Edge_const_iterator eit = arrangement.edges_begin(); eit != arrangement.edges_end();
          ++eit) {
-
         if (counter < _config.pruning()) {
             result2.emplace_back(eit->curve());
         } else {
@@ -147,7 +146,6 @@ auto AlternateRoute::pruneArrangement(const laby::Arrangement_2& arrangement) co
     std::cout << "start random remove edges\n";
     laby::Arrangement_2 arr2;
     CGAL::insert(arr2, result2.begin(), result2.end());
-
     std::cout << "random edges are remove\n";
     return arr2;
 }
@@ -155,18 +153,15 @@ auto AlternateRoute::pruneArrangement(const laby::Arrangement_2& arrangement) co
 auto AlternateRoute::removeAntenna(const laby::Arrangement_2& arrangement) -> laby::Arrangement_2 {
     // remove inner  antenna
     std::vector<Segment_info_2> result2;
-
     for (Edge_const_iterator eit = arrangement.edges_begin(); eit != arrangement.edges_end();
          ++eit) {
         if (&*eit->face() != &*eit->twin()->face()) {
-
             result2.emplace_back(eit->curve());
         }
     }
     std::cout << "start remove antenna edges\n";
     laby::Arrangement_2 arr2;
     CGAL::insert(arr2, result2.begin(), result2.end());
-
     std::cout << "  antenna edges are remove\n";
     return arr2;
 }
@@ -246,10 +241,8 @@ void AlternateRoute::addTriplet(alter::OffsetTriplet& triplet, const OffsetPair&
     Kernel::Line_2 const firstLine(lineStart, lineEnd);
     Kernel::Line_2 const secondLine(triplet.origin(), triplet.offset1());
     auto variant2 = CGAL::intersection(firstLine, secondLine);
-    if (variant2) {
-        if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
-            triplet.setOffset2(*intersectionPoint);
-        }
+    if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
+        triplet.setOffset2(*intersectionPoint);
     }
 }
 
@@ -285,7 +278,7 @@ auto AlternateRoute::voronoiArr(const Arrangement_2& arrangement, int32_t direct
     framePolyline.closed = true;
 
     CGAL::Bbox_2 const frameBox(viewBox.xmin() - 1, viewBox.ymin() - 1, viewBox.xmax() + 1,
-                          viewBox.ymax() + 1);
+                                viewBox.ymax() + 1);
     VoronoiMedialSkeleton const vor(ribContourFramed, frameBox);
 
     std::cout << "vor.get_vor_segments().size() " << vor.get_vor_segments().size() << '\n';
@@ -380,7 +373,7 @@ void AlternateRoute::populateTrapeze(const GridIndex& gridIndex, const std::vect
     const Ribbon& ribCircular = ribList.at(gridIndex.circularIndex());
     const Ribbon& ribRadial = ribList.at(gridIndex.radialIndex());
     Arrangement_2 arr = gridIndex.getArr(ribList);
-    // remove inner  antenna
+    // remove inner antenna
     arr = pruneArrangement(arr);
     arr = removeAntenna(arr);
 

@@ -227,6 +227,6 @@ TEST(NodeQueueTest, PriorityQueueOrdersSmallerFirst) {
 
 TEST(FamilyTest, DefaultConstructionEmpty) {
     Family f;
-    EXPECT_TRUE(f._intersections.empty());
-    EXPECT_TRUE(f._patches.empty());
+    EXPECT_TRUE(f.intersections().empty());
+    EXPECT_TRUE(f.patches().empty());
 }

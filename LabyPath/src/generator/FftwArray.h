@@ -10,12 +10,58 @@
 
 #include <cassert>
 #include <complex>
+#include <cstddef>
 #include <cstdint>
 #include <fftw3.h>
+#include <gsl/span>
 #include <stdexcept>
 
-
 namespace laby::fft {
+
+class ComplexRef {
+    fftw_complex* _value = nullptr;
+
+  public:
+    explicit ComplexRef(fftw_complex& value) : _value(&value) {}
+
+    auto operator=(const std::complex<double>& complexValue) -> ComplexRef& {
+        (*_value)[0] = complexValue.real();
+        (*_value)[1] = complexValue.imag();
+        return *this;
+    }
+
+    auto operator=(double realValue) -> ComplexRef& {
+        (*_value)[0] = realValue;
+        (*_value)[1] = 0.0;
+        return *this;
+    }
+
+    [[nodiscard]] auto real() const -> double {
+        return (*_value)[0];
+    }
+
+    void real(double realValue) {
+        (*_value)[0] = realValue;
+    }
+
+    [[nodiscard]] auto imag() const -> double {
+        return (*_value)[1];
+    }
+
+    void imag(double imaginaryValue) {
+        (*_value)[1] = imaginaryValue;
+    }
+
+    auto operator*=(double scale) -> ComplexRef& {
+        (*_value)[0] *= scale;
+        (*_value)[1] *= scale;
+        return *this;
+    }
+
+    [[nodiscard]] auto toComplex() const -> std::complex<double> {
+        return {(*_value)[0], (*_value)[1]};
+    }
+};
 
 /**
  * @brief 1-D complex array backed by fftw_malloc (SIMD-aligned).
@@ -25,8 +71,9 @@ class Array1D {
     uint32_t _nx = 0;
 
   public:
-    explicit Array1D(uint32_t nx)
-        : _data{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx))}, _nx{nx} {
+    explicit Array1D(uint32_t sampleCount)
+        : _data{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * sampleCount))},
+          _nx{sampleCount} {
         if (_data == nullptr) {
             throw std::bad_alloc();
         }
@@ -69,34 +116,35 @@ class Array1D {
         return _data;
     }
 
-    auto operator[](uint32_t i) -> std::complex<double>& {
-        return reinterpret_cast<std::complex<double>*>(_data)[i];
-    }
-    auto operator[](uint32_t i) const -> const std::complex<double>& {
-        return reinterpret_cast<const std::complex<double>*>(_data)[i];
-    }
-    auto operator[](int32_t i) -> std::complex<double>& {
-        assert(i >= 0);
-        return reinterpret_cast<std::complex<double>*>(_data)[i];
-    }
-    auto operator[](int32_t i) const -> const std::complex<double>& {
-        assert(i >= 0);
-        return reinterpret_cast<const std::complex<double>*>(_data)[i];
+    auto operator()(uint32_t sampleIndex) -> ComplexRef {
+        assert(sampleIndex < _nx);
+        return ComplexRef{elements()[sampleIndex]};
     }
 
-    auto operator()(uint32_t i) -> std::complex<double>& {
-        return (*this)[i];
+    [[nodiscard]] auto operator()(uint32_t sampleIndex) const -> std::complex<double> {
+        assert(sampleIndex < _nx);
+        const auto elementsView = constElements();
+        const fftw_complex& value = elementsView[sampleIndex];
+        return {value[0], value[1]};
     }
-    auto operator()(uint32_t i) const -> const std::complex<double>& {
-        return (*this)[i];
+
+    auto operator()(int32_t sampleIndex) -> ComplexRef {
+        assert(sampleIndex >= 0);
+        return (*this)(static_cast<uint32_t>(sampleIndex));
     }
-    auto operator()(int32_t i) -> std::complex<double>& {
-        assert(i >= 0);
-        return (*this)[static_cast<uint32_t>(i)];
+
+    [[nodiscard]] auto operator()(int32_t sampleIndex) const -> std::complex<double> {
+        assert(sampleIndex >= 0);
+        return (*this)(static_cast<uint32_t>(sampleIndex));
     }
-    auto operator()(int32_t i) const -> const std::complex<double>& {
-        assert(i >= 0);
-        return (*this)[static_cast<uint32_t>(i)];
+
+  private:
+    [[nodiscard]] auto elements() -> gsl::span<fftw_complex> {
+        return {_data, static_cast<std::size_t>(_nx)};
+    }
+
+    [[nodiscard]] auto constElements() const -> gsl::span<const fftw_complex> {
+        return {_data, static_cast<std::size_t>(_nx)};
     }
 };
 
@@ -109,9 +157,10 @@ class Array2D {
     uint32_t _ny = 0;
 
   public:
-    Array2D(uint32_t nx, uint32_t ny)
-        : _data{static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * nx * ny))}, _nx{nx},
-          _ny{ny} {
+    Array2D(uint32_t xSampleCount, uint32_t ySampleCount)
+        : _data{static_cast<fftw_complex*>(
+              fftw_malloc(sizeof(fftw_complex) * xSampleCount * ySampleCount))},
+          _nx{xSampleCount}, _ny{ySampleCount} {
         if (_data == nullptr) {
             throw std::bad_alloc();
         }
@@ -160,40 +209,39 @@ class Array2D {
         return _data;
     }
 
-    /** arr[i] returns pointer to row i, so arr[i][j] works. */
-    auto operator[](uint32_t i) -> std::complex<double>* {
-        return reinterpret_cast<std::complex<double>*>(_data) + static_cast<std::size_t>(i) * _ny;
-    }
-    auto operator[](uint32_t i) const -> const std::complex<double>* {
-        return reinterpret_cast<const std::complex<double>*>(_data) +
-               static_cast<std::size_t>(i) * _ny;
-    }
-    auto operator[](int32_t i) -> std::complex<double>* {
-        assert(i >= 0);
-        return reinterpret_cast<std::complex<double>*>(_data) +
-               static_cast<std::size_t>(static_cast<uint32_t>(i)) * _ny;
-    }
-    auto operator[](int32_t i) const -> const std::complex<double>* {
-        assert(i >= 0);
-        return reinterpret_cast<const std::complex<double>*>(_data) +
-               static_cast<std::size_t>(static_cast<uint32_t>(i)) * _ny;
+    auto operator()(uint32_t xIndex, uint32_t yIndex) -> ComplexRef {
+        assert(xIndex < _nx && yIndex < _ny);
+        return ComplexRef{elements()[flatIndex(xIndex, yIndex)]};
     }
 
-    auto operator()(uint32_t i, uint32_t j) -> std::complex<double>& {
-        return reinterpret_cast<std::complex<double>*>(_data)[i * _ny + j];
+    [[nodiscard]] auto operator()(uint32_t xIndex, uint32_t yIndex) const -> std::complex<double> {
+        assert(xIndex < _nx && yIndex < _ny);
+        const auto elementsView = constElements();
+        const fftw_complex& value = elementsView[flatIndex(xIndex, yIndex)];
+        return {value[0], value[1]};
     }
-    auto operator()(uint32_t i, uint32_t j) const -> const std::complex<double>& {
-        return reinterpret_cast<const std::complex<double>*>(_data)[i * _ny + j];
+
+    auto operator()(int32_t xIndex, int32_t yIndex) -> ComplexRef {
+        assert(xIndex >= 0 && yIndex >= 0);
+        return (*this)(static_cast<uint32_t>(xIndex), static_cast<uint32_t>(yIndex));
     }
-    auto operator()(int32_t i, int32_t j) -> std::complex<double>& {
-        assert(i >= 0 && j >= 0);
-        return reinterpret_cast<std::complex<double>*>(
-            _data)[static_cast<uint32_t>(i) * _ny + static_cast<uint32_t>(j)];
+
+    [[nodiscard]] auto operator()(int32_t xIndex, int32_t yIndex) const -> std::complex<double> {
+        assert(xIndex >= 0 && yIndex >= 0);
+        return (*this)(static_cast<uint32_t>(xIndex), static_cast<uint32_t>(yIndex));
     }
-    auto operator()(int32_t i, int32_t j) const -> const std::complex<double>& {
-        assert(i >= 0 && j >= 0);
-        return reinterpret_cast<const std::complex<double>*>(
-            _data)[static_cast<uint32_t>(i) * _ny + static_cast<uint32_t>(j)];
+
+  private:
+    [[nodiscard]] auto elements() -> gsl::span<fftw_complex> {
+        return {_data, static_cast<std::size_t>(_nx) * static_cast<std::size_t>(_ny)};
+    }
+
+    [[nodiscard]] auto constElements() const -> gsl::span<const fftw_complex> {
+        return {_data, static_cast<std::size_t>(_nx) * static_cast<std::size_t>(_ny)};
+    }
+
+    [[nodiscard]] auto flatIndex(uint32_t xIndex, uint32_t yIndex) const -> std::size_t {
+        return static_cast<std::size_t>(xIndex) * _ny + yIndex;
     }
 };
 
@@ -206,7 +254,7 @@ class Plan {
   public:
     Plan() = default;
 
-    explicit Plan(fftw_plan p) : _plan{p} {
+    explicit Plan(fftw_plan rawPlan) : _plan{rawPlan} {
         if (_plan == nullptr) {
             throw std::runtime_error("fftw_plan creation failed");
         }
@@ -244,4 +292,3 @@ class Plan {
 };
 
 } // namespace laby::fft
-

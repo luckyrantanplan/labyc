@@ -14,8 +14,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "PolyConvex.h"
 #include "GeomData.h"
+#include "PolyConvex.h"
 #include "basic/AugmentedPolygonSet.h"
 #include "basic/EasyProfilerCompat.h"
 #include <CGAL/Polygon_2.h>
@@ -25,17 +25,17 @@
 #include <iostream>
 #include <iterator>
 #include <queue>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "../OrientedRibbon.h"
 #include "../basic/PolygonTools.h"
 #include "NodeRendering.h"
-#include "flatteningOverlap/Node.h"
-#include "flatteningOverlap/Family.h"
 #include "basic/RangeHelper.h"
+#include "flatteningOverlap/Family.h"
+#include "flatteningOverlap/Node.h"
 
 namespace laby {
 
@@ -131,8 +131,8 @@ auto collectMultiPatchCoverSet(const std::vector<const Family*>& families)
     -> std::unordered_set<std::size_t> {
     std::unordered_set<std::size_t> coverSet;
     for (const Family* family : families) {
-        if (family->_patches.size() > 1) {
-            for (const auto& patchEntry : family->_patches) {
+        if (family->patches().size() > 1) {
+            for (const auto& patchEntry : family->patches()) {
                 coverSet.insert(patchEntry.second.begin(), patchEntry.second.end());
             }
         }
@@ -143,8 +143,8 @@ auto collectMultiPatchCoverSet(const std::vector<const Family*>& families)
 auto extendCoverSetFromSinglePatchFamilies(const std::vector<const Family*>& families,
                                            std::unordered_set<std::size_t>& coverSet) -> void {
     for (const Family* family : families) {
-        if (family->_patches.size() == 1) {
-            for (const Intersection& interval : family->_intersections) {
+        if (family->patches().size() == 1) {
+            for (const Intersection& interval : family->intersections()) {
                 if (coverSet.count(interval.first()) > 0) {
                     coverSet.emplace(interval.second());
                 } else if (coverSet.count(interval.second()) > 0) {
@@ -404,7 +404,7 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
         if (iterator.second) {
             familyVector.emplace_back();
         }
-        familyVector.at(iterator.first->second)._intersections.emplace_back(intersection);
+        familyVector.at(iterator.first->second).intersections().emplace_back(intersection);
     }
 
     std::vector<Node> nodes = processFamilies(families, polyConvexList, familyVector, intersections,
@@ -482,7 +482,7 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
                                     const std::vector<PolyConvex>& polyConvexList,
                                     std::vector<Family>& familyVector,
                                     std::vector<Intersection>& intersections,
-                                    std::vector<BoxIntersection>& box_intersection,
+                                    std::vector<BoxIntersection>& boxIntersectionList,
                                     CGAL::Union_find<std::size_t>& unionFind) -> std::vector<Node> {
     EASY_FUNCTION();
 
@@ -492,14 +492,14 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
         std::size_t const familyIndex = familyEntry.second;
         Family& family = familyVector.at(familyIndex);
         family.createPatch(polyConvexList);
-        if (family._patches.size() == 1) {
-            intersectOnSinglePiece.insert(family._intersections.begin(),
-                                          family._intersections.end());
+        if (family.patches().size() == 1) {
+            intersectOnSinglePiece.insert(family.intersections().begin(),
+                                          family.intersections().end());
         }
     }
 
     std::unordered_map<std::size_t, std::vector<const Family*>> const map = locateFamilies(
-        families, familyVector, intersections, box_intersection, unionFind, polyConvexList);
+        families, familyVector, intersections, boxIntersectionList, unionFind, polyConvexList);
 
     std::vector<Node> nodes = createNode(map, intersectOnSinglePiece, polyConvexList);
     return nodes;
@@ -531,10 +531,10 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
     std::vector<basic::Polygon_set_2Node> intersectGeometryList;
     intersectGeometryList.reserve(families.size());
     for (const Family* family : families) {
-        if (family->_patches.size() > 1) {
+        if (family->patches().size() > 1) {
             intersectGeometryList.emplace_back();
             basic::Polygon_set_2Node& setPolygons = intersectGeometryList.back();
-            auto patchIterator = family->_patches.begin();
+            auto patchIterator = family->patches().begin();
             createPolygonSet(polyConvexList, patchIterator->second, setPolygons);
             basic::Polygon_set_2Node secondaryPolygonSet;
             ++patchIterator;

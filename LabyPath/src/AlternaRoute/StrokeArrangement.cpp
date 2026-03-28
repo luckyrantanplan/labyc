@@ -5,13 +5,13 @@
  *      Author: florian
  */
 #include "StrokeArrangement.h"
+#include <CGAL/Intersections_2/Line_2_Line_2.h>
+#include <CGAL/Kernel/global_functions_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/enum.h>
+#include <boost/variant/get.hpp>
 #include <cstdint>
 #include <utility>
-#include <CGAL/Intersections_2/Line_2_Line_2.h>
-#include <boost/variant/get.hpp>
-#include <CGAL/Polygon_2.h>
-#include <CGAL/Kernel/global_functions_2.h>
-#include <CGAL/enum.h>
 
 namespace laby::alter {
 

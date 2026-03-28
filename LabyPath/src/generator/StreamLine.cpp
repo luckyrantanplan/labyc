@@ -7,32 +7,31 @@
 
 #include "StreamLine.h"
 
-#include <complex>
+#include <CGAL/Compact_container.h>
 #include <CGAL/Distance_2/Point_2_Point_2.h>
-#include <cstddef>
-#include <CGAL/Segment_2.h>
+#include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
-#include <cstdint>
+#include <CGAL/Segment_2.h>
+#include <CGAL/enum.h>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
-#include <CGAL/Compact_container.h>
-#include <CGAL/enum.h>
-#include <CGAL/Kernel/global_functions_2.h>
+#include <complex>
+#include <cstddef>
+#include <cstdint>
 // #include <CGAL/Kernel/global_functions_3.h>
-#include <CGAL/number_utils.h>
 #include <CGAL/Point_2.h>
+#include <CGAL/number_utils.h>
 // #include <CGAL/Runge_kutta_integrator_2.h>
 // #include <CGAL/Stream_lines_2.h>
+#include "GeomData.h"
+#include "Polyline.h"
+#include "Ribbon.h"
+#include "basic/EasyProfilerCompat.h"
 #include <CGAL/Triangulation_ds_face_base_2.h>
 #include <CGAL/Vector_2.h>
-#include "Ribbon.h"
-#include "Polyline.h"
-#include "GeomData.h"
-#include "basic/EasyProfilerCompat.h"
 #include <algorithm>
 #include <cmath>
 #include <future>
-#include <cmath>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -43,10 +42,23 @@
 #include "../basic/RangeHelper.h"
 #include "../basic/SimplifyLines.h"
 
-
 namespace laby::generator {
 
-void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, Ribbon& ribbon) {
+namespace {
+
+constexpr double kConnectionDistanceSquared = 1.0;
+constexpr double kUnitMagnitude = 1.0;
+constexpr double kTwo = 2.0;
+constexpr double kHalf = 0.5;
+constexpr double kPi = 3.14159265358979323846;
+constexpr double kQuarterTurn = kPi / 4.0;
+constexpr double kHalfTurn = kPi / 2.0;
+constexpr double kFullTurn = 2.0 * kPi;
+
+} // namespace
+
+void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines,
+                                   Ribbon& ribbon) const {
     double const div = _config.resolution;
     int32_t lineNumber = 0;
 
@@ -60,7 +72,8 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, 
             pointComplex = pointComplex / div;
             lineString.emplace_back(SimplifyLines::xy(pointComplex.real(), pointComplex.imag()));
         }
-        SimplifyLines::LineString const simpleLine = SimplifyLines::decimate(lineString, _config.simplify_distance);
+        SimplifyLines::LineString const simpleLine =
+            SimplifyLines::decimate(lineString, _config.simplify_distance);
         for (SimplifyLines::xy const simplifiedPoint : simpleLine) {
             polyline.points.emplace_back(simplifiedPoint.x(), simplifiedPoint.y());
         }
@@ -70,9 +83,11 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines, 
 
 StreamLine::StreamLine(const Config& config) : _config(config), _radialList(0), _circularList(1) {
     if (_config.old_RegularGrid) {
-        auto xSamples = static_cast<uint32_t>(config.size * _config.resolution);
-        auto ySamples = static_cast<uint32_t>(config.size * _config.resolution);
-        _field.resize(boost::extents[xSamples][ySamples]);
+        _xSampleCount = static_cast<std::size_t>(config.size * _config.resolution);
+        _ySampleCount = static_cast<std::size_t>(config.size * _config.resolution);
+        using FieldIndex = boost::multi_array<std::complex<double>, 2>::index;
+        _field.resize(boost::extents[static_cast<FieldIndex>(_xSampleCount)]
+                                    [static_cast<FieldIndex>(_ySampleCount)]);
     }
 }
 
@@ -82,8 +97,7 @@ void StreamLine::changeLine(const Point_2& midpoint,
     RibbonCoord const& ribbonCoord = ribbonCoordMap.at(vertex);
     if (ribbonCoord.position() == 0) {
         ribbonCoord.polyline()->points.front() = midpoint;
-    }
-    else {
+    } else {
         ribbonCoord.polyline()->points.back() = midpoint;
     }
 }
@@ -107,7 +121,8 @@ auto StreamLine::connectExtreme(Ribbon& ribbon) -> Ribbon {
         existingSegments.emplace(startVertex, endVertex);
     }
 
-    for (auto& edge : RangeHelper::make(pointSet.finite_edges_begin(), pointSet.finite_edges_end())) {
+    for (auto& edge :
+         RangeHelper::make(pointSet.finite_edges_begin(), pointSet.finite_edges_end())) {
         PS::Face_handle const& faceHandle = edge.first;
         int const edgeIndex = edge.second;
         SegmentPS const segment(&*faceHandle->vertex(PS::cw(edgeIndex)),
@@ -123,15 +138,15 @@ auto StreamLine::connectExtreme(Ribbon& ribbon) -> Ribbon {
         if (connectedVertices.count(segment.source()) == 0 &&
             connectedVertices.count(segment.target()) == 0) {
 
-            if (CGAL::to_double(CGAL::squared_distance(segment.source()->point(),
-                                                       segment.target()->point())) < 1) {
+            if (CGAL::to_double(
+                    CGAL::squared_distance(segment.source()->point(), segment.target()->point())) <
+                kConnectionDistanceSquared) {
 
                 Point_2 const midpoint =
                     CGAL::midpoint(segment.source()->point(), segment.target()->point());
                 changeLine(midpoint, ribbonCoordMap, segment.source());
                 changeLine(midpoint, ribbonCoordMap, segment.target());
-            }
-            else {
+            } else {
 
                 result.lines().emplace_back();
                 Polyline& polyline = result.lines().back();
@@ -154,8 +169,8 @@ void StreamLine::connectExtremInPlace(laby::Ribbon& ribbon) {
 
 void StreamLine::render() {
     EASY_FUNCTION();
-    int const xSampleCount = static_cast<int>(_field.size());
-    int const ySampleCount = static_cast<int>(_field.shape()[1]);
+    int const xSampleCount = static_cast<int>(_xSampleCount);
+    int const ySampleCount = static_cast<int>(_ySampleCount);
     Field radial(xSampleCount, ySampleCount, xSampleCount, ySampleCount);
     Field circular(xSampleCount, ySampleCount, xSampleCount, ySampleCount);
 
@@ -166,7 +181,7 @@ void StreamLine::render() {
 
             radial.set_field(xIndex, yIndex,
                              CGAL::Vector_2<K>(fieldVector.real(), fieldVector.imag()));
-            fieldVector *= std::polar<double>(1., M_PI / 2.);
+            fieldVector *= std::polar<double>(kUnitMagnitude, kHalfTurn);
             circular.set_field(xIndex, yIndex,
                                CGAL::Vector_2<K>(fieldVector.real(), fieldVector.imag()));
         }
@@ -185,30 +200,27 @@ void StreamLine::render() {
     future.get();
 }
 
-void StreamLine::drawSpiral(const std::complex<double>& origin, const double& radius,
-                            const double& angle) {
+void StreamLine::drawSpiral(const SpiralParameters& parameters) {
     EASY_FUNCTION();
-    constexpr double kHalf = 0.5;
-    constexpr double kQuarterTurn = M_PI / 4;
-    constexpr double kHalfTurn = M_PI / 2;
 
-    std::complex<double> const center = origin * (1. * _config.resolution);
-    double const radiusSquared = radius * radius * _config.resolution * _config.resolution;
+    std::complex<double> const center = parameters.origin * (kUnitMagnitude * _config.resolution);
+    double const radiusSquared =
+        parameters.radius * parameters.radius * _config.resolution * _config.resolution;
 
-    for (std::size_t xIndex = 0; xIndex < _field.size(); ++xIndex) {
-        for (std::size_t yIndex = 0; yIndex < _field.shape()[1]; ++yIndex) {
+    for (std::size_t xIndex = 0; xIndex < _xSampleCount; ++xIndex) {
+        for (std::size_t yIndex = 0; yIndex < _ySampleCount; ++yIndex) {
             std::complex<double> pixel(static_cast<double>(xIndex), static_cast<double>(yIndex));
             pixel -= center;
             std::complex<double> vect = pixel;
 
             vect /= std::abs(vect);
-            vect *= std::polar<double>(1., angle);
+            vect *= std::polar<double>(kUnitMagnitude, parameters.angleRadians);
 
             if (std::norm(pixel) > radiusSquared) {
 
                 double localAngle = std::arg(vect);
-                localAngle += kQuarterTurn + 2 * M_PI;
-                localAngle *= 2 / M_PI;
+                localAngle += kQuarterTurn + kFullTurn;
+                localAngle *= kTwo / kPi;
                 int const angleInt = static_cast<int>(localAngle);
 
                 vect = std::polar<double>(_config.epsilon * kHalf, angleInt * kHalfTurn);
@@ -225,7 +237,9 @@ void StreamLine::addToArrangement(Arrangement_2& arr) {
     Ribbon::appendToArr(_radialList, _circularList, arr);
 }
 
-auto StreamLine::generateTriangularField(std::vector<CGAL::Point_2<K>> pointList, std::vector<CGAL::Vector_2<K>> vectorList, const Config& config) -> Ribbon {
+auto StreamLine::generateTriangularField(std::vector<CGAL::Point_2<K>> pointList,
+                                         std::vector<CGAL::Vector_2<K>> vectorList,
+                                         const Config& config) -> Ribbon {
     FieldTri const triangularField(pointList.begin(), pointList.end(), vectorList.begin());
     StreamLine streamLine(config);
     double const separationDistance = config.resolution * config.divisor;
@@ -235,7 +249,8 @@ auto StreamLine::generateTriangularField(std::vector<CGAL::Point_2<K>> pointList
     return ribbon;
 }
 
-void StreamLine::VectorCompute::addSegPerp(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg,
+void StreamLine::VectorCompute::addSegPerp(std::vector<CGAL::Point_2<K>>& pointList,
+                                           const CGAL::Segment_2<Kernel>& seg,
                                            std::vector<CGAL::Vector_2<K>>& vectorList) const {
 
     CGAL::Vector_2<K> vect(_kernelToK(seg));
@@ -255,7 +270,8 @@ void StreamLine::VectorCompute::addSegPerp(std::vector<CGAL::Point_2<K>>& pointL
     vectorList.emplace_back(vect);
 }
 
-void StreamLine::VectorCompute::addSegLong(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg,
+void StreamLine::VectorCompute::addSegLong(std::vector<CGAL::Point_2<K>>& pointList,
+                                           const CGAL::Segment_2<Kernel>& seg,
                                            std::vector<CGAL::Vector_2<K>>& vectorList) const {
 
     CGAL::Vector_2<K> vect(_kernelToK(seg));
@@ -274,18 +290,22 @@ void StreamLine::VectorCompute::addSegLong(std::vector<CGAL::Point_2<K>>& pointL
     vectorList.emplace_back(vect);
 }
 
-auto StreamLine::getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) -> Ribbon {
+auto StreamLine::getRadial(const Config& config,
+                           const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons)
+    -> Ribbon {
     std::vector<CGAL::Point_2<K>> pointList;
     std::vector<CGAL::Vector_2<K>> vectorList;
     VectorCompute const vCompute(config.resolution);
 
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
-        for (const CGAL::Segment_2<Kernel>& seg : RangeHelper::make(polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
+        for (const CGAL::Segment_2<Kernel>& seg : RangeHelper::make(
+                 polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
             vCompute.addSegPerp(pointList, seg, vectorList);
         }
         for (const auto& hole : RangeHelper::make(polygon.holes_begin(), polygon.holes_end())) {
 
-            for (const CGAL::Segment_2<Kernel>& seg : RangeHelper::make(hole.edges_begin(), hole.edges_end())) {
+            for (const CGAL::Segment_2<Kernel>& seg :
+                 RangeHelper::make(hole.edges_begin(), hole.edges_end())) {
                 vCompute.addSegPerp(pointList, seg.opposite(), vectorList);
             }
         }
@@ -293,18 +313,22 @@ auto StreamLine::getRadial(const Config& config, const std::vector<CGAL::Polygon
     return generateTriangularField(pointList, vectorList, config);
 }
 
-auto StreamLine::getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) -> Ribbon {
+auto StreamLine::getLongitudinal(const Config& config,
+                                 const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons)
+    -> Ribbon {
     std::vector<CGAL::Point_2<K>> pointList;
     std::vector<CGAL::Vector_2<K>> vectorList;
     VectorCompute const vCompute(config.resolution);
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
 
-        for (const CGAL::Segment_2<Kernel> seg : RangeHelper::make(polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
+        for (const CGAL::Segment_2<Kernel> seg : RangeHelper::make(
+                 polygon.outer_boundary().edges_begin(), polygon.outer_boundary().edges_end())) {
             vCompute.addSegLong(pointList, seg, vectorList);
         }
         for (const auto& hole : RangeHelper::make(polygon.holes_begin(), polygon.holes_end())) {
 
-            for (const CGAL::Segment_2<Kernel>& seg : RangeHelper::make(hole.edges_begin(), hole.edges_end())) {
+            for (const CGAL::Segment_2<Kernel>& seg :
+                 RangeHelper::make(hole.edges_begin(), hole.edges_end())) {
                 //    vCompute.addSegLong(pointList, seg.opposite(), vectorList);
             }
         }
@@ -313,4 +337,3 @@ auto StreamLine::getLongitudinal(const Config& config, const std::vector<CGAL::P
 }
 
 } // namespace laby::generator
-

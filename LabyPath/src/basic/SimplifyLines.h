@@ -8,6 +8,9 @@
 #ifndef BASIC_SIMPLIFYLINES_H_
 #define BASIC_SIMPLIFYLINES_H_
 
+#include <array>
+#include <cstddef>
+
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
@@ -17,16 +20,50 @@
 namespace laby {
 
 struct IndexedPoint {
-    IndexedPoint(double ix, double iy, std::size_t i) : x(ix), y(iy), index(i) {}
     IndexedPoint() = default;
 
-    double x = 0;
-    double y = 0;
-    std::size_t index = 0;
+    static auto fromCoordinates(const std::array<double, 2>& coordinates,
+                                std::size_t pointIndex) -> IndexedPoint {
+        IndexedPoint point;
+        point.setX(coordinates[0]);
+        point.setY(coordinates[1]);
+        point.setIndex(pointIndex);
+        return point;
+    }
+
+    [[nodiscard]] auto x() const -> double {
+        return _x;
+    }
+
+    [[nodiscard]] auto y() const -> double {
+        return _y;
+    }
+
+    [[nodiscard]] auto index() const -> std::size_t {
+        return _index;
+    }
+
+    void setX(double xCoordinate) {
+        _x = xCoordinate;
+    }
+
+    void setY(double yCoordinate) {
+        _y = yCoordinate;
+    }
+
+    void setIndex(std::size_t pointIndex) {
+        _index = pointIndex;
+    }
+
+  private:
+    double _x = 0;
+    double _y = 0;
+    std::size_t _index = 0;
 };
 } /* namespace laby */
 
-BOOST_GEOMETRY_REGISTER_POINT_2D(laby::IndexedPoint, double, cs::cartesian, x, y)
+BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(laby::IndexedPoint, double, cs::cartesian, x, y, setX,
+                                         setY)
 
 namespace laby {
 class SimplifyLines {

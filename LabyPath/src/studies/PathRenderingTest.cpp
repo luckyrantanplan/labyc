@@ -29,9 +29,9 @@ generator::StreamLine PathRenderingTest::createStreamLine() {
     config_st.divisor = 2;
     config_st.size = 320;
     generator::StreamLine st(config_st);
-    st.drawSpiral({80, 80}, 100, M_PI / 40.);
-    st.drawSpiral({40., 40.}, 32, -M_PI / 4.);
-    st.drawSpiral({220., 200.}, 76, -M_PI / 4.);
+    st.drawSpiral({{80, 80}, 100, M_PI / 40.});
+    st.drawSpiral({{40., 40.}, 32, -M_PI / 4.});
+    st.drawSpiral({{220., 200.}, 76, -M_PI / 4.});
     st.render();
     return st;
 }

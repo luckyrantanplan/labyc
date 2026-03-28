@@ -92,16 +92,31 @@ class Family {
   public:
     auto createPatch(const std::vector<PolyConvex>& polyConvexList) -> void;
 
-    std::vector<Intersection> _intersections;
+    auto intersections() -> std::vector<Intersection>& {
+        return _intersections;
+    }
 
-    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
-    mutable CGAL::Union_find<std::size_t>::handle handle;
+    [[nodiscard]] auto intersections() const -> const std::vector<Intersection>& {
+        return _intersections;
+    }
+
+    auto patches() -> std::unordered_map<std::size_t, std::vector<std::size_t>>& {
+        return _patches;
+    }
+
+    [[nodiscard]] auto
+    patches() const -> const std::unordered_map<std::size_t, std::vector<std::size_t>>& {
+        return _patches;
+    }
 
     static void createUnionFind(const std::unordered_set<std::size_t>& coverSet,
                                 const std::vector<PolyConvex>& polyConvexList,
                                 CGAL::Union_find<std::size_t>& unionFind);
 
   private:
+    std::vector<Intersection> _intersections;
+    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
+    mutable CGAL::Union_find<std::size_t>::handle _handle;
 };
 
 } /* namespace laby */
