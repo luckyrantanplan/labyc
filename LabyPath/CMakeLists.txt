@@ -6,7 +6,7 @@ project(LabyPath
 )
 
 # ─── C++ Standard ────────────────────────────────────────────────────────────
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -41,9 +41,18 @@ option(LABYPATH_BUILD_TESTS "Build unit tests" ON)
 option(LABYPATH_ENABLE_PROFILER "Enable easy_profiler integration" OFF)
 
 # ─── Find Dependencies ──────────────────────────────────────────────────────
-find_package(CGAL REQUIRED)
+set(LABYPATH_CGAL_MIN_VERSION 6.1.1)
+set(LABYPATH_PROTOBUF_MIN_VERSION 34.1.0)
+set(protobuf_MODULE_COMPATIBLE ON)
+find_package(CGAL ${LABYPATH_CGAL_MIN_VERSION} REQUIRED CONFIG)
 find_package(Boost REQUIRED)
-find_package(Protobuf REQUIRED)
+find_package(Protobuf REQUIRED CONFIG)
+if(NOT Protobuf_VERSION VERSION_GREATER_EQUAL LABYPATH_PROTOBUF_MIN_VERSION)
+    message(FATAL_ERROR
+        "Found Protobuf ${Protobuf_VERSION}, but ${LABYPATH_PROTOBUF_MIN_VERSION}+ is required")
+endif()
+message(STATUS "Found CGAL ${CGAL_VERSION}")
+message(STATUS "Found Protobuf ${Protobuf_VERSION}")
 # Microsoft Guideline Support Library (GSL) via FetchContent
 include(FetchContent)
 FetchContent_Declare(GSL
@@ -58,6 +67,7 @@ FetchContent_MakeAvailable(GSL)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.25")
     set_target_properties(CGAL       PROPERTIES SYSTEM TRUE)
     set_target_properties(Boost::boost PROPERTIES SYSTEM TRUE)
+    set_target_properties(protobuf::libprotobuf PROPERTIES SYSTEM TRUE)
 endif()
 
 # FFTW3 (optional – needed for noise generation)
@@ -171,8 +181,6 @@ target_include_directories(labypath_lib
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-# Protobuf include dirs marked as SYSTEM to suppress third-party warnings
-target_include_directories(labypath_lib SYSTEM PUBLIC ${Protobuf_INCLUDE_DIRS})
 
 target_link_libraries(labypath_lib
     PUBLIC

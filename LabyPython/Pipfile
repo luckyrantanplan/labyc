@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 watchdog = ">=4.0"
 pyqt6 = ">=6.6"
-protobuf = ">=4.25"
+protobuf = ">=7.34.1"
 
 [dev-packages]
 pytest = ">=8.0"

@@ -140,9 +140,9 @@ graph TD
 
 | Library | Minimum version | Purpose |
 |---------|----------------|---------|
-| **CGAL** | 5.6+ | Computational geometry (arrangements, Voronoi, polygon ops) |
+| **CGAL** | 6.1.1+ | Computational geometry (arrangements, Voronoi, polygon ops) |
 | **Boost** | 1.74+ | Multi-array, geometry utilities |
-| **Protobuf** | 3.21+ | Configuration message serialization |
+| **Protobuf** | 34.1+ | Configuration message serialization |
 | **FFTW3** | 3.3+ | FFT for noise generation (optional) |
 | **SVG++** | 1.3+ | SVG parsing library |
 | **MS GSL** | 4.0+ | Microsoft Guidelines Support Library |
@@ -156,12 +156,45 @@ graph TD
 ```bash
 sudo apt-get install -y \
     g++-14 cmake ninja-build \
-    libcgal-dev libgmp-dev libmpfr-dev \
+    ca-certificates curl xz-utils \
+    git \
+    libgmp-dev libmpfr-dev \
     libboost-all-dev \
-    libprotobuf-dev protobuf-compiler \
     libfftw3-dev \
     libsvgpp-dev libmsgsl-dev \
     libgtest-dev
+```
+
+### Install CGAL 6.1.1 locally
+
+Ubuntu 24.04 does not package CGAL 6.1.1, so install the official release archive and point CMake at that prefix when building outside the dev container.
+
+```bash
+curl -fsSL https://github.com/CGAL/cgal/releases/download/v6.1.1/CGAL-6.1.1-library.tar.xz -o /tmp/CGAL-6.1.1-library.tar.xz
+echo "37e9fffe48a83209b070e1914c6aa0a7bae8076749712ab78b53245e176e0e0e  /tmp/CGAL-6.1.1-library.tar.xz" | sha256sum -c -
+tar -xf /tmp/CGAL-6.1.1-library.tar.xz -C /tmp
+cmake -S /tmp/CGAL-6.1.1 -B /tmp/cgal-build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+    -DWITH_examples=OFF \
+    -DWITH_demos=OFF
+cmake --build /tmp/cgal-build --target install --parallel $(nproc)
+```
+
+### Install Protobuf 34.1 locally
+
+Ubuntu 24.04 packages Protobuf 3.21.x, so install the official 34.1 release if you build outside the dev container.
+
+```bash
+curl -fsSL https://github.com/protocolbuffers/protobuf/releases/download/v34.1/protobuf-34.1.tar.gz -o /tmp/protobuf-34.1.tar.gz
+echo "e4e6ff10760cf747a2decd1867741f561b216bd60cc4038c87564713a6da1848  /tmp/protobuf-34.1.tar.gz" | sha256sum -c -
+tar -xzf /tmp/protobuf-34.1.tar.gz -C /tmp
+cmake -S /tmp/protobuf-34.1 -B /tmp/protobuf-build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+    -DCMAKE_CXX_STANDARD=20 \
+    -Dprotobuf_BUILD_TESTS=OFF
+cmake --build /tmp/protobuf-build --target install --parallel $(nproc)
 ```
 
 ### Build with CMake
@@ -170,6 +203,7 @@ sudo apt-get install -y \
 cmake -S . -B .cmake/build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_COMPILER=g++-14 \
+    -DCMAKE_PREFIX_PATH=$HOME/.local \
     -DLABYPATH_BUILD_TESTS=ON \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build .cmake/build --parallel $(nproc)
@@ -198,7 +232,7 @@ The project includes a complete **Dev Container** setup so all compilation, test
 1. Install [VS Code](https://code.visualstudio.com/) and the **Dev Containers** extension.
 2. Open this repository in VS Code.
 3. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
-4. The container builds automatically with GCC 14, CMake, CGAL, FFTW3, GDB, clang-tidy, Python 3, PyQt6.
+4. The container builds automatically with GCC 14, CMake, CGAL 6.1.1, Protobuf 34.1, FFTW3, GDB, clang-tidy, Python 3, PyQt6.
 5. VS Code and CMake Tools use the repository root as the CMake source directory and write all generated files to `.cmake/build`.
 
 ### Build and test (inside the container)
@@ -290,7 +324,7 @@ The `LabyPython/` directory contains a PyQt6 project-management GUI. It lets you
 
 ```bash
 cd LabyPython
-pip install -r requirements.txt   # PyQt6, protobuf, watchdog
+pip install -r requirements.txt   # PyQt6, protobuf 7.34.1+, watchdog
 ```
 
 ### Run the GUI
@@ -441,7 +475,7 @@ The `flatteningOverlap` module has detailed documentation with mermaid diagrams 
 
 ## Code style
 
-- **C++17** standard
+- **C++20** standard
 - Strict compiler warnings (`-Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wdouble-promotion` and more)
 - **Zero warnings** from project source code (third-party headers suppressed via SYSTEM includes)
 - Code formatting enforced by [clang-format](https://clang.llvm.org/docs/ClangFormat.html) (see `.clang-format`)

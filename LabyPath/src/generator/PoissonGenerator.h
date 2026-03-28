@@ -72,7 +72,7 @@ struct SGridPoint {
 
 struct SGrid {
 
-    [[nodiscard]] static SGridPoint imageToGrid(const SPoint& P, double CellSize) {
+    [[nodiscard]] static auto imageToGrid(const SPoint& P, double CellSize) -> SGridPoint {
         return {(int)(P.x / CellSize), (int)(P.y / CellSize)};
     }
     [[nodiscard]] static auto getSqDistance(const SPoint& P1, const SPoint& P2) -> double {
@@ -124,8 +124,8 @@ struct SGrid {
 
 class PoissonPoints {
   public:
-    static SPoint generateRandomPointAround(const SPoint& P, const double sqDist,
-                                            laby::basic::RandomUniDist& Generator) {
+    static auto generateRandomPointAround(const SPoint& P, const double sqDist,
+                                            laby::basic::RandomUniDist& Generator) -> SPoint {
         // start with non-uniform distribution
 
         double const sqR1 = (3 * sqDist) * Generator.get() + sqDist;
