@@ -50,13 +50,13 @@ class AlternateRoute {
                              const double& distance) -> std::vector<OffsetPair>;
 
       private:
-        Kernel::Point_2 _origin;
-        Kernel::Point_2 _offset;
+        Kernel::Point_2 _origin{0, 0};
+        Kernel::Point_2 _offset{0, 0};
     };
 
     struct OffsetEndpoints {
-        Kernel::Point_2 originPoint;
-        Kernel::Point_2 targetPoint;
+        Kernel::Point_2 originPoint{0, 0};
+        Kernel::Point_2 targetPoint{0, 0};
     };
 
   public:
@@ -67,8 +67,8 @@ class AlternateRoute {
     double _sqMaxThickness = 0.0;
     double _sqMinThickness = 0.0;
 
-    [[nodiscard]] auto pruneArrangement(const Arrangement_2& arrangement) const -> Arrangement_2;
-    [[nodiscard]] static auto removeAntenna(const Arrangement_2& arrangement) -> Arrangement_2;
+    auto pruneArrangement(Arrangement_2& arrangement) const -> void;
+    static auto removeAntenna(Arrangement_2& arrangement) -> void;
     void addPoint(std::vector<OffsetPair>& offsets, const OffsetEndpoints& endpoints);
     [[nodiscard]] auto coupleList(const Halfedge& halfedge,
                                   int32_t direction) -> std::vector<OffsetPair>;

@@ -129,41 +129,38 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
     return list;
 }
 
-auto AlternateRoute::pruneArrangement(const laby::Arrangement_2& arrangement) const
-    -> laby::Arrangement_2 {
+auto AlternateRoute::pruneArrangement(laby::Arrangement_2& arrangement) const -> void {
     // remove inner  antenna
-    std::vector<Segment_info_2> result2;
+    std::vector<Segment_info_2> filteredCurves;
     uint32_t counter = 0;
     for (Edge_const_iterator eit = arrangement.edges_begin(); eit != arrangement.edges_end();
          ++eit) {
         if (counter < _config.pruning()) {
-            result2.emplace_back(eit->curve());
+            filteredCurves.emplace_back(eit->curve());
         } else {
             counter = 0;
         }
         ++counter;
     }
     std::cout << "start random remove edges\n";
-    laby::Arrangement_2 arr2;
-    CGAL::insert(arr2, result2.begin(), result2.end());
+    arrangement.clear();
+    CGAL::insert(arrangement, filteredCurves.begin(), filteredCurves.end());
     std::cout << "random edges are remove\n";
-    return arr2;
 }
 
-auto AlternateRoute::removeAntenna(const laby::Arrangement_2& arrangement) -> laby::Arrangement_2 {
+auto AlternateRoute::removeAntenna(laby::Arrangement_2& arrangement) -> void {
     // remove inner  antenna
-    std::vector<Segment_info_2> result2;
+    std::vector<Segment_info_2> filteredCurves;
     for (Edge_const_iterator eit = arrangement.edges_begin(); eit != arrangement.edges_end();
          ++eit) {
         if (&*eit->face() != &*eit->twin()->face()) {
-            result2.emplace_back(eit->curve());
+            filteredCurves.emplace_back(eit->curve());
         }
     }
     std::cout << "start remove antenna edges\n";
-    laby::Arrangement_2 arr2;
-    CGAL::insert(arr2, result2.begin(), result2.end());
+    arrangement.clear();
+    CGAL::insert(arrangement, filteredCurves.begin(), filteredCurves.end());
     std::cout << "  antenna edges are remove\n";
-    return arr2;
 }
 
 void AlternateRoute::addPoint(std::vector<OffsetPair>& offsets, const OffsetEndpoints& endpoints) {
@@ -240,9 +237,12 @@ void AlternateRoute::addTriplet(alter::OffsetTriplet& triplet, const OffsetPair&
     triplet.setOffset1(offsetPair.offset());
     Kernel::Line_2 const firstLine(lineStart, lineEnd);
     Kernel::Line_2 const secondLine(triplet.origin(), triplet.offset1());
-    auto variant2 = CGAL::intersection(firstLine, secondLine);
-    if (const Kernel::Point_2* intersectionPoint = boost::get<Kernel::Point_2>(&*variant2)) {
-        triplet.setOffset2(*intersectionPoint);
+    const auto intersectionVariant = CGAL::intersection(firstLine, secondLine);
+    if (intersectionVariant) {
+        if (const Kernel::Point_2* intersectionPoint =
+                boost::get<Kernel::Point_2>(&*intersectionVariant)) {
+            triplet.setOffset2(*intersectionPoint);
+        }
     }
 }
 
@@ -374,8 +374,8 @@ void AlternateRoute::populateTrapeze(const GridIndex& gridIndex, const std::vect
     const Ribbon& ribRadial = ribList.at(gridIndex.radialIndex());
     Arrangement_2 arr = gridIndex.getArr(ribList);
     // remove inner antenna
-    arr = pruneArrangement(arr);
-    arr = removeAntenna(arr);
+    pruneArrangement(arr);
+    removeAntenna(arr);
 
     ribToTrapeze(ribCircular, trapezeVect, arr, viewBox, ribLimit);
     ribToTrapeze(ribRadial, trapezeVect, arr, viewBox, ribLimit);

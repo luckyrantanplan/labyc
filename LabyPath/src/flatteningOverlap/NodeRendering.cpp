@@ -16,8 +16,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "OrientedRibbon.h"
 #include "GeomData.h"
+#include "OrientedRibbon.h"
 #include "PolyConvex.h"
 #include "basic/AugmentedPolygonSet.h"
 #include "basic/EasyProfilerCompat.h"
@@ -43,17 +43,17 @@ auto arrangementHasSharedFace(basic::Arrangement_2Node& arrangement) -> bool {
     return false;
 }
 
-auto buildOverlayArrangement(const std::vector<Node*>& nodes) -> basic::Arrangement_2Node {
-    basic::Arrangement_2Node overlayArrangement = nodes.front()->_setPolygons.arrangement();
+auto buildOverlayArrangement(const std::vector<Node*>& nodes,
+                             basic::Arrangement_2Node& overlayArrangement) -> void {
+    overlayArrangement = nodes.front()->_setPolygons.arrangement();
     basic::Overlay_traitsNode overlayTraits;
 
     for (std::size_t nodeIndex = 1; nodeIndex < nodes.size(); ++nodeIndex) {
-        const basic::Arrangement_2Node previousArrangement = overlayArrangement;
+        basic::Arrangement_2Node previousArrangement;
+        previousArrangement = overlayArrangement;
         CGAL::overlay(previousArrangement, nodes.at(nodeIndex)->_setPolygons.arrangement(),
                       overlayArrangement, overlayTraits);
     }
-
-    return overlayArrangement;
 }
 
 auto renderSharedEdges(OrientedRibbon& orientedRibbon,
@@ -148,7 +148,8 @@ auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
         return;
     }
 
-    basic::Arrangement_2Node overlayArrangement = buildOverlayArrangement(nodes());
+    basic::Arrangement_2Node overlayArrangement;
+    buildOverlayArrangement(nodes(), overlayArrangement);
     if (!arrangementHasSharedFace(overlayArrangement)) {
         renderSharedEdges(orientedRibbon, overlayArrangement);
         return;

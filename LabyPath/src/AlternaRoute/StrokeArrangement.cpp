@@ -6,9 +6,8 @@
  */
 #include "StrokeArrangement.h"
 #include <CGAL/Intersections_2/Line_2_Line_2.h>
-#include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Polygon_2.h>
-#include <CGAL/enum.h>
+#include <CGAL/squared_distance_2.h>
 #include <boost/variant/get.hpp>
 #include <cstdint>
 #include <utility>
@@ -51,7 +50,9 @@ auto TrapezeEdgeInfo::getGeometry(const Kernel::Segment_2& segment) const
     CGAL::Polygon_2<Kernel> geometry;
     const Kernel::Point_2& source = segment.source();
     const Kernel::Point_2& target = segment.target();
-    if (CGAL::compare_distance_to_point(_source.origin(), source, target) == CGAL::SMALLER) {
+    const Kernel::FT sourceDistance = CGAL::squared_distance(_source.origin(), source);
+    const Kernel::FT targetDistance = CGAL::squared_distance(_source.origin(), target);
+    if (sourceDistance < targetDistance) {
 
         computeGeometry(source, target, geometry);
     } else {
