@@ -16,8 +16,13 @@
 #include <unordered_set>
 #include <vector>
 
+#include "OrientedRibbon.h"
+#include "GeomData.h"
 #include "PolyConvex.h"
+#include "basic/AugmentedPolygonSet.h"
 #include "basic/EasyProfilerCompat.h"
+#include "basic/RangeHelper.h"
+#include "flatteningOverlap/Node.h"
 
 namespace laby {
 

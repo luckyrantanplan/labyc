@@ -8,7 +8,6 @@
 #ifndef BASIC_AUGMENTEDPOLYGONSET_H_
 #define BASIC_AUGMENTEDPOLYGONSET_H_
 
-#include <cstdint>
 #include <CGAL/Arr_consolidated_curve_data_traits_2.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>
@@ -17,6 +16,7 @@
 #include <CGAL/General_polygon_set_2.h>
 #include <CGAL/Gps_segment_traits_2.h>
 #include <CGAL/Point_2.h>
+#include <cstdint>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
@@ -27,18 +27,22 @@ namespace laby {
 namespace basic {
 
 class EdgeNodeInfo {
-public:
-    int32_t _polygonId = -1; 
+  public:
+    int32_t _polygonId = -1;
 
     explicit EdgeNodeInfo(int32_t polygonId) : _polygonId{polygonId} {}
 
-    auto operator==(const EdgeNodeInfo& it) const -> bool { return _polygonId == it._polygonId; }
+    auto operator==(const EdgeNodeInfo& it) const -> bool {
+        return _polygonId == it._polygonId;
+    }
 
-    void print(std::ostream& os) const { os << _polygonId; }
+    void print(std::ostream& os) const {
+        os << _polygonId;
+    }
 };
 
 class FaceNodeInfo : public CGAL::Gps_face_base {
-public:
+  public:
     FaceNodeInfo() = default;
     FaceNodeInfo(const FaceNodeInfo&) = default;
     FaceNodeInfo(FaceNodeInfo&&) noexcept = default;
@@ -51,27 +55,36 @@ public:
             _polygonIds.emplace(polygonId);
         }
     }
-    std::unordered_set<int32_t> _polygonIds; 
+    std::unordered_set<int32_t> _polygonIds;
 
-    void setData(const std::unordered_set<int32_t>& data) { _polygonIds = data; }
+    void setData(const std::unordered_set<int32_t>& data) {
+        _polygonIds = data;
+    }
 
-    void setData(const std::unordered_set<int32_t>& data) { setData(data); } 
+    void set_data(const std::unordered_set<int32_t>& data) {
+        setData(data);
+    }
 
-    auto data() -> std::unordered_set<int32_t>& { return _polygonIds; }
+    auto data() -> std::unordered_set<int32_t>& {
+        return _polygonIds;
+    }
 
-    auto data() const -> const std::unordered_set<int32_t>& { return _polygonIds; }
+    auto data() const -> const std::unordered_set<int32_t>& {
+        return _polygonIds;
+    }
     /*! Assign from another face. */
     void assign(const Arr_face_base& f) override {
         Gps_face_base::assign(f);
 
         // CGAL passes back the exact derived face type here.
-        const auto& exFace = dynamic_cast<const FaceNodeInfo&>(f); 
+        const auto& exFace = dynamic_cast<const FaceNodeInfo&>(f);
         _polygonIds = exFace._polygonIds;
     }
 };
 
 struct OverlayLabel {
-    auto operator()(const std::unordered_set<int32_t>& a, const std::unordered_set<int32_t>& b) const -> std::unordered_set<int32_t> {
+    auto operator()(const std::unordered_set<int32_t>& a,
+                    const std::unordered_set<int32_t>& b) const -> std::unordered_set<int32_t> {
         std::unordered_set<int32_t> fn;
         fn.insert(a.begin(), a.end());
         fn.insert(b.begin(), b.end());
@@ -88,8 +101,10 @@ using SegTraitNode = CGAL::Arr_consolidated_curve_data_traits_2<Segment_traits_2
 // Polygon_2_curve_iterator incompatibility with curve data traits in CGAL 5.x.
 using GpsSegTraitNode = CGAL::Gps_segment_traits_2<KernelAug, ContainerNode>;
 
-using DcelNode = CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename GpsSegTraitNode::Point_2>,
-                                     CGAL::Gps_halfedge_base<typename GpsSegTraitNode::X_monotone_curve_2>, FaceNodeInfo>;
+using DcelNode =
+    CGAL::Arr_dcel_base<CGAL::Arr_vertex_base<typename GpsSegTraitNode::Point_2>,
+                        CGAL::Gps_halfedge_base<typename GpsSegTraitNode::X_monotone_curve_2>,
+                        FaceNodeInfo>;
 
 using Polygon_set_2Node = CGAL::General_polygon_set_2<GpsSegTraitNode, DcelNode>;
 

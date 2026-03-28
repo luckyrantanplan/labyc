@@ -65,23 +65,23 @@ auto shouldSkipHalfedge(const QueueElement& queueElement, const Halfedge& halfed
 
 auto buildQueuedCost(const QueueElement& queueElement) -> QueueCost {
     QueueCost cost = queueElement.cost();
-    cost.memory_source = queueElement.cost().future_memory_source;
-    cost.future_memory_source.clear();
-    cost.memory_target = queueElement.cost().future_memory_target;
-    cost.future_memory_target.clear();
+    cost.memorySource() = queueElement.cost().futureMemorySource();
+    cost.futureMemorySource().clear();
+    cost.memoryTarget() = queueElement.cost().futureMemoryTarget();
+    cost.futureMemoryTarget().clear();
     return cost;
 }
 
 void applyDegreeCost(QueueCost& cost, std::size_t degree, const proto::RoutingCost& config) {
     if (degree > 2U) {
-        cost.distance += config.distance_unit_cost();
+        cost.distance() += config.distance_unit_cost();
     }
 }
 
 void applyTargetMemoryPenalty(QueueCost& cost) {
-    for (const int32_t targetNetId : cost.memory_target) {
-        if (cost.future_memory_target.count(targetNetId) == 0U) {
-            ++cost.congestion;
+    for (const int32_t targetNetId : cost.memoryTarget()) {
+        if (cost.futureMemoryTarget().count(targetNetId) == 0U) {
+            ++cost.congestion();
         }
     }
 }
@@ -91,8 +91,8 @@ auto needsViaCost(const QueueElement& queueElement, int32_t direction) -> bool {
 }
 
 auto shouldRelaxQueueElement(const QueueCost& cost, const QueueElement& queueElement) -> bool {
-    return cost.congestion == 0 &&
-           (queueElement.cost().distance == -1 || queueElement.cost() > cost);
+    return cost.congestion() == 0 &&
+           (queueElement.cost().distance() == -1 || queueElement.cost() > cost);
 }
 
 void updateQueueElement(QueueElement& queueElement, const QueueCost& cost, QueueUpdateState state,
@@ -434,9 +434,9 @@ auto Routing::findRoute(Net& net) -> bool {
     basic::LinearGradient linearGradient = net.gradient();
 
     sourceQueueElement.pushIn(queue);
-    sourceQueueElement.cost().distance = 0;
-    sourceQueueElement.cost().via_num = 0;
-    sourceQueueElement.cost().memory_source = collectCongestedNetIds(pin1.vertex());
+    sourceQueueElement.cost().distance() = 0;
+    sourceQueueElement.cost().viaNum() = 0;
+    sourceQueueElement.cost().memorySource() = collectCongestedNetIds(pin1.vertex());
 
     std::unordered_set<int32_t> const targetNets = collectCongestedNetIds(pin2.vertex());
 
@@ -469,18 +469,18 @@ auto Routing::findRoute(Net& net) -> bool {
 
             const int32_t newDirection = halfedge.curve().data().direction();
             const int32_t congestion = halfedge.curve().data().congestion();
-            cost.congestion += congestion;
+            cost.congestion() += congestion;
 
             const PolyConvex candidatePolyConvex(halfedge, 0, linearGradient);
 
             if (congestion == 0) {
                 _spatialIndex.updateCostIfIntersect(candidatePolyConvex, net, targetNets, cost);
             }
-            if (cost.congestion == 0) {
+            if (cost.congestion() == 0) {
                 applyTargetMemoryPenalty(cost);
             }
             if (needsViaCost(topQueueElement, newDirection)) {
-                cost.distance += _config.via_unit_cost();
+                cost.distance() += _config.via_unit_cost();
             }
 
             const int32_t newId = halfedge.source()->data().id(); // vertex id
@@ -489,7 +489,7 @@ auto Routing::findRoute(Net& net) -> bool {
                 continue;
             }
 
-            cost.randomization = _random.get();
+            cost.randomization() = _random.get();
             --priorityNumber;
             updateQueueElement(nextQueueElement, cost,
                                QueueUpdateState{newDirection, topQueueElement.vertex().data().id()},

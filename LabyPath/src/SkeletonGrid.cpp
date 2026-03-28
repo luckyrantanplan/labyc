@@ -39,11 +39,11 @@ void SkeletonGrid::create(const svgp::Loader& load) {
     int32_t ribNumber = 0;
 
     for (const Ribbon& rib : load.ribList()) {
-        std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons = SVGShapeToGrid::get_polygons(rib);
+        std::vector<CGAL::Polygon_with_holes_2<Kernel>> polygons = SVGShapeToGrid::getPolygons(rib);
 
-        const double blue = laby::basic::Color::get_blue_normalized(static_cast<uint32_t>(rib.fillColor()));
+        const double blue = laby::basic::Color::getBlueNormalized(static_cast<uint32_t>(rib.fillColor()));
 
-        const uint32_t fillColor = laby::basic::Color::set_blue(static_cast<uint32_t>(rib.fillColor()), static_cast<uint32_t>(ribNumber));
+        const uint32_t fillColor = laby::basic::Color::setBlue(static_cast<uint32_t>(rib.fillColor()), static_cast<uint32_t>(ribNumber));
         ++ribNumber;
 
         const double distance = (_config.max_sep() - _config.min_sep()) * blue + _config.min_sep();
@@ -60,7 +60,7 @@ void SkeletonGrid::create(const svgp::Loader& load) {
 
             result.emplace_back(Ribbon::createRibbonOfEdge(arr, 0.1));
 
-            result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 50)));
+            result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::setGreen(fillColor, 50)));
         }
         {
             std::vector<Segment_info_2> segResult;
@@ -71,10 +71,10 @@ void SkeletonGrid::create(const svgp::Loader& load) {
             CGAL::insert(arr, segResult.begin(), segResult.end());
 
             result.emplace_back(Ribbon::createRibbonOfEdge(arr, 0.1));
-            result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 100)));
+            result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::setGreen(fillColor, 100)));
         }
         result.emplace_back(rib);
-        result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::set_green(fillColor, 150)));
+        result.back().setFillColor(static_cast<int32_t>(laby::basic::Color::setGreen(fillColor, 150)));
     }
 
     std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << std::endl;

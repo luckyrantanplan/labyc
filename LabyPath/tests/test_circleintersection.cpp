@@ -18,7 +18,7 @@ TEST(CircleIntersectionTest, TwoIntersections) {
     K::Point_2 a(-10, 0);
     K::Point_2 b(10, 0);
 
-    auto result = CircleIntersection::prob_2(center, 5.0, a, b);
+    auto result = CircleIntersection::prob2(center, 5.0, a, b);
     ASSERT_EQ(result.size(), 2U);
 
     // Intersection points should be at (-5, 0) and (5, 0)
@@ -40,7 +40,7 @@ TEST(CircleIntersectionTest, NoIntersection) {
     K::Point_2 a(10, 10);
     K::Point_2 b(20, 10);
 
-    auto result = CircleIntersection::prob_2(center, 1.0, a, b);
+    auto result = CircleIntersection::prob2(center, 1.0, a, b);
     EXPECT_EQ(result.size(), 0U);
 }
 
@@ -50,7 +50,7 @@ TEST(CircleIntersectionTest, TangentIntersection) {
     K::Point_2 a(-10, 5);
     K::Point_2 b(10, 5);
 
-    auto result = CircleIntersection::prob_2(center, 5.0, a, b);
+    auto result = CircleIntersection::prob2(center, 5.0, a, b);
     // Tangent should produce 1 intersection point
     ASSERT_EQ(result.size(), 1U);
     double x0 = CGAL::to_double(result[0].x());
@@ -65,7 +65,7 @@ TEST(CircleIntersectionTest, VerticalLine) {
     K::Point_2 a(5, -10);
     K::Point_2 b(5, 20);
 
-    auto result = CircleIntersection::prob_2(center, 3.0, a, b);
+    auto result = CircleIntersection::prob2(center, 3.0, a, b);
     ASSERT_EQ(result.size(), 2U);
 
     double y0 = CGAL::to_double(result[0].y());

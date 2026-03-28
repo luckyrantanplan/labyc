@@ -21,10 +21,11 @@ namespace laby::basic {
 
 class LinearGradient {
 public:
-    LinearGradient(Point_2  p1, double thickness1, const Point_2& p2, double thickness2);
+    LinearGradient(Point_2 startPoint, double thickness1, const Point_2& endPoint,
+                   double thickness2);
 
-    auto thickness(const Point_2& p) -> double;
-    static auto f(double t, double _thickness1, double _thickness2) -> double;
+    auto thickness(const Point_2& point) -> double;
+    static auto f(double position, double startThickness, double endThickness) -> double;
 
 private:
     double _thickness1;

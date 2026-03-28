@@ -10,27 +10,27 @@
 #include <CGAL/Arr_dcel_base.h>
 #include <CGAL/Arr_geometry_traits/Consolidated_curve_data_aux.h>
 #include <CGAL/Arrangement_on_surface_2.h>
-#include <CGAL/Polygon_with_holes_2.h>
-#include <CGAL/Vector_2.h>
-#include <CGAL/Point_2.h>
 #include <CGAL/Arrangement_on_surface_with_history_2.h>
-#include <CGAL/create_offset_polygons_2.h>
-#include <CGAL/create_straight_skeleton_2.h>
 #include <CGAL/Direction_2.h>
 #include <CGAL/Iterator_transform.h>
 #include <CGAL/Kernel/global_functions_2.h>
+#include <CGAL/Point_2.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_set_2.h>
-#include <cstdint>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Vector_2.h>
+#include <CGAL/create_offset_polygons_2.h>
+#include <CGAL/create_straight_skeleton_2.h>
 #include <CGAL/number_utils.h>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <queue>
 #include <vector>
 
 #include "GeomData.h"
-#include "Ribbon.h"
 #include "Polyline.h"
+#include "Ribbon.h"
 #include "basic/RangeHelper.h"
 
 namespace laby {
@@ -40,23 +40,22 @@ void SVGShapeToGrid::markFace(Halfedge& he, Face& parent_face, std::queue<Face*>
     if (!data._walked) {
         int32_t windingNumber = parent_face.data()._winding_number;
         const Halfedge::X_monotone_curve& curve = he.curve();
-        const CGAL::_Unique_list<Segment_2 *> curveData = curve.data();
+        const CGAL::_Unique_list<Segment_2*> curveData = curve.data();
 
-        for (const Segment_2 * ocit : RangeHelper::make(curveData.begin(), curveData.end())) {
+        for (const Segment_2* ocit : RangeHelper::make(curveData.begin(), curveData.end())) {
             const Segment_2& seg = *ocit;
 
-            if (CGAL::Direction_2<Kernel>(seg) == CGAL::Direction_2<Kernel>(he.target()->point() - he.source()->point())) {
+            if (CGAL::Direction_2<Kernel>(seg) ==
+                CGAL::Direction_2<Kernel>(he.target()->point() - he.source()->point())) {
                 ++windingNumber;
             } else {
                 --windingNumber;
             }
-
         }
         data._walked = true;
         data._winding_number = windingNumber;
         q.push(&*he.face());
     }
-
 }
 
 void SVGShapeToGrid::markWindingRule(Arr_with_hist_2& arr) {
@@ -79,7 +78,6 @@ void SVGShapeToGrid::markWindingRule(Arr_with_hist_2& arr) {
             }
         }
     }
-
 }
 
 void SVGShapeToGrid::debugPoly(const CGAL::Polygon_2<Kernel>& outP) {
@@ -92,7 +90,8 @@ void SVGShapeToGrid::debugPoly(const CGAL::Polygon_2<Kernel>& outP) {
     }
 }
 
-auto SVGShapeToGrid::getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> > {
+auto SVGShapeToGrid::getPolygons(Arr_with_hist_2& arr)
+    -> std::vector<CGAL::Polygon_with_holes_2<Kernel>> {
     CGAL::Polygon_set_2<Kernel> polySet;
     for (const Face& face : RangeHelper::make(arr.faces_begin(), arr.faces_end())) {
         if (face.data()._winding_number != 0) {
@@ -100,15 +99,13 @@ auto SVGShapeToGrid::getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Poly
             for (const Halfedge& he : RangeHelper::make(face.outer_ccb())) {
 
                 outP.push_back(he.source()->point());
-
             }
-            std::vector<CGAL::Polygon_2<Kernel> > holesP;
+            std::vector<CGAL::Polygon_2<Kernel>> holesP;
             for (auto iter = face.inner_ccbs_begin(); iter != face.inner_ccbs_end(); ++iter) {
                 holesP.emplace_back();
                 for (const Halfedge& halfedge : RangeHelper::make(*iter)) {
 
                     holesP.back().push_back(halfedge.source()->point());
-
                 }
                 debugPoly(holesP.back());
             }
@@ -120,7 +117,7 @@ auto SVGShapeToGrid::getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Poly
         }
     }
 
-    std::vector<CGAL::Polygon_2<Kernel> > patches;
+    std::vector<CGAL::Polygon_2<Kernel>> patches;
 
     const auto& arrSet = polySet.arrangement();
     CGAL::Vector_2<Kernel> const vX(0.1, 0);
@@ -141,29 +138,33 @@ auto SVGShapeToGrid::getPolygons(Arr_with_hist_2& arr) -> std::vector<CGAL::Poly
         polySet.join(lp);
     }
 
-    std::vector<CGAL::Polygon_with_holes_2<Kernel> > res;
-    std::cout << "The result contains " << polySet.number_of_polygons_with_holes() << " components:" << '\n';
+    std::vector<CGAL::Polygon_with_holes_2<Kernel>> res;
+    std::cout << "The result contains " << polySet.number_of_polygons_with_holes()
+              << " components:" << '\n';
     polySet.polygons_with_holes(std::back_inserter(res));
 
     return res;
 }
 
-auto SVGShapeToGrid::createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel> >& res, const double l) -> std::vector<Segment_2> {
+auto SVGShapeToGrid::createOffset(std::vector<CGAL::Polygon_with_holes_2<Kernel>>& res,
+                                  const double l) -> std::vector<Segment_2> {
     std::cout << "SVGShapeToGrid::createOffset " << res.size() << '\n';
-    SsPtr const iss = CGAL::create_interior_straight_skeleton_2(res.front());
+    const auto& polygon = res.front();
+    SsPtr const iss = CGAL::create_interior_straight_skeleton_2(
+        polygon.outer_boundary().vertices_begin(), polygon.outer_boundary().vertices_end(),
+        polygon.holes_begin(), polygon.holes_end(), InexactK());
     std::cout << "first step OK " << '\n';
     std::vector<Segment_2> segResult;
     for (double ll = 0.01; ll < 10.; ll += l) {
 
-        auto offsetPolygons = CGAL::create_offset_polygons_2<CGAL::Polygon_2<InexactK> >(ll, *iss);
+        auto offsetPolygons = CGAL::create_offset_polygons_2<CGAL::Polygon_2<InexactK>>(ll, *iss);
         for (const auto& polySp : offsetPolygons) {
             const auto& poly = *polySp;
             for (auto eit = poly.edges_begin(); eit != poly.edges_end(); ++eit) {
                 auto src = *eit;
                 segResult.emplace_back(
                     Point_2(CGAL::to_double(src.source().x()), CGAL::to_double(src.source().y())),
-                    Point_2(CGAL::to_double(src.target().x()), CGAL::to_double(src.target().y()))
-                );
+                    Point_2(CGAL::to_double(src.target().x()), CGAL::to_double(src.target().y())));
             }
         }
     }
@@ -197,10 +198,10 @@ auto SVGShapeToGrid::getGrid(const Ribbon& ribb) -> std::vector<Segment_2> {
     CGAL::insert(arr, segs.begin(), segs.end());
 
     return SVGShapeToGrid::getGrid(arr);
-
 }
 
-auto SVGShapeToGrid::getPolygons(const Ribbon& ribb) -> std::vector<CGAL::Polygon_with_holes_2<Kernel> > {
+auto SVGShapeToGrid::getPolygons(const Ribbon& ribb)
+    -> std::vector<CGAL::Polygon_with_holes_2<Kernel>> {
 
     std::vector<Segment_2> segs = SVGShapeToGrid::addToSegments(ribb);
     Arr_with_hist_2 arr;

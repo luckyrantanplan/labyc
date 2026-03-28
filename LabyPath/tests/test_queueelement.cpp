@@ -87,8 +87,8 @@ TEST_F(QueueElementFixture, PriorityOrdering) {
     QueueElement firstQueueElement(firstVertex);
     QueueElement secondQueueElement(secondVertex);
 
-    firstQueueElement.cost().distance = kHigherDistance;
-    secondQueueElement.cost().distance = kLowerDistance;
+    firstQueueElement.cost().distance() = kHigherDistance;
+    secondQueueElement.cost().distance() = kLowerDistance;
 
     PriorityQueue priorityQueue;
     firstQueueElement.pushIn(priorityQueue);

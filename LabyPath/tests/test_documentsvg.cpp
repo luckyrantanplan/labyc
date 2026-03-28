@@ -157,7 +157,7 @@ TEST(SvgShapeTest, RectangleToString) {
 
 TEST(SvgShapeTest, LineToString) {
     Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Line line(Point(0, 0), Point(100, 100), Stroke(2, Color::Black));
+    Line line(Point(0, 0), Point(100, 100), Stroke(2, Color(Color::Black)));
     std::string svg = line.toString(lay);
     EXPECT_NE(svg.find("<line"), std::string::npos);
     EXPECT_NE(svg.find("x1=\"0\""), std::string::npos);
@@ -176,13 +176,13 @@ TEST(SvgShapeTest, TextToString) {
 // ─── Optional Tests ─────────────────────────────────────────────────────────
 
 TEST(SvgOptionalTest, ValidOptional) {
-    optional<int> opt(42);
+    Optional<int> opt(42);
     EXPECT_FALSE(!opt); // valid
     EXPECT_EQ(*opt.operator->(), 42);
 }
 
 TEST(SvgOptionalTest, InvalidOptional) {
-    optional<int> opt;
+    Optional<int> opt;
     EXPECT_TRUE(!opt); // invalid
     EXPECT_THROW(opt.operator->(), std::exception);
 }
@@ -234,7 +234,7 @@ TEST(SvgShapeTest, PolygonStreamOperator) {
 
 TEST(SvgShapeTest, PolylineStreamOperator) {
     svg::Layout lay(svg::Dimensions(100, 100), svg::Layout::TopLeft, 1.0);
-    svg::Polyline poly{svg::Fill(svg::Color::Transparent), svg::Stroke(1, svg::Color::Black)};
+    svg::Polyline poly{svg::Fill(svg::Color::Transparent), svg::Stroke(1, svg::Color(svg::Color::Black))};
     poly << svg::Point(0, 0) << svg::Point(50, 50) << svg::Point(100, 0);
     std::string svg = poly.toString(lay);
     EXPECT_NE(svg.find("<polyline"), std::string::npos);
@@ -251,13 +251,13 @@ TEST(FillStrokeTest, FillTransparent) {
 
 TEST(FillStrokeTest, StrokeNegativeWidthEmpty) {
     Layout lay;
-    Stroke s(-1, Color::Black);
+    Stroke s(-1, Color(Color::Black));
     EXPECT_TRUE(s.toString(lay).empty());
 }
 
 TEST(FillStrokeTest, StrokePositiveWidth) {
     Layout lay(Dimensions(100, 100), Layout::TopLeft, 1.0);
-    Stroke s(2.0, Color::Red);
+    Stroke s(2.0, Color(Color::Red));
     std::string result = s.toString(lay);
     EXPECT_NE(result.find("stroke-width"), std::string::npos);
     EXPECT_NE(result.find("rgb(255,0,0)"), std::string::npos);
@@ -265,7 +265,7 @@ TEST(FillStrokeTest, StrokePositiveWidth) {
 
 TEST(FillStrokeTest, NonScalingStroke) {
     Layout lay;
-    Stroke s(1.0, Color::Black, true);
+    Stroke s(1.0, Color(Color::Black), true);
     std::string result = s.toString(lay);
     EXPECT_NE(result.find("non-scaling-stroke"), std::string::npos);
 }

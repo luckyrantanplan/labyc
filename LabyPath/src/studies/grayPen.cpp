@@ -22,7 +22,7 @@
 /* namespace laby */
 
 Cairo::RefPtr<Cairo::ImageSurface> getNoiseSurface(const laby::HqNoise2D& hqNoise2D) {
-    const laby::generator::HqNoiseConfig& config =  generator::hqNoise2D.config;
+    const laby::generator::HqNoiseConfig& config = hqNoise2D.config();
 
     Cairo::RefPtr<Cairo::ImageSurface> surface = Cairo::ImageSurface::create(Cairo::Format::FORMAT_RGB24, config.maxN, config.maxN);
     unsigned char* data = surface->get_data();

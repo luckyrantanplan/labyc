@@ -5,6 +5,5 @@
  *      Author: florian
  */
 
-#include "Node.h"
 
 namespace laby {} /* namespace laby */

@@ -12,10 +12,11 @@
 
 namespace laby {
 
-auto NumericHelper::reduce(const int32_t& x, const int32_t& detailSize, const int32_t& globalSize) -> std::optional<signed int> {
-    int32_t const previous = ((x - 1) * globalSize) / detailSize;
-    int32_t current = (x * globalSize) / detailSize;
-    if (x == 0 || previous != current) {
+auto NumericHelper::reduce(const int32_t& value, const int32_t& detailSize,
+                           const int32_t& globalSize) -> std::optional<signed int> {
+    int32_t const previous = ((value - 1) * globalSize) / detailSize;
+    int32_t current = (value * globalSize) / detailSize;
+    if (value == 0 || previous != current) {
         return current;
     }
     return std::nullopt;

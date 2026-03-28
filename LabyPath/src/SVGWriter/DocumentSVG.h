@@ -193,7 +193,7 @@ public:
         }
     }
     ~Color() override = default;
-    [[nodiscard]] auto toString(Layout const & /*layout*/) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & /*layout*/) const -> std::string override {
         std::stringstream ss;
         if (_transparent) {
             ss << "none";
@@ -220,10 +220,10 @@ public:
     explicit Fill(Color::Defaults col) :
             _color(col) {
     }
-    explicit Fill(const Color& col = Color::Transparent) :
+    explicit Fill(const Color& col = Color(Color::Transparent)) :
             _color(col) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << attribute("fill", _color.toString(layout));
         return ss.str();
@@ -234,10 +234,10 @@ private:
 
 class Stroke: public Serializeable {
 public:
-    explicit Stroke(double w = -1, const Color& col = Color::Transparent, bool nonScalingStroke = false) :
+    explicit Stroke(double w = -1, const Color& col = Color(Color::Transparent), bool nonScalingStroke = false) :
             _width(w), _color(col), _nonScaling(nonScalingStroke) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         // If stroke width is invalid.
         if (_width < 0) {
             return {};
@@ -263,7 +263,7 @@ public:
     explicit Font(double sz = 12, std::string  fam = "Verdana") :
             _size(sz), _family(std::move(fam)) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << attribute("font-size", translateScale(_size, layout)) << attribute("font-family", _family);
         return ss.str();
@@ -300,7 +300,7 @@ public:
     Circle(Point  c, double diameter, Fill const & f, Stroke const & s = Stroke()) :
             Shape(f, s), _center(std::move(c)), _radius(diameter / 2) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("circle") << attribute("cx", translateX(_center, layout)) << attribute("cy", translateY(_center, layout)) << attribute("r", translateScale(_radius, layout))
                 << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
@@ -320,7 +320,7 @@ public:
     Elipse(Point  c, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s), _center(std::move(c)), _radius_width(w / 2), _radius_height(h / 2) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("ellipse") << attribute("cx", translateX(_center, layout)) << attribute("cy", translateY(_center, layout)) << attribute("rx", translateScale(_radius_width, layout))
                 << attribute("ry", translateScale(_radius_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
@@ -341,7 +341,7 @@ public:
     Rectangle(Point  e, double w, double h, Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s), _edge(std::move(e)), _width(w), _height(h) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("rect") << attribute("x", translateX(_edge, layout)) << attribute("y", translateY(_edge, layout)) << attribute("width", translateScale(_width, layout))
                 << attribute("height", translateScale(_height, layout)) << fill.toString(layout) << stroke.toString(layout) << emptyElemEnd();
@@ -362,7 +362,7 @@ public:
     Line(Point  sp, Point  ep, Stroke const & s = Stroke()) :
             Shape(Fill(), s), _start_point(std::move(sp)), _end_point(std::move(ep)) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("line") << attribute("x1", translateX(_start_point, layout)) << attribute("y1", translateY(_start_point, layout)) << attribute("x2", translateX(_end_point, layout))
                 << attribute("y2", translateY(_end_point, layout)) << stroke.toString(layout) << emptyElemEnd();
@@ -383,13 +383,13 @@ public:
             Shape(f, s) {
     }
     explicit Polygon(Stroke const & s = Stroke()) :
-            Shape(Color::Transparent, s) {
+            Shape(Fill(), s) {
     }
     auto operator<<(Point const & point) -> Polygon & {
         points.push_back(point);
         return *this;
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("polygon");
 
@@ -419,7 +419,7 @@ public:
         startNewSubPath();
     }
     explicit Path(Stroke const & s = Stroke()) :
-            Shape(Color::Transparent, s) {
+            Shape(Fill(), s) {
         startNewSubPath();
     }
     auto operator<<(Point const & point) -> Path & {
@@ -437,7 +437,7 @@ public:
         paths.back().closed = true;
     }
 
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
         ss << elemStart("path");
@@ -481,7 +481,7 @@ public:
             Shape(f, s) {
     }
     explicit Polyline(Stroke const & s = Stroke()) :
-            Shape(Color::Transparent, s) {
+            Shape(Fill(), s) {
     }
     explicit Polyline(std::vector<Point> const & pts, Fill const & f = Fill(), Stroke const & s = Stroke()) :
             Shape(f, s), points(pts) {
@@ -490,7 +490,7 @@ public:
         points.push_back(point);
         return *this;
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("polyline");
 
@@ -518,7 +518,7 @@ public:
     Text(Point  orig, std::string  text, Fill const & f = Fill(), Font  fnt = Font(), Stroke const & s = Stroke()) :
             Shape(f, s), _origin(std::move(orig)), _content(std::move(text)), _font(std::move(fnt)) {
     }
-    [[nodiscard]] auto toString(Layout const & layout) const override -> std::string {
+    [[nodiscard]] auto toString(Layout const & layout) const -> std::string override {
         std::stringstream ss;
         ss << elemStart("text") << attribute("x", translateX(_origin, layout)) << attribute("y", translateY(_origin, layout)) << fill.toString(layout) << stroke.toString(layout) << _font.toString(layout)
                 << ">" << _content << elemEnd("text");

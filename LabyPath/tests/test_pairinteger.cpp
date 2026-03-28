@@ -68,14 +68,14 @@ TEST(PairIntegerTest, UseInUnorderedSet) {
 
 TEST(PairIntegerTest, SetFirst) {
     PairInteger pi(3, 7);
-    pi.set_first(10);
+    pi.setFirst(10);
     EXPECT_EQ(pi.first(), 10U);
     EXPECT_EQ(pi.second(), 7U);
 }
 
 TEST(PairIntegerTest, SetSecond) {
     PairInteger pi(3, 7);
-    pi.set_second(10);
+    pi.setSecond(10);
     EXPECT_EQ(pi.first(), 3U);
     EXPECT_EQ(pi.second(), 10U);
 }

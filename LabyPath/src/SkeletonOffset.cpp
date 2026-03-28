@@ -160,7 +160,7 @@ void SkeletonOffset::offset_corner(const basic::HalfedgeNode& he, std::vector<Ke
     for (const basic::HalfedgeNode& he3 : RangeHelper::make(he2.ccb())) {
 
         const auto& result = vertices_cache.try_emplace(&he3.curve(), //
-                basic::CircleIntersection::prob_2(o.point(), offset_distance, he3.source()->point(), he3.target()->point())).first->second;
+            basic::CircleIntersection::prob2(o.point(), offset_distance, he3.source()->point(), he3.target()->point())).first->second;
 
         addToSegmentsList(result, winding, arc_list, last_point);
 

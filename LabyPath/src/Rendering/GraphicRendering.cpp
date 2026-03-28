@@ -76,23 +76,21 @@ GraphicRendering::GraphicRendering(proto::GraphicRendering config) : _config(std
     std::cout << "faceList " << faceList.size() << " arr " << arr.number_of_faces() << '\n';
 
     for (const Face* face : faceList) {
-        svg::Path path(svg::Color(kDebugFaceRed, kDebugFaceGreen, kDebugFaceBlue),
-                       svg::Color::Transparent);
+        svg::Path path(svg::Fill(svg::Color(kDebugFaceRed, kDebugFaceGreen, kDebugFaceBlue)));
         gpt.drawFace(path, *face);
         docSvg << path;
     }
 
     using laby::basic::Color;
     const auto fillColorValue = static_cast<uint32_t>(ribbon.fillColor());
-    svg::Path path(svg::Color(static_cast<int32_t>(Color::get_red(fillColorValue)),
-                              static_cast<int32_t>(Color::get_green(fillColorValue)),
-                              static_cast<int32_t>(Color::get_blue(fillColorValue))),
-                   svg::Color::Transparent);
+    svg::Path path(svg::Fill(svg::Color(static_cast<int32_t>(Color::getRed(fillColorValue)),
+                                        static_cast<int32_t>(Color::getGreen(fillColorValue)),
+                                        static_cast<int32_t>(Color::getBlue(fillColorValue)))));
 
     gpt.drawOutline(path);
     docSvg << path;
 
-    docSvg.save();
+    static_cast<void>(docSvg.save());
 }
 
 void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::string& filename,
@@ -112,17 +110,17 @@ void GraphicRendering::printRibbonSvg(const CGAL::Bbox_2& bbox, const std::strin
         using laby::basic::Color;
         const auto fillColorValue = static_cast<uint32_t>(cleanRibbon.fillColor());
         svg::Stroke stroke(thickness,
-                           svg::Color(static_cast<int32_t>(Color::get_red(fillColorValue)),
-                                      static_cast<int32_t>(Color::get_green(fillColorValue)),
-                                      static_cast<int32_t>(Color::get_blue(fillColorValue))));
+                           svg::Color(static_cast<int32_t>(Color::getRed(fillColorValue)),
+                                      static_cast<int32_t>(Color::getGreen(fillColorValue)),
+                                      static_cast<int32_t>(Color::getBlue(fillColorValue))));
 
-        svg::Path path(svg::Color::Transparent, stroke);
+        svg::Path path(svg::Fill(), stroke);
 
         PenStroke::drawRibbonStroke(path, cleanRibbon);
 
         docSvg << path;
     }
-    docSvg.save();
+    static_cast<void>(docSvg.save());
 }
 
 } /* namespace laby */

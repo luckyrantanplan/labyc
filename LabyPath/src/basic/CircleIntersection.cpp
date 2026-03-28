@@ -22,25 +22,28 @@
 
 namespace laby::basic {
 
-auto CircleIntersection::prob2(const Kernel::Point_2& c, double offset, const Kernel::Point_2& a, const Kernel::Point_2& b) -> std::vector<CircleIntersection::Kernel::Point_2> {
+auto CircleIntersection::prob2(const Kernel::Point_2& center, double offset,
+                               const Kernel::Point_2& segmentStart,
+                               const Kernel::Point_2& segmentEnd)
+    -> std::vector<CircleIntersection::Kernel::Point_2> {
 
     typedef CGAL::Exact_circular_kernel_2 Circular_k;
     typedef CGAL::Point_2<Circular_k> Point_2;
     typedef CGAL::Circle_2<Circular_k> Circle_2;
     typedef CGAL::Line_arc_2<Circular_k> Line_arc_2;
 
-    Point_2 const cc(CGAL::to_double(c.x()), CGAL::to_double(c.y()));
-    Point_2 const ac(CGAL::to_double(a.x()), CGAL::to_double(a.y()));
-    Point_2 const bc(CGAL::to_double(b.x()), CGAL::to_double(b.y()));
+    Point_2 const centerCircular(CGAL::to_double(center.x()), CGAL::to_double(center.y()));
+    Point_2 const startCircular(CGAL::to_double(segmentStart.x()), CGAL::to_double(segmentStart.y()));
+    Point_2 const endCircular(CGAL::to_double(segmentEnd.x()), CGAL::to_double(segmentEnd.y()));
 
-    Circle_2 const o1(cc, offset * offset);
+    Circle_2 const circle(centerCircular, offset * offset);
 
-    Line_arc_2 const o2(ac, bc);
+    Line_arc_2 const lineArc(startCircular, endCircular);
     typedef CGAL::CK2_Intersection_traits<Circular_k, Circle_2, Line_arc_2>::type Intersection_result;
     typedef std::pair<Circular_k::Circular_arc_point_2, unsigned int> ResultType;
     std::vector<Intersection_result> res;
 
-    CGAL::intersection(o1, o2, std::back_inserter(res));
+    CGAL::intersection(circle, lineArc, std::back_inserter(res));
     std::vector<Kernel::Point_2> collect;
 
     for (const Intersection_result& result : res) {
@@ -50,7 +53,7 @@ auto CircleIntersection::prob2(const Kernel::Point_2& c, double offset, const Ke
     }
 
     if (collect.size() == 2) {
-        if (CGAL::has_larger_distance_to_point(a, collect.at(0), collect.at(1))) {
+        if (CGAL::has_larger_distance_to_point(segmentStart, collect.at(0), collect.at(1))) {
             std::swap(collect.at(0), collect.at(1));
         }
     }

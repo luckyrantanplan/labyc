@@ -17,8 +17,9 @@ class CircleIntersection {
 public:
     using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 
-    static auto prob2(const Kernel::Point_2& c, double offset, const Kernel::Point_2& a, const Kernel::Point_2& b) -> std::vector<Kernel::Point_2>;
-
+    static auto prob2(const Kernel::Point_2& center, double offset,
+                      const Kernel::Point_2& segmentStart,
+                      const Kernel::Point_2& segmentEnd) -> std::vector<Kernel::Point_2>;
 };
 
 } // namespace laby::basic

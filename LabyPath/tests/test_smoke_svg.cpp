@@ -382,7 +382,7 @@ TEST_F(SkeletonGridQualTest, ProcessSquareCircle) {
     bool hasCircular = false;
     bool hasRadial = false;
     for (const auto& rib : outputLoader.ribList()) {
-        const auto green = laby::basic::Color::get_green(static_cast<uint32_t>(rib.strokeColor()));
+        const auto green = laby::basic::Color::getGreen(static_cast<uint32_t>(rib.strokeColor()));
         if (green == static_cast<uint32_t>(laby::GridChannel::Circular)) {
             hasCircular = hasCircular || ribbonHasGeometry(rib);
         }

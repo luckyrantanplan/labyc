@@ -20,269 +20,284 @@
 
 
 namespace laby::generator {
-auto HqNoiseUtils::lerp(double a, double b, double t) -> double {
-    return a + t * (b - a);
+auto HqNoiseUtils::lerp(double startValue, double endValue, double position) -> double {
+    return startValue + position * (endValue - startValue);
 }
 
-auto HqNoiseUtils::lerpC(const std::complex<double>& a, const std::complex<double>& b, double t) -> std::complex<double> {
-    return a + t * (b - a);
+auto HqNoiseUtils::lerpC(const std::complex<double>& startValue,
+                         const std::complex<double>& endValue,
+                         double position) -> std::complex<double> {
+    return startValue + position * (endValue - startValue);
 }
 
-auto HqNoiseUtils::fastFloor(double f) -> int32_t {
-    auto i = static_cast<int32_t>(f);
-    return (f >= 0 || f == static_cast<double>(i)) ? i : i - 1;
+auto HqNoiseUtils::fastFloor(double value) -> int32_t {
+    auto integerValue = static_cast<int32_t>(value);
+    return (value >= 0 || value == static_cast<double>(integerValue)) ? integerValue
+                                                                      : integerValue - 1;
 }
 
-auto HqNoise2D::get(const double x, const double y) const -> double {
-    double const xx = x * config.accuracy;
-    double const yy = y * config.accuracy;
-    int32_t const x0 = HqNoiseUtils::fastFloor(xx);
-    int32_t const y0 = HqNoiseUtils::fastFloor(yy);
-    int32_t const x1 = x0 + 1;
-    int32_t const y1 = y0 + 1;
+auto HqNoise2D::get(const double xCoordinate, const double yCoordinate) const -> double {
+    double const xScaled = xCoordinate * _config.accuracy;
+    double const yScaled = yCoordinate * _config.accuracy;
+    int32_t const xBase = HqNoiseUtils::fastFloor(xScaled);
+    int32_t const yBase = HqNoiseUtils::fastFloor(yScaled);
+    int32_t const xNext = xBase + 1;
+    int32_t const yNext = yBase + 1;
 
-    double const xs = xx - static_cast<double>(x0);
-    double const ys = yy - static_cast<double>(y0);
+    double const xFraction = xScaled - static_cast<double>(xBase);
+    double const yFraction = yScaled - static_cast<double>(yBase);
 
-    double const xf0 = HqNoiseUtils::lerp(arr[x0][y0].real(), arr[x1][y0].real(), xs);
-    double const xf1 = HqNoiseUtils::lerp(arr[x0][y1].real(), arr[x1][y1].real(), xs);
+    double const xInterpolatedLow =
+        HqNoiseUtils::lerp(_array[xBase][yBase].real(), _array[xNext][yBase].real(), xFraction);
+    double const xInterpolatedHigh = HqNoiseUtils::lerp(_array[xBase][yNext].real(),
+                                                        _array[xNext][yNext].real(), xFraction);
 
-    return HqNoiseUtils::lerp(xf0, xf1, ys);
+    return HqNoiseUtils::lerp(xInterpolatedLow, xInterpolatedHigh, yFraction);
 }
 
-auto HqNoise2D::getComplex(const std::complex<double> &c) const -> std::complex<double> {
-    return getComplex(c.real(), c.imag());
+auto HqNoise2D::getComplex(const std::complex<double>& complexPoint) const
+    -> std::complex<double> {
+    return getComplex(complexPoint.real(), complexPoint.imag());
 }
 
-auto HqNoise2D::getComplex(const double x, const double y) const -> std::complex<double> {
-    double const xx = x * config.accuracy;
-    double const yy = y * config.accuracy;
+auto HqNoise2D::getComplex(const double xCoordinate, const double yCoordinate) const
+    -> std::complex<double> {
+    double const xScaled = xCoordinate * _config.accuracy;
+    double const yScaled = yCoordinate * _config.accuracy;
 
-    int32_t const x0 = HqNoiseUtils::fastFloor(xx);
-    int32_t const y0 = HqNoiseUtils::fastFloor(yy);
-    int32_t const x1 = x0 + 1;
-    int32_t const y1 = y0 + 1;
+    int32_t const xBase = HqNoiseUtils::fastFloor(xScaled);
+    int32_t const yBase = HqNoiseUtils::fastFloor(yScaled);
+    int32_t const xNext = xBase + 1;
+    int32_t const yNext = yBase + 1;
 
-    double const xs = xx - static_cast<double>(x0);
-    double const ys = yy - static_cast<double>(y0);
+    double const xFraction = xScaled - static_cast<double>(xBase);
+    double const yFraction = yScaled - static_cast<double>(yBase);
 
-    std::complex<double> const xf0 = HqNoiseUtils::lerpC(arr[x0][y0], arr[x1][y0], xs);
-    std::complex<double> const xf1 = HqNoiseUtils::lerpC(arr[x0][y1], arr[x1][y1], xs);
+    std::complex<double> const xInterpolatedLow =
+        HqNoiseUtils::lerpC(_array[xBase][yBase], _array[xNext][yBase], xFraction);
+    std::complex<double> const xInterpolatedHigh =
+        HqNoiseUtils::lerpC(_array[xBase][yNext], _array[xNext][yNext], xFraction);
 
-    return HqNoiseUtils::lerpC(xf0, xf1, ys);
+    return HqNoiseUtils::lerpC(xInterpolatedLow, xInterpolatedHigh, yFraction);
 }
 
-auto HqNoise2D::sgn(uint32_t x, uint32_t y) -> double {
-    return (static_cast<int32_t>((y + x) % 2)) * 2 - 1;
+auto HqNoise2D::sgn(uint32_t xIndex, uint32_t yIndex) -> double {
+    return (static_cast<int32_t>((yIndex + xIndex) % 2)) * 2 - 1;
 }
 
-void HqNoise2D::normalize(uint32_t nx, uint32_t ny) {
+void HqNoise2D::normalize(uint32_t xSampleCount, uint32_t ySampleCount) {
     double maxVal = std::numeric_limits<double>::min();
     double minVal = std::numeric_limits<double>::max();
-    for (uint32_t i = 0; i < nx; i++) {
-        for (uint32_t j = 0; j < ny; j++) {
-            double const value = sgn(i, j) * arr[i][j].real();
+    for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+        for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+            double const value = sgn(xIndex, yIndex) * _array[xIndex][yIndex].real();
             maxVal = std::max(maxVal, value);
             minVal = std::min(minVal, value);
         }
     }
     double mid = (maxVal + minVal) / 2.;
-    double maxAmpl = 2. * config.amplitude / (maxVal - minVal);
+    double maxAmpl = 2. * _config.amplitude / (maxVal - minVal);
 
-    for (uint32_t y = 0; y < ny; ++y) {
-        for (uint32_t x = 0; x < nx; ++x) {
-            double const norm2 = arr[x][y].real() * sgn(x, y) - mid;
-            arr[x][y].real(norm2 * maxAmpl);
+    for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+        for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+            double const normalizedValue =
+                _array[xIndex][yIndex].real() * sgn(xIndex, yIndex) - mid;
+            _array[xIndex][yIndex].real(normalizedValue * maxAmpl);
         }
     }
-    if (config.complex) {
+    if (_config.complex) {
         // imaginary part
         maxVal = std::numeric_limits<double>::min();
         minVal = std::numeric_limits<double>::max();
-        for (uint32_t i = 0; i < nx; i++) {
-            for (uint32_t j = 0; j < ny; j++) {
-                double const value = sgn(i, j) * arr[i][j].imag();
+        for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+            for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+                double const value = sgn(xIndex, yIndex) * _array[xIndex][yIndex].imag();
                 maxVal = std::max(maxVal, value);
                 minVal = std::min(minVal, value);
             }
         }
 
         mid = (maxVal + minVal) / 2.;
-        maxAmpl = 2. * config.amplitude / (maxVal - minVal);
-        for (uint32_t y = 0; y < ny; ++y) {
-            for (uint32_t x = 0; x < nx; ++x) {
-                double const norm2 = arr[x][y].imag() * sgn(x, y) - mid;
-                arr[x][y].imag(norm2 * maxAmpl);
+        maxAmpl = 2. * _config.amplitude / (maxVal - minVal);
+        for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+            for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+                double const normalizedValue =
+                    _array[xIndex][yIndex].imag() * sgn(xIndex, yIndex) - mid;
+                _array[xIndex][yIndex].imag(normalizedValue * maxAmpl);
             }
         }
     }
 }
 
-HqNoise2D::HqNoise2D(const HqNoiseConfig& iconfig)
-    : config{iconfig}
-    , arr{iconfig.maxN * iconfig.accuracy + 2, iconfig.maxN * iconfig.accuracy + 2} {
+HqNoise2D::HqNoise2D(const HqNoiseConfig& noiseConfig)
+    : _config{noiseConfig}
+    , _array{noiseConfig.maxN * noiseConfig.accuracy + 2,
+             noiseConfig.maxN * noiseConfig.accuracy + 2} {
 
-    uint32_t const nx = config.maxN * config.accuracy + 2;
-    uint32_t const ny = config.maxN * config.accuracy + 2;
-    basic::RandomUniDist distribution(0, 100.0, static_cast<uint32_t>(config.seed));
+    uint32_t const xSampleCount = _config.maxN * _config.accuracy + 2;
+    uint32_t const ySampleCount = _config.maxN * _config.accuracy + 2;
+    basic::RandomUniDist distribution(0, 100.0, static_cast<uint32_t>(_config.seed));
 
     // Create FFTW plans before filling data (FFTW_ESTIMATE does not touch the array)
     fft::Plan forward{fftw_plan_dft_2d(
-        static_cast<int>(nx), static_cast<int>(ny),
-        arr.raw(), arr.raw(), FFTW_FORWARD, FFTW_ESTIMATE)};
+        static_cast<int>(xSampleCount), static_cast<int>(ySampleCount),
+        _array.raw(), _array.raw(), FFTW_FORWARD, FFTW_ESTIMATE)};
     fft::Plan backward{fftw_plan_dft_2d(
-        static_cast<int>(nx), static_cast<int>(ny),
-        arr.raw(), arr.raw(), FFTW_BACKWARD, FFTW_ESTIMATE)};
+        static_cast<int>(xSampleCount), static_cast<int>(ySampleCount),
+        _array.raw(), _array.raw(), FFTW_BACKWARD, FFTW_ESTIMATE)};
 
-    for (uint32_t i = 0; i < nx; i++) {
-        for (uint32_t j = 0; j < ny; j++) {
-            double const x = distribution.get();
-            if (config.complex) {
-                arr(i, j) = std::complex<double>(x * sgn(i, j), distribution.get() * sgn(i, j));
+    for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+        for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+            double const realSample = distribution.get();
+            if (_config.complex) {
+                _array(xIndex, yIndex) = std::complex<double>(realSample * sgn(xIndex, yIndex),
+                                                              distribution.get() * sgn(xIndex, yIndex));
             } else {
-                arr(i, j) = std::complex<double>(x * sgn(i, j), 0);
+                _array(xIndex, yIndex) = std::complex<double>(realSample * sgn(xIndex, yIndex), 0);
             }
         }
     }
 
     forward.execute();
 
-    double const power = config.powerlaw.power * .5;
-    double const pfreq = config.powerlaw.frequency;
+    double const power = _config.powerlaw.power * .5;
+    double const pfreq = _config.powerlaw.frequency;
     double const quot = pfreq * pfreq;
 
-    double const gfreq = config.gaussian.frequency;
+    double const gfreq = _config.gaussian.frequency;
     double const gaussVariance = 2. * gfreq * gfreq;
 
     // cut freq 0
-    arr[nx / 2][ny / 2] = 0;
+    _array[xSampleCount / 2][ySampleCount / 2] = 0;
 
-    for (uint32_t i = 0; i < nx; i++) {
-        for (uint32_t j = 0; j < ny; j++) {
-            double const xx = static_cast<double>(i) - nx / 2.;
-            double const yy = static_cast<double>(j) - ny / 2.;
-            double const d = xx * xx + yy * yy;
-            double const dquot = d / quot;
-            if (dquot >= 1.) {
-                arr[i][j] *= pow(dquot, -power);
+    for (uint32_t xIndex = 0; xIndex < xSampleCount; ++xIndex) {
+        for (uint32_t yIndex = 0; yIndex < ySampleCount; ++yIndex) {
+            double const xDistance = static_cast<double>(xIndex) - xSampleCount / 2.;
+            double const yDistance = static_cast<double>(yIndex) - ySampleCount / 2.;
+            double const squaredDistance = xDistance * xDistance + yDistance * yDistance;
+            double const powerLawQuotient = squaredDistance / quot;
+            if (powerLawQuotient >= 1.) {
+                _array[xIndex][yIndex] *= std::pow(powerLawQuotient, -power);
             }
             if (gaussVariance > 0) {
-                arr[i][j] *= exp(-d / gaussVariance);
+                _array[xIndex][yIndex] *= std::exp(-squaredDistance / gaussVariance);
             }
         }
     }
 
     backward.execute();
-    normalize(nx, ny);
+    normalize(xSampleCount, ySampleCount);
 }
 
-auto HqNoise1D::sgn(uint32_t val) -> double {
-    return (static_cast<int32_t>(val % 2)) * 2 - 1;
+auto HqNoise1D::sgn(uint32_t sampleIndex) -> double {
+    return (static_cast<int32_t>(sampleIndex % 2)) * 2 - 1;
 }
 
-void HqNoise1D::normalize(uint32_t nx) {
+void HqNoise1D::normalize(uint32_t sampleCount) {
     double maxVal = std::numeric_limits<double>::min();
     double minVal = std::numeric_limits<double>::max();
-    for (uint32_t i = 0; i < nx; ++i) {
-        double const value = sgn(i) * arr[i].real();
+    for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+        double const value = sgn(sampleIndex) * _array[sampleIndex].real();
         maxVal = std::max(maxVal, value);
         minVal = std::min(minVal, value);
     }
     double mid = (maxVal + minVal) / 2.;
-    double maxAmpl = 2. * config.amplitude / (maxVal - minVal);
-    for (uint32_t x = 0; x < nx; ++x) {
-        double const norm2 = arr[x].real() * sgn(x) - mid;
-        arr[x].real(norm2 * maxAmpl);
+    double maxAmpl = 2. * _config.amplitude / (maxVal - minVal);
+    for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+        double const normalizedValue = _array[sampleIndex].real() * sgn(sampleIndex) - mid;
+        _array[sampleIndex].real(normalizedValue * maxAmpl);
     }
-    if (config.complex) {
+    if (_config.complex) {
         maxVal = std::numeric_limits<double>::min();
         minVal = std::numeric_limits<double>::max();
-        for (uint32_t i = 0; i < nx; ++i) {
-            double const value = sgn(i) * arr[i].imag();
+        for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+            double const value = sgn(sampleIndex) * _array[sampleIndex].imag();
             maxVal = std::max(maxVal, value);
             minVal = std::min(minVal, value);
         }
         mid = (maxVal + minVal) / 2.;
-        maxAmpl = 2. * config.amplitude / (maxVal - minVal);
-        for (uint32_t x = 0; x < nx; ++x) {
-            double const norm2 = arr[x].imag() * sgn(x) - mid;
-            arr[x].imag(norm2 * maxAmpl);
+        maxAmpl = 2. * _config.amplitude / (maxVal - minVal);
+        for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+            double const normalizedValue = _array[sampleIndex].imag() * sgn(sampleIndex) - mid;
+            _array[sampleIndex].imag(normalizedValue * maxAmpl);
         }
     }
 }
 
-HqNoise1D::HqNoise1D(const HqNoiseConfig& iconfig)
-    : config{iconfig}
-    , arr{config.maxN * config.accuracy + 2} {
+HqNoise1D::HqNoise1D(const HqNoiseConfig& noiseConfig)
+    : _config{noiseConfig}
+    , _array{noiseConfig.maxN * noiseConfig.accuracy + 2} {
 
-    uint32_t const nx = config.maxN * config.accuracy + 2;
+    uint32_t const sampleCount = _config.maxN * _config.accuracy + 2;
 
-    std::default_random_engine generator(static_cast<uint32_t>(config.seed));
+    std::default_random_engine generator(static_cast<uint32_t>(_config.seed));
     std::uniform_real_distribution<double> distribution(0, 100.0);
 
     // Create FFTW plans before filling data (FFTW_ESTIMATE does not touch the array)
     fft::Plan forward{fftw_plan_dft_1d(
-        static_cast<int>(nx),
-        arr.raw(), arr.raw(), FFTW_FORWARD, FFTW_ESTIMATE)};
+        static_cast<int>(sampleCount),
+        _array.raw(), _array.raw(), FFTW_FORWARD, FFTW_ESTIMATE)};
     fft::Plan backward{fftw_plan_dft_1d(
-        static_cast<int>(nx),
-        arr.raw(), arr.raw(), FFTW_BACKWARD, FFTW_ESTIMATE)};
+        static_cast<int>(sampleCount),
+        _array.raw(), _array.raw(), FFTW_BACKWARD, FFTW_ESTIMATE)};
 
-    for (uint32_t i = 0; i < nx; i++) {
-        double const x = distribution(generator);
-        if (config.complex) {
-            arr(i) = std::complex<double>(x * sgn(i), distribution(generator) * sgn(i));
+    for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+        double const realSample = distribution(generator);
+        if (_config.complex) {
+            _array(sampleIndex) =
+                std::complex<double>(realSample * sgn(sampleIndex), distribution(generator) * sgn(sampleIndex));
         } else {
-            arr(i) = std::complex<double>(x * sgn(i), 0);
+            _array(sampleIndex) = std::complex<double>(realSample * sgn(sampleIndex), 0);
         }
     }
 
     forward.execute();
 
     // cut freq 0
-    arr[nx / 2] = 0;
+    _array[sampleCount / 2] = 0;
 
-    double const power = config.powerlaw.power;
-    double const pfreq = config.powerlaw.frequency;
+    double const power = _config.powerlaw.power;
+    double const pfreq = _config.powerlaw.frequency;
 
-    double const gfreq = config.gaussian.frequency;
+    double const gfreq = _config.gaussian.frequency;
     double const gaussVariance = 2. * gfreq * gfreq;
 
-    for (uint32_t i = 0; i < nx; i++) {
-        double const xx = static_cast<double>(i) - nx / 2.;
-        double const dquot = std::abs(xx) / pfreq;
-        if (dquot >= 1.) {
-            arr[i] *= pow(dquot, -power);
+    for (uint32_t sampleIndex = 0; sampleIndex < sampleCount; ++sampleIndex) {
+        double const distanceFromCenter = static_cast<double>(sampleIndex) - sampleCount / 2.;
+        double const powerLawQuotient = std::abs(distanceFromCenter) / pfreq;
+        if (powerLawQuotient >= 1.) {
+            _array[sampleIndex] *= std::pow(powerLawQuotient, -power);
         }
         if (gaussVariance > 0) {
-            arr[i] *= exp(-(xx * xx) / gaussVariance);
+            _array[sampleIndex] *= std::exp(-(distanceFromCenter * distanceFromCenter) / gaussVariance);
         }
     }
 
     backward.execute();
-    normalize(nx);
+    normalize(sampleCount);
 }
 
-auto HqNoise1D::get(double x) const -> double {
-    double const xx = x * config.accuracy;
-    int32_t const x0 = HqNoiseUtils::fastFloor(xx);
-    int32_t const x1 = x0 + 1;
+auto HqNoise1D::get(double xCoordinate) const -> double {
+    double const xScaled = xCoordinate * _config.accuracy;
+    int32_t const xBase = HqNoiseUtils::fastFloor(xScaled);
+    int32_t const xNext = xBase + 1;
 
-    double const xs = xx - static_cast<double>(x0);
+    double const xFraction = xScaled - static_cast<double>(xBase);
 
-    double const xf0 = HqNoiseUtils::lerp(arr[x0].real(), arr[x1].real(), xs);
+    double const xInterpolated =
+        HqNoiseUtils::lerp(_array[xBase].real(), _array[xNext].real(), xFraction);
 
-    return xf0;
+    return xInterpolated;
 }
 
-auto HqNoise1D::getComplex(double x) const -> std::complex<double> {
-    double const xx = x * config.accuracy;
-    int32_t const x0 = HqNoiseUtils::fastFloor(xx);
-    int32_t const x1 = x0 + 1;
+auto HqNoise1D::getComplex(double xCoordinate) const -> std::complex<double> {
+    double const xScaled = xCoordinate * _config.accuracy;
+    int32_t const xBase = HqNoiseUtils::fastFloor(xScaled);
+    int32_t const xNext = xBase + 1;
 
-    double const xs = xx - static_cast<double>(x0);
+    double const xFraction = xScaled - static_cast<double>(xBase);
 
-    return HqNoiseUtils::lerpC(arr[x0], arr[x1], xs);
+    return HqNoiseUtils::lerpC(_array[xBase], _array[xNext], xFraction);
 }
 } // namespace laby::generator
 

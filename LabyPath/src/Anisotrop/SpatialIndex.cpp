@@ -177,7 +177,7 @@ auto SpatialIndex::intersectionTest(QueueCost& cost, const PolyConvex& /*polyCon
 
         if (testPinProximity(segment, sourceVertex, net, minSeparation) ||
             testPinProximity(segment, targetVertex, net, minSeparation)) {
-            ++cost.congestion;
+            ++cost.congestion();
 
             return true;
         }
@@ -186,13 +186,13 @@ auto SpatialIndex::intersectionTest(QueueCost& cost, const PolyConvex& /*polyCon
         // <45 degree : true if we should block
         if (cosineValue * cosineValue > kBlockingCosineThreshold) {
             int32_t const netId = otherPolyConvex._supportHe->curve().data().getNet();
-            if (cost.memory_source.count(netId) != 0U) {
-                cost.future_memory_source.emplace(netId);
+            if (cost.memorySource().count(netId) != 0U) {
+                cost.futureMemorySource().emplace(netId);
             } else if (targetNets.count(netId) != 0U) {
-                cost.future_memory_target.emplace(netId);
+                cost.futureMemoryTarget().emplace(netId);
             } else {
 
-                ++cost.congestion;
+                ++cost.congestion();
             }
 
             return true;

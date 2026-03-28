@@ -55,10 +55,10 @@ TEST(SPointTest, IsInCircleOutside) {
     EXPECT_FALSE(sPoint(1.0, 1.0).isInCircle());
 }
 
-// ── sGrid ──────────────────────────────────────────────────────────────────
+// ── SGrid ──────────────────────────────────────────────────────────────────
 
 TEST(SGridTest, ImageToGrid) {
-    sGrid const grid(10, 10, 0.1);
+    SGrid const grid(10, 10, 0.1);
     sPoint const p(0.25, 0.35);
     sGridPoint const gp = grid.imageToGrid(p, 0.1);
     EXPECT_EQ(gp.x, 2);
@@ -66,14 +66,14 @@ TEST(SGridTest, ImageToGrid) {
 }
 
 TEST(SGridTest, GetSqDistance) {
-    sGrid const grid(10, 10, 0.1);
+    SGrid const grid(10, 10, 0.1);
     sPoint const a(0.0, 0.0);
     sPoint const b(3.0, 4.0);
     EXPECT_DOUBLE_EQ(grid.getSqDistance(a, b), 25.0);
 }
 
 TEST(SGridTest, GetSqDistanceSamePoint) {
-    sGrid const grid(10, 10, 0.1);
+    SGrid const grid(10, 10, 0.1);
     sPoint const a(1.0, 1.0);
     EXPECT_DOUBLE_EQ(grid.getSqDistance(a, a), 0.0);
 }
@@ -82,7 +82,7 @@ TEST(SGridTest, InsertAndNeighbourhood) {
     double const cellSize = 0.1;
     int const w = static_cast<int>(std::ceil(1.0 / cellSize));
     int const h = w;
-    sGrid grid(w, h, cellSize);
+    SGrid grid(w, h, cellSize);
 
     sPoint const p(0.5, 0.5);
     grid.insert(p);

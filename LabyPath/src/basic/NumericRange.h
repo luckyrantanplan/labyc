@@ -32,9 +32,13 @@ public:
 
     ~NumericRangeIterator() = default;
 
-    auto operator!=(const NumericRangeIterator& it) const -> bool { return _index != it._index || _range != it._range; }
+    auto operator!=(const NumericRangeIterator& iterator) const -> bool {
+        return _index != iterator._index || _range != iterator._range;
+    }
 
-    auto operator==(const NumericRangeIterator& it) const -> bool { return _index == it._index && _range == it._range; }
+    auto operator==(const NumericRangeIterator& iterator) const -> bool {
+        return _index == iterator._index && _range == iterator._range;
+    }
 
     auto operator*() const -> T { return _range->getValue(_index); }
 
@@ -57,7 +61,7 @@ public:
 
     [[nodiscard]] auto end() const -> NumericRangeIterator<T> { return NumericRangeIterator<T>{_end, *this}; }
 
-    [[nodiscard]] auto getValue(int32_t i) const -> T { return _begin + i * _step; }
+    [[nodiscard]] auto getValue(int32_t index) const -> T { return _begin + index * _step; }
 
 private:
     /// Compute the number of steps, using std::lround for floating-point types
@@ -77,7 +81,8 @@ private:
 };
 
 struct NumericHelper {
-    static auto reduce(const int32_t& x, const int32_t& detailSize, const int32_t& globalSize) -> std::optional<int32_t>;
+    static auto reduce(const int32_t& value, const int32_t& detailSize,
+                       const int32_t& globalSize) -> std::optional<int32_t>;
 };
 
 } /* namespace laby */

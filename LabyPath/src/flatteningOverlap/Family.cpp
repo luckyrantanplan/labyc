@@ -12,11 +12,15 @@
 
 #include "Family.h"
 
+#include "PolyConvex.h"
 #include "basic/EasyProfilerCompat.h"
-#include <CGAL/Box_intersection_d/Box_with_handle_d.h>
-#include <iostream>
+#include <cstddef>
+#include <CGAL/Union_find.h>
 #include <stdexcept>
+#include <unordered_set>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace laby {
 
@@ -34,7 +38,7 @@ void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
     for (const std::size_t& coverIndex : coverSet) {
         const PolyConvex& polyConvex = polyConvexList.at(coverIndex);
 
-        for (std::size_t adjacentIndex : polyConvex._adjacents) {
+        for (std::size_t const adjacentIndex : polyConvex._adjacents) {
             if (coverSet.count(adjacentIndex) > 0) {
                 unionFind.unify_sets(polyConvex.handle, polyConvexList.at(adjacentIndex).handle);
             }
@@ -53,7 +57,7 @@ void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
 auto Family::createPatch(const std::vector<PolyConvex>& polyConvexList) -> void {
     EASY_FUNCTION();
     std::unordered_set<std::size_t> coverSet;
-    for (Intersection& intersection : _intersections) {
+    for (Intersection const& intersection : _intersections) {
         coverSet.emplace(intersection.first());
         coverSet.emplace(intersection.second());
     }

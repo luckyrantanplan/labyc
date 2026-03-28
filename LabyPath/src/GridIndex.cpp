@@ -7,8 +7,15 @@
 
 #include "GridIndex.h"
 
+#include <unordered_map>
+#include <cstdint>
+#include <cstddef>
+#include <iostream>
 #include <utility>
+#include <vector>
 
+#include "Ribbon.h"
+#include "GeomData.h"
 #include "basic/Color.h"
 
 namespace laby {
@@ -23,9 +30,9 @@ auto GridIndex::getIndexMap(const std::vector<Ribbon>& ribList)
         const Ribbon& ribbon = ribList.at(ribbonIndex);
 
         const uint32_t blue =
-            laby::basic::Color::get_blue(static_cast<uint32_t>(ribbon.fillColor()));
+            laby::basic::Color::getBlue(static_cast<uint32_t>(ribbon.fillColor()));
         const uint32_t green =
-            laby::basic::Color::get_green(static_cast<uint32_t>(ribbon.fillColor()));
+            laby::basic::Color::getGreen(static_cast<uint32_t>(ribbon.fillColor()));
         GridIndex& gridIndex = mapOfGrids.try_emplace(blue).first->second;
         switch (green) {
         case static_cast<uint32_t>(GridChannel::Circular): {

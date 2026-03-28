@@ -36,10 +36,20 @@
 
 namespace laby::generator {
 class RibbonCoord {
-public:
-    RibbonCoord(Polyline* pl, std::size_t pos) : _pl{pl}, _pos{pos} {}
-    Polyline* _pl;
-    std::size_t _pos;
+    public:
+        RibbonCoord(Polyline* polyline, std::size_t position) : _polyline{polyline}, _position{position} {}
+
+        [[nodiscard]] auto polyline() const -> Polyline* {
+                return _polyline;
+        }
+
+        [[nodiscard]] auto position() const -> std::size_t {
+                return _position;
+        }
+
+    private:
+        Polyline* _polyline;
+        std::size_t _position;
 };
 
 class StreamLine {
@@ -62,16 +72,20 @@ public:
 
     struct VectorCompute {
 
-        using Kernel_To_K = CGAL::Cartesian_converter<Kernel, K>;
+        using KernelToK = CGAL::Cartesian_converter<Kernel, K>;
 
-        explicit VectorCompute(const double resolution) : kernel_to_k(), scale(CGAL::SCALING, resolution) {}
+        explicit VectorCompute(const double resolution)
+            : _kernelToK(), _scale(CGAL::SCALING, resolution) {}
 
         void addSegLong(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, std::vector<CGAL::Vector_2<K>>& vectorList) const;
         void addSegPerp(std::vector<CGAL::Point_2<K>>& pointList, const CGAL::Segment_2<Kernel>& seg, std::vector<CGAL::Vector_2<K>>& vectorList) const;
 
-        Kernel_To_K kernel_to_k;
-        CGAL::Aff_transformation_2<K> scale;
-        double epsilon = 0.001;
+      private:
+        KernelToK _kernelToK;
+        CGAL::Aff_transformation_2<K> _scale;
+        double _epsilon = 0.001;
+
+        friend class StreamLine;
     };
 
     using PS = CGAL::Point_set_2<Kernel>;
@@ -86,17 +100,24 @@ public:
 
     void addToArrangement(Arrangement_2& arr);
 
-    void drawSpiral(const std::complex<double>& o, const double& r, const double& angle);
+    void drawSpiral(const std::complex<double>& origin, const double& radius,
+                    const double& angle);
 
     void render();
 
-    static auto getRadial(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs) -> Ribbon;
-    static auto getLongitudinal(const Config& config, const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& segs) -> Ribbon;
+    static auto getRadial(const Config& config,
+                          const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons)
+        -> Ribbon;
+    static auto getLongitudinal(
+        const Config& config,
+        const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons) -> Ribbon;
 
 private:
-    auto connectExtreme(Ribbon& ribbon) -> Ribbon;
+    static auto connectExtreme(Ribbon& ribbon) -> Ribbon;
     void connectExtremInPlace(laby::Ribbon& ribbon);
-    static void changeLine(const Point_2& mid, std::unordered_map<PS::Vertex*, RibbonCoord>& map, PS::Vertex* seg);
+    static void changeLine(const Point_2& midpoint,
+                           std::unordered_map<PS::Vertex*, RibbonCoord>& ribbonCoordMap,
+                           PS::Vertex* vertex);
 
     template <typename FIELD, typename Rk_integrator = CGAL::Runge_kutta_integrator_2<FIELD>>
     auto streamPlacement(const FIELD& field, double dSep, double dRat) -> CGAL::Stream_lines_2<FIELD, Rk_integrator> {

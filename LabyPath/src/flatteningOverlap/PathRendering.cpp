@@ -7,12 +7,16 @@
 
 #include "PathRendering.h"
 
-#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Bbox_2.h>
-#include <CGAL/Boolean_set_operations_2/Gps_on_surface_base_2.h>
+#include <CGAL/Box_intersection_d/Box_with_handle_d.h>
+#include <CGAL/Union_find.h>
 #include <CGAL/box_intersection_d.h>
+#include <cstddef>
 #include <cstdint>
 
+#include "PolyConvex.h"
+#include "GeomData.h"
+#include "basic/AugmentedPolygonSet.h"
 #include "basic/EasyProfilerCompat.h"
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_set_2.h>
@@ -21,11 +25,17 @@
 #include <iostream>
 #include <iterator>
 #include <queue>
+#include <unordered_set>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include "../OrientedRibbon.h"
 #include "../basic/PolygonTools.h"
 #include "NodeRendering.h"
+#include "flatteningOverlap/Node.h"
+#include "flatteningOverlap/Family.h"
+#include "basic/RangeHelper.h"
 
 namespace laby {
 
@@ -190,7 +200,7 @@ void PathRendering::unify(std::size_t secondIndex, const std::vector<std::size_t
                           CGAL::Union_find<size_t>& unionFind, const Intersection& intersection) {
 
     EASY_FUNCTION();
-    for (std::size_t adjacentIndex : adjacentIndices) {
+    for (std::size_t const adjacentIndex : adjacentIndices) {
         const auto iterator = intersections.find({adjacentIndex, secondIndex});
         if (iterator != intersections.end()) {
             unionFind.unify_sets(intersection.handle(), iterator->handle());
@@ -279,7 +289,7 @@ auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::si
     CGAL::Union_find<std::size_t> familyUnionFind;
 
     for (const auto& familyEntry : families) {
-        std::size_t intersectionIndex = familyEntry.first;
+        std::size_t const intersectionIndex = familyEntry.first;
         intersections.at(intersectionIndex)
             .setFamilyHandle(familyUnionFind.push_back(intersectionIndex));
     }
@@ -293,11 +303,11 @@ auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::si
             const std::size_t firstFamilyHead = *unionFind.find(firstIntersection.handle());
             const std::size_t secondFamilyHead = *unionFind.find(secondIntersection.handle());
             if (firstFamilyHead != secondFamilyHead) {
-                Intersection firstHeadIntersection = intersections.at(firstFamilyHead);
-                Intersection secondHeadIntersection = intersections.at(secondFamilyHead);
+                Intersection const firstHeadIntersection = intersections.at(firstFamilyHead);
+                Intersection const secondHeadIntersection = intersections.at(secondFamilyHead);
                 if (!familyUnionFind.same_set(firstHeadIntersection.familyHandle(),
                                               secondHeadIntersection.familyHandle())) {
-                    bool intersects =
+                    bool const intersects =
                         doIntersect(firstIntersection, secondIntersection, polyConvexList);
                     if (intersects) {
                         familyUnionFind.unify_sets(firstHeadIntersection.familyHandle(),
@@ -309,8 +319,8 @@ auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::si
     std::unordered_map<std::size_t, std::vector<const Family*>> groupedFamilies;
 
     for (const auto& familyEntry : families) {
-        std::size_t intersectionIndex = familyEntry.first;
-        std::size_t head =
+        std::size_t const intersectionIndex = familyEntry.first;
+        std::size_t const head =
             *familyUnionFind.find(intersections.at(intersectionIndex).familyHandle());
         auto iterator = groupedFamilies.try_emplace(head);
         iterator.first->second.emplace_back(&familyVector.at(familyEntry.second));
@@ -350,14 +360,14 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
                 if (PolyConvex::testConvexPolyIntersect(firstBox.handle()->_geometry,
                                                         secondBox.handle()->_geometry)) {
                     intersections.emplace_back(firstBox.handle()->_id, secondBox.handle()->_id);
-                    CGAL::Bbox_2 firstBbox = firstBox.handle()->_geometry.bbox();
-                    CGAL::Bbox_2 secondBbox = secondBox.handle()->_geometry.bbox();
+                    CGAL::Bbox_2 const firstBbox = firstBox.handle()->_geometry.bbox();
+                    CGAL::Bbox_2 const secondBbox = secondBox.handle()->_geometry.bbox();
 
                     const double xmin = std::max(firstBbox.xmin(), secondBbox.xmin());
                     const double xmax = std::min(firstBbox.xmax(), secondBbox.xmax());
                     const double ymin = std::max(firstBbox.ymin(), secondBbox.ymin());
                     const double ymax = std::min(firstBbox.ymax(), secondBbox.ymax());
-                    CGAL::Bbox_2 intersectBox(xmin, ymin, xmax, ymax);
+                    CGAL::Bbox_2 const intersectBox(xmin, ymin, xmax, ymax);
 
                     boxIntersectionList.emplace_back(intersectBox, intersections.size() - 1);
                 }
@@ -389,7 +399,7 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
     familyVector.reserve(intersections.size());
     for (const Intersection& intersection : intersections) {
 
-        std::size_t head = *unionFind.find(intersection.handle());
+        std::size_t const head = *unionFind.find(intersection.handle());
         auto iterator = families.try_emplace(head, familyVector.size());
         if (iterator.second) {
             familyVector.emplace_back();
@@ -422,7 +432,7 @@ void PathRendering::nodeAdjacence(std::vector<Node>& nodes,
         std::queue<QueueNodePolyConvex> queue;
         seedNodeAdjacenceQueue(node, polyConvexList, queue);
         while (!queue.empty()) {
-            QueueNodePolyConvex queuedPolyConvex = queue.front();
+            QueueNodePolyConvex const queuedPolyConvex = queue.front();
             queue.pop();
             processQueuedPolyConvex(queuedPolyConvex, polyConvexList, queue);
         }
@@ -479,7 +489,7 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
     std::unordered_set<Intersection> intersectOnSinglePiece;
 
     for (const auto& familyEntry : families) {
-        std::size_t familyIndex = familyEntry.second;
+        std::size_t const familyIndex = familyEntry.second;
         Family& family = familyVector.at(familyIndex);
         family.createPatch(polyConvexList);
         if (family._patches.size() == 1) {
@@ -488,7 +498,7 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
         }
     }
 
-    std::unordered_map<std::size_t, std::vector<const Family*>> map = locateFamilies(
+    std::unordered_map<std::size_t, std::vector<const Family*>> const map = locateFamilies(
         families, familyVector, intersections, box_intersection, unionFind, polyConvexList);
 
     std::vector<Node> nodes = createNode(map, intersectOnSinglePiece, polyConvexList);
@@ -507,7 +517,7 @@ void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyConvexLi
                                    polyConvex._geometry.vertices_end());
     }
 
-    for (basic::Polygon_2Node& polygon : polygonVector) {
+    for (basic::Polygon_2Node const& polygon : polygonVector) {
         setPolygons.join(polygon);
     }
 }
@@ -533,7 +543,7 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
         }
     }
     basic::Polygon_set_2Node unionFamilies;
-    for (basic::Polygon_set_2Node& setPolygons : intersectGeometryList) {
+    for (basic::Polygon_set_2Node const& setPolygons : intersectGeometryList) {
         unionFamilies.join(setPolygons);
     }
     for (const auto& nodeEntry : map) {
@@ -556,12 +566,12 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
     CGAL::Union_find<std::size_t> unionFind;
     Family::createUnionFind(coverSet, polyConvexList, unionFind);
 
-    std::vector<std::size_t> heads(coverSet.begin(), coverSet.end());
+    std::vector<std::size_t> const heads(coverSet.begin(), coverSet.end());
 
     unifyIntersectingCoverSet(heads, polyConvexList, intersectOnSinglePiece, unionFind);
 
     if (unionFind.number_of_sets() > 1) {
-        std::unordered_map<std::size_t, Node*> map =
+        std::unordered_map<std::size_t, Node*> const map =
             buildNodeMapFromCoverSet(coverSet, polyConvexList, unionFind, nodes, nodeId);
         for (const auto& nodeEntry : map) {
             Node& node = *nodeEntry.second;
