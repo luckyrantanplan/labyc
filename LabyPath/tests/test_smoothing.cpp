@@ -3,13 +3,12 @@
  * @brief Unit tests for Smoothing class (Chaikin curve smoothing)
  */
 
-#include <gtest/gtest.h>
 #include "Polyline.h"
 #include "Smoothing.h"
+#include <gtest/gtest.h>
 
 namespace laby {
 namespace {
-
 
 constexpr double kDefaultTension = 0.5;
 constexpr double kDirectSmootherTension = 0.25;
