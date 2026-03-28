@@ -1,8 +1,8 @@
 #include "Anisotrop/QueueElement.h"
 #include "GeomData.h"
 
-#include <cstdint>
 #include <CGAL/number_utils.h>
+#include <cstdint>
 #include <gtest/gtest.h>
 
 using namespace laby;
@@ -36,8 +36,8 @@ class QueueElementFixture : public ::testing::Test {
 } // namespace
 
 TEST_F(QueueElementFixture, Construction) {
-    Vertex& vertex = makeVertex(kCoordOne, kCoordTwo);
-    QueueElement queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordOne, kCoordTwo);
+    QueueElement queueElement(testVertex);
 
     EXPECT_EQ(queueElement.direction(), kDirectionUnset);
     EXPECT_EQ(queueElement.parent(), kParentUnset);
@@ -45,8 +45,8 @@ TEST_F(QueueElementFixture, Construction) {
 }
 
 TEST_F(QueueElementFixture, ClearResetsState) {
-    Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordZero, kCoordZero);
+    QueueElement queueElement(testVertex);
     queueElement.setDirection(kDirectionThree);
     queueElement.setParent(kParentFive);
     queueElement.cost() = QueueCost();
@@ -57,14 +57,14 @@ TEST_F(QueueElementFixture, ClearResetsState) {
 }
 
 TEST_F(QueueElementFixture, NotInQueueByDefault) {
-    Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement const queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordZero, kCoordZero);
+    QueueElement const queueElement(testVertex);
     EXPECT_FALSE(queueElement.isInQueue());
 }
 
 TEST_F(QueueElementFixture, PushInAndIsInQueue) {
-    Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordZero, kCoordZero);
+    QueueElement queueElement(testVertex);
     PriorityQueue priorityQueue;
 
     queueElement.pushIn(priorityQueue);
@@ -72,8 +72,8 @@ TEST_F(QueueElementFixture, PushInAndIsInQueue) {
 }
 
 TEST_F(QueueElementFixture, ResetHandleClearsQueueState) {
-    Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordZero, kCoordZero);
+    QueueElement queueElement(testVertex);
     PriorityQueue priorityQueue;
 
     queueElement.pushIn(priorityQueue);
@@ -100,7 +100,7 @@ TEST_F(QueueElementFixture, PriorityOrdering) {
 }
 
 TEST_F(QueueElementFixture, PolyConvexDefaultEmpty) {
-    Vertex& vertex = makeVertex(kCoordZero, kCoordZero);
-    QueueElement queueElement(vertex);
+    Vertex& testVertex = makeVertex(kCoordZero, kCoordZero);
+    QueueElement queueElement(testVertex);
     EXPECT_TRUE(queueElement.polyConvex().empty());
 }

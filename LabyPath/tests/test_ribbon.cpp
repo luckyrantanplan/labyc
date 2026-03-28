@@ -3,109 +3,128 @@
  * @brief Unit tests for Ribbon class
  */
 
-#include <gtest/gtest.h>
 #include "Polyline.h"
 #include "Ribbon.h"
+#include <gtest/gtest.h>
 
 namespace laby {
 namespace {
 
+constexpr int kDefaultColor = 0;
+constexpr double kDefaultStrokeWidth = 1.0;
+constexpr int kFillColor = 5;
+constexpr int kAssignedFillColor = 42;
+constexpr int kAssignedStrokeColor = 7;
+constexpr double kAssignedStrokeWidth = 2.5;
+constexpr int kFirstPolylineId = 1;
+constexpr int kSecondPolylineId = 2;
+constexpr int kMutablePolylineId = 1;
+constexpr int kDegeneratePolylineId = 7;
+constexpr int kHorizontalOffset = 10;
+constexpr int kVerticalOffset = 10;
+constexpr int kDiagonalOffset = 5;
+constexpr int kConstructedFillColor = 1;
+constexpr std::size_t kTwoEntries = 2U;
+constexpr std::size_t kSingleEntry = 1U;
+constexpr unsigned int kIndexRangeMin = 3U;
+constexpr unsigned int kIndexRangeMax = 10U;
+
 TEST(RibbonTest, DefaultConstruction) {
-    Ribbon r;
-    EXPECT_EQ(r.fillColor(), 0);
-    EXPECT_TRUE(r.lines().empty());
-    EXPECT_EQ(r.strokeColor(), 0);
-    EXPECT_DOUBLE_EQ(r.strokeWidth(), 1.0);
+    Ribbon ribbon;
+    EXPECT_EQ(ribbon.fillColor(), kDefaultColor);
+    EXPECT_TRUE(ribbon.lines().empty());
+    EXPECT_EQ(ribbon.strokeColor(), kDefaultColor);
+    EXPECT_DOUBLE_EQ(ribbon.strokeWidth(), kDefaultStrokeWidth);
 }
 
 TEST(RibbonTest, ConstructWithFillColor) {
-    Ribbon const r(5);
-    EXPECT_EQ(r.fillColor(), 5);
+    Ribbon const ribbon(kFillColor);
+    EXPECT_EQ(ribbon.fillColor(), kFillColor);
 }
 
 TEST(RibbonTest, ConstructWithLines) {
-    Polyline pl1(1);
-    pl1.points().emplace_back(0, 0);
-    pl1.points().emplace_back(10, 0);
+    Polyline firstPolyline(kFirstPolylineId);
+    firstPolyline.points().emplace_back(0, 0);
+    firstPolyline.points().emplace_back(kHorizontalOffset, 0);
 
-    Polyline pl2(2);
-    pl2.points().emplace_back(0, 10);
-    pl2.points().emplace_back(10, 10);
+    Polyline secondPolyline(kSecondPolylineId);
+    secondPolyline.points().emplace_back(0, kVerticalOffset);
+    secondPolyline.points().emplace_back(kHorizontalOffset, kVerticalOffset);
 
-    Ribbon r(1, {pl1, pl2});
-    EXPECT_EQ(r.lines().size(), 2U);
-    EXPECT_EQ(r.fillColor(), 1);
+    Ribbon const ribbon(kConstructedFillColor, {firstPolyline, secondPolyline});
+    EXPECT_EQ(ribbon.lines().size(), kTwoEntries);
+    EXPECT_EQ(ribbon.fillColor(), kConstructedFillColor);
 }
 
 TEST(RibbonTest, FillColorGetSet) {
-    Ribbon r;
-    r.setFillColor(42);
-    EXPECT_EQ(r.fillColor(), 42);
+    Ribbon ribbon;
+    ribbon.setFillColor(kAssignedFillColor);
+    EXPECT_EQ(ribbon.fillColor(), kAssignedFillColor);
 }
 
 TEST(RibbonTest, StrokeColorGetSet) {
-    Ribbon r;
-    r.setStrokeColor(7);
-    EXPECT_EQ(r.strokeColor(), 7);
+    Ribbon ribbon;
+    ribbon.setStrokeColor(kAssignedStrokeColor);
+    EXPECT_EQ(ribbon.strokeColor(), kAssignedStrokeColor);
 }
 
 TEST(RibbonTest, StrokeWidthGetSet) {
-    Ribbon r;
-    r.setStrokeWidth(2.5);
-    EXPECT_DOUBLE_EQ(r.strokeWidth(), 2.5);
+    Ribbon ribbon;
+    ribbon.setStrokeWidth(kAssignedStrokeWidth);
+    EXPECT_DOUBLE_EQ(ribbon.strokeWidth(), kAssignedStrokeWidth);
 }
 
 TEST(RibbonTest, MutableLinesAccess) {
-    Ribbon r;
-    Polyline pl(1);
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(5, 5);
+    Ribbon ribbon;
+    Polyline polyline(kMutablePolylineId);
+    polyline.points().emplace_back(0, 0);
+    polyline.points().emplace_back(kDiagonalOffset, kDiagonalOffset);
 
-    r.lines().push_back(pl);
-    EXPECT_EQ(r.lines().size(), 1U);
-    EXPECT_EQ(r.lines()[0].id(), 1);
+    ribbon.lines().push_back(polyline);
+    EXPECT_EQ(ribbon.lines().size(), kSingleEntry);
+    EXPECT_EQ(ribbon.lines()[0].id(), kMutablePolylineId);
 }
 
 TEST(RibbonTest, GetSegments) {
-    Polyline pl;
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(10, 0);
-    pl.points().emplace_back(10, 10);
+    Polyline polyline;
+    polyline.points().emplace_back(0, 0);
+    polyline.points().emplace_back(kHorizontalOffset, 0);
+    polyline.points().emplace_back(kHorizontalOffset, kVerticalOffset);
 
-    Ribbon const r(0, {pl});
-    auto segs = r.getSegments();
-    EXPECT_EQ(segs.size(), 2U);
+    Ribbon const ribbon(kDefaultColor, {polyline});
+    auto const segments = ribbon.getSegments();
+    EXPECT_EQ(segments.size(), kTwoEntries);
 }
 
 TEST(RibbonTest, CreateArrSkipsDegenerateSegments) {
-    Polyline pl;
-    pl.setId(7);
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(10, 0);
+    Polyline polyline;
+    polyline.setId(kDegeneratePolylineId);
+    polyline.points().emplace_back(0, 0);
+    polyline.points().emplace_back(0, 0);
+    polyline.points().emplace_back(kHorizontalOffset, 0);
 
-    Ribbon const r(0, {pl});
+    Ribbon const ribbon(kDefaultColor, {polyline});
 
     EXPECT_NO_THROW({
-        auto arr = r.createArr();
-        EXPECT_EQ(arr.number_of_edges(), 1U);
+        auto arrangement = ribbon.createArr();
+        EXPECT_EQ(arrangement.number_of_edges(), kSingleEntry);
     });
 }
 
 TEST(RibbonTest, GetPoints) {
-    Polyline pl;
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(5, 5);
+    Polyline polyline;
+    polyline.points().emplace_back(0, 0);
+    polyline.points().emplace_back(kDiagonalOffset, kDiagonalOffset);
 
-    Ribbon const r(0, {pl});
-    auto pts = r.getPoints();
-    EXPECT_EQ(pts.size(), 2U);
+    Ribbon const ribbon(kDefaultColor, {polyline});
+    auto const points = ribbon.getPoints();
+    EXPECT_EQ(points.size(), kTwoEntries);
 }
 
 TEST(IndexRangeTest, Construction) {
-    IndexRange const range{3, 10};
-    EXPECT_EQ(range.min, 3U);
-    EXPECT_EQ(range.max, 10U);
+    IndexRange const range{kIndexRangeMin, kIndexRangeMax};
+    EXPECT_EQ(range.min, kIndexRangeMin);
+    EXPECT_EQ(range.max, kIndexRangeMax);
 }
 
 } // namespace

@@ -7,78 +7,110 @@
 #include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
+#include <numeric>
 #include <vector>
 
 using laby::basic::RandomUniDist;
 
+namespace {
+
+constexpr double kUnitRangeMin = 0.0;
+constexpr double kUnitRangeMax = 1.0;
+constexpr double kWideRangeMax = 10.0;
+constexpr double kCustomRangeMin = -5.0;
+constexpr double kCustomRangeMax = 5.0;
+constexpr int kDefaultSeed = 42;
+constexpr int kSharedSeed = 123;
+constexpr int kFirstSeed = 1;
+constexpr int kSecondSeed = 2;
+constexpr int kRangeCheckIterations = 1000;
+constexpr int kDeterminismIterations = 100;
+constexpr int kDifferenceIterations = 10;
+constexpr int kCustomRangeIterations = 100;
+constexpr unsigned int kSelectionMin = 0U;
+constexpr unsigned int kSelectionMax = 10U;
+constexpr unsigned int kSingleSelectionValue = 5U;
+constexpr unsigned int kSingleSelectionEnd = 6U;
+constexpr double kDifferenceTolerance = 1e-12;
+constexpr int kShufflePreservedCount = 10;
+constexpr int kShuffleChangedCount = 15;
+
+auto makeSequentialValues(int count) -> std::vector<int> {
+    std::vector<int> values(static_cast<std::size_t>(count));
+    std::iota(values.begin(), values.end(), 1);
+    return values;
+}
+
+} // namespace
+
 TEST(RandomUniDistTest, ValueInRange) {
-    RandomUniDist rng(0.0, 1.0, 42);
-    for (int i = 0; i < 1000; ++i) {
-        double const val = rng.get();
-        EXPECT_GE(val, 0.0);
-        EXPECT_LE(val, 1.0);
+    RandomUniDist randomGenerator(kUnitRangeMin, kUnitRangeMax, kDefaultSeed);
+    for (int iteration = 0; iteration < kRangeCheckIterations; ++iteration) {
+        double const generatedValue = randomGenerator.get();
+        EXPECT_GE(generatedValue, kUnitRangeMin);
+        EXPECT_LE(generatedValue, kUnitRangeMax);
     }
 }
 
 TEST(RandomUniDistTest, DeterministicWithSameSeed) {
-    RandomUniDist rng1(0.0, 10.0, 123);
-    RandomUniDist rng2(0.0, 10.0, 123);
-    for (int i = 0; i < 100; ++i) {
-        EXPECT_DOUBLE_EQ(rng1.get(), rng2.get());
+    RandomUniDist firstGenerator(kUnitRangeMin, kWideRangeMax, kSharedSeed);
+    RandomUniDist secondGenerator(kUnitRangeMin, kWideRangeMax, kSharedSeed);
+    for (int iteration = 0; iteration < kDeterminismIterations; ++iteration) {
+        EXPECT_DOUBLE_EQ(firstGenerator.get(), secondGenerator.get());
     }
 }
 
 TEST(RandomUniDistTest, DifferentSeedsDifferentSequence) {
-    RandomUniDist rng1(0.0, 1.0, 1);
-    RandomUniDist rng2(0.0, 1.0, 2);
-    bool allEqual = true;
-    for (int i = 0; i < 10; ++i) {
-        if (std::abs(rng1.get() - rng2.get()) > 1e-12) {
-            allEqual = false;
+    RandomUniDist firstGenerator(kUnitRangeMin, kUnitRangeMax, kFirstSeed);
+    RandomUniDist secondGenerator(kUnitRangeMin, kUnitRangeMax, kSecondSeed);
+    bool sequencesMatch = true;
+    for (int iteration = 0; iteration < kDifferenceIterations; ++iteration) {
+        if (std::abs(firstGenerator.get() - secondGenerator.get()) > kDifferenceTolerance) {
+            sequencesMatch = false;
             break;
         }
     }
-    EXPECT_FALSE(allEqual);
+    EXPECT_FALSE(sequencesMatch);
 }
 
 TEST(RandomUniDistTest, CustomRange) {
-    RandomUniDist rng(-5.0, 5.0, 42);
-    for (int i = 0; i < 100; ++i) {
-        double const val = rng.get();
-        EXPECT_GE(val, -5.0);
-        EXPECT_LE(val, 5.0);
+    RandomUniDist randomGenerator(kCustomRangeMin, kCustomRangeMax, kDefaultSeed);
+    for (int iteration = 0; iteration < kCustomRangeIterations; ++iteration) {
+        double const generatedValue = randomGenerator.get();
+        EXPECT_GE(generatedValue, kCustomRangeMin);
+        EXPECT_LE(generatedValue, kCustomRangeMax);
     }
 }
 
 TEST(RandomUniDistTest, SelectInRange) {
-    RandomUniDist rng(0.0, 1.0, 42);
-    for (int i = 0; i < 100; ++i) {
-        auto val = rng.select(0, 10);
-        EXPECT_GE(val, 0U);
-        EXPECT_LT(val, 10U);
+    RandomUniDist randomGenerator(kUnitRangeMin, kUnitRangeMax, kDefaultSeed);
+    for (int iteration = 0; iteration < kCustomRangeIterations; ++iteration) {
+        auto const selectedIndex = randomGenerator.select(kSelectionMin, kSelectionMax);
+        EXPECT_GE(selectedIndex, kSelectionMin);
+        EXPECT_LT(selectedIndex, kSelectionMax);
     }
 }
 
 TEST(RandomUniDistTest, SelectSingleElement) {
-    RandomUniDist rng(0.0, 1.0, 42);
-    auto val = rng.select(5, 6);
-    EXPECT_EQ(val, 5U);
+    RandomUniDist randomGenerator(kUnitRangeMin, kUnitRangeMax, kDefaultSeed);
+    auto const selectedIndex = randomGenerator.select(kSingleSelectionValue, kSingleSelectionEnd);
+    EXPECT_EQ(selectedIndex, kSingleSelectionValue);
 }
 
 TEST(RandomUniDistTest, ShufflePreservesElements) {
-    RandomUniDist rng(0.0, 1.0, 42);
-    std::vector<int> const original = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    RandomUniDist randomGenerator(kUnitRangeMin, kUnitRangeMax, kDefaultSeed);
+    std::vector<int> const original = makeSequentialValues(kShufflePreservedCount);
     std::vector<int> shuffled = original;
-    rng.shuffle(shuffled);
+    randomGenerator.shuffle(shuffled);
 
     std::sort(shuffled.begin(), shuffled.end());
     EXPECT_EQ(original, shuffled);
 }
 
 TEST(RandomUniDistTest, ShuffleChangesOrder) {
-    RandomUniDist rng(0.0, 1.0, 42);
-    std::vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    std::vector<int> const original = v;
-    rng.shuffle(v);
-    EXPECT_NE(v, original);
+    RandomUniDist randomGenerator(kUnitRangeMin, kUnitRangeMax, kDefaultSeed);
+    std::vector<int> values = makeSequentialValues(kShuffleChangedCount);
+    std::vector<int> const original = values;
+    randomGenerator.shuffle(values);
+    EXPECT_NE(values, original);
 }

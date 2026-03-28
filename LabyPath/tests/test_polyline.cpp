@@ -3,55 +3,71 @@
  * @brief Unit tests for Polyline class
  */
 
+#include "GeomData.h"
+#include "Polyline.h"
 #include <CGAL/Polygon_2.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "GeomData.h"
-#include "Polyline.h"
 
 namespace laby {
 namespace {
 
+constexpr std::size_t kPointCount = 3U;
+constexpr int kDefaultPolylineId = 0;
+constexpr int kFirstPolylineId = 42;
+constexpr int kSecondPolylineId = 7;
+constexpr double kCoordZero = 0.0;
+constexpr double kCoordOne = 1.0;
+constexpr double kCoordThree = 3.0;
+constexpr double kCoordFour = 4.0;
+constexpr double kCoordFive = 5.0;
+constexpr double kCoordTen = 10.0;
+constexpr double kExpectedTotalLength = 7.0;
+constexpr double kDuplicateEpsilon = 1e-13;
+constexpr double kDuplicateTolerance = 1e-9;
+
 TEST(PolylineTest, DefaultConstruction) {
-    Polyline const pl;
-    EXPECT_TRUE(pl.empty());
-    EXPECT_EQ(pl.id(), 0);
-    EXPECT_FALSE(pl.isClosed());
+    Polyline const polyline;
+    EXPECT_TRUE(polyline.empty());
+    EXPECT_EQ(polyline.id(), kDefaultPolylineId);
+    EXPECT_FALSE(polyline.isClosed());
 }
 
 TEST(PolylineTest, ConstructWithNumber) {
-    Polyline const pl(42);
-    EXPECT_TRUE(pl.empty());
-    EXPECT_EQ(pl.id(), 42);
+    Polyline const polyline(kFirstPolylineId);
+    EXPECT_TRUE(polyline.empty());
+    EXPECT_EQ(polyline.id(), kFirstPolylineId);
 }
 
 TEST(PolylineTest, ConstructWithPoints) {
-    std::vector<Point_2> const pts = {Point_2(0, 0), Point_2(1, 0), Point_2(1, 1)};
-    Polyline const pl(7, pts);
-    EXPECT_FALSE(pl.empty());
-    EXPECT_EQ(pl.id(), 7);
-    EXPECT_EQ(pl.points().size(), 3U);
+    std::vector<Point_2> const points = {Point_2(kCoordZero, kCoordZero),
+                                         Point_2(kCoordOne, kCoordZero),
+                                         Point_2(kCoordOne, kCoordOne)};
+    Polyline const polyline(kSecondPolylineId, points);
+    EXPECT_FALSE(polyline.empty());
+    EXPECT_EQ(polyline.id(), kSecondPolylineId);
+    EXPECT_EQ(polyline.points().size(), kPointCount);
 }
 
 TEST(PolylineTest, TotalLengthStraightLine) {
-    Polyline pl;
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(3, 0);
-    pl.points().emplace_back(3, 4);
+    Polyline polyline;
+    polyline.points().emplace_back(kCoordZero, kCoordZero);
+    polyline.points().emplace_back(kCoordThree, kCoordZero);
+    polyline.points().emplace_back(kCoordThree, kCoordFour);
 
     // Length: 3 + 4 = 7
-    EXPECT_NEAR(pl.totalLength(), 7.0, 1e-9);
+    EXPECT_NEAR(polyline.totalLength(), kExpectedTotalLength, kDuplicateTolerance);
 }
 
 TEST(PolylineTest, TotalLengthSinglePoint) {
-    Polyline pl;
-    pl.points().emplace_back(5, 5);
-    EXPECT_DOUBLE_EQ(pl.totalLength(), 0.0);
+    Polyline polyline;
+    polyline.points().emplace_back(kCoordFive, kCoordFive);
+    EXPECT_DOUBLE_EQ(polyline.totalLength(), kCoordZero);
 }
 
 TEST(PolylineTest, TotalLengthEmpty) {
-    Polyline const pl;
-    EXPECT_DOUBLE_EQ(pl.totalLength(), 0.0);
+    Polyline const polyline;
+    EXPECT_DOUBLE_EQ(polyline.totalLength(), kCoordZero);
 }
 
 TEST(PolylineTest, ConstructFromPolygon) {
@@ -60,51 +76,51 @@ TEST(PolylineTest, ConstructFromPolygon) {
     poly.push_back(Point_2(10, 0));
     poly.push_back(Point_2(10, 10));
 
-    Polyline const pl(poly);
-    EXPECT_TRUE(pl.isClosed());
-    EXPECT_EQ(pl.points().size(), 3U);
+    Polyline const polyline(poly);
+    EXPECT_TRUE(polyline.isClosed());
+    EXPECT_EQ(polyline.points().size(), kPointCount);
 }
 
 TEST(PolylineTest, ComputeMinLexi) {
-    Polyline pl;
-    pl.points().emplace_back(5, 5);
-    pl.points().emplace_back(1, 2);
-    pl.points().emplace_back(3, 1);
+    Polyline polyline;
+    polyline.points().emplace_back(kCoordFive, kCoordFive);
+    polyline.points().emplace_back(kCoordOne, 2);
+    polyline.points().emplace_back(kCoordThree, kCoordOne);
 
-    pl.computeMinLexi();
+    polyline.computeMinLexi();
     // Lexicographically smallest point: (1, 2)
-    EXPECT_EQ(pl.minPoint(), Point_2(1, 2));
+    EXPECT_EQ(polyline.minPoint(), Point_2(kCoordOne, 2));
 }
 
 TEST(PolylineTest, RemoveConsecutiveDuplicatePoints) {
-    Polyline pl;
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(1, 0);
-    pl.points().emplace_back(1, 0);
-    pl.points().emplace_back(1, 0);
-    pl.points().emplace_back(2, 0);
+    Polyline polyline;
+    polyline.points().emplace_back(kCoordZero, kCoordZero);
+    polyline.points().emplace_back(kCoordOne, kCoordZero);
+    polyline.points().emplace_back(kCoordOne, kCoordZero);
+    polyline.points().emplace_back(kCoordOne, kCoordZero);
+    polyline.points().emplace_back(2, kCoordZero);
 
-    pl.removeConsecutiveDuplicatePoints();
+    polyline.removeConsecutiveDuplicatePoints();
 
-    ASSERT_EQ(pl.points().size(), 3U);
-    EXPECT_EQ(pl.points().at(0), Point_2(0, 0));
-    EXPECT_EQ(pl.points().at(1), Point_2(1, 0));
-    EXPECT_EQ(pl.points().at(2), Point_2(2, 0));
+    ASSERT_EQ(polyline.points().size(), kPointCount);
+    EXPECT_EQ(polyline.points().at(0), Point_2(kCoordZero, kCoordZero));
+    EXPECT_EQ(polyline.points().at(1), Point_2(kCoordOne, kCoordZero));
+    EXPECT_EQ(polyline.points().at(2), Point_2(2, kCoordZero));
 }
 
 TEST(PolylineTest, RemoveNearlyConsecutiveDuplicatePoints) {
-    Polyline pl;
-    pl.points().emplace_back(0, 0);
-    pl.points().emplace_back(1, 0);
-    pl.points().emplace_back(1.0 + 1e-13, 1e-13);
-    pl.points().emplace_back(2, 0);
+    Polyline polyline;
+    polyline.points().emplace_back(kCoordZero, kCoordZero);
+    polyline.points().emplace_back(kCoordOne, kCoordZero);
+    polyline.points().emplace_back(kCoordOne + kDuplicateEpsilon, kDuplicateEpsilon);
+    polyline.points().emplace_back(2, kCoordZero);
 
-    pl.removeConsecutiveDuplicatePoints(1e-9);
+    polyline.removeConsecutiveDuplicatePoints(kDuplicateTolerance);
 
-    ASSERT_EQ(pl.points().size(), 3U);
-    EXPECT_EQ(pl.points().at(0), Point_2(0, 0));
-    EXPECT_EQ(pl.points().at(1), Point_2(1, 0));
-    EXPECT_EQ(pl.points().at(2), Point_2(2, 0));
+    ASSERT_EQ(polyline.points().size(), kPointCount);
+    EXPECT_EQ(polyline.points().at(0), Point_2(kCoordZero, kCoordZero));
+    EXPECT_EQ(polyline.points().at(1), Point_2(kCoordOne, kCoordZero));
+    EXPECT_EQ(polyline.points().at(2), Point_2(2, kCoordZero));
 }
 
 } // namespace
