@@ -44,7 +44,14 @@ option(LABYPATH_ENABLE_PROFILER "Enable easy_profiler integration" OFF)
 find_package(CGAL REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Protobuf REQUIRED)
-
+# Microsoft Guideline Support Library (GSL) via FetchContent
+include(FetchContent)
+FetchContent_Declare(GSL
+    GIT_REPOSITORY "https://github.com/microsoft/GSL"
+    GIT_TAG "v4.2.0"
+    GIT_SHALLOW ON
+)
+FetchContent_MakeAvailable(GSL)
 # Mark CGAL and Boost as SYSTEM so their headers don't trigger our strict
 # warnings during template instantiation (GCC may inline system-header code
 # into project translation units). Requires CMake ≥ 3.25.
@@ -173,6 +180,7 @@ target_link_libraries(labypath_lib
         Boost::boost
         protobuf::libprotobuf
         pthread
+        Microsoft.GSL::GSL
 )
 
 if(FFTW3_FOUND)

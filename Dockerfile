@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Protocol Buffers
     libprotobuf-dev \
     protobuf-compiler \
+    # utilities
+    ripgrep \
     # FFTW3
     libfftw3-dev \
     # SVG++ and rapidxml_ns
@@ -77,6 +79,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     python3 \
     python3-venv \
+    ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/LabyPath/build/labypath /usr/local/bin/labypath
