@@ -12,15 +12,9 @@
 
 #include "Family.h"
 
-#include "PolyConvex.h"
 #include "basic/EasyProfilerCompat.h"
-#include <cstddef>
-#include <CGAL/Union_find.h>
 #include <stdexcept>
-#include <unordered_set>
 #include <string>
-#include <utility>
-#include <vector>
 
 namespace laby {
 
@@ -28,9 +22,9 @@ namespace laby {
  * Build a Union-Find structure over the polygon indices in @p coverSet,
  * merging any two indices that are adjacent in @p polyConvexList.
  */
-void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
-                             const std::vector<PolyConvex>& polyConvexList,
-                             CGAL::Union_find<std::size_t>& unionFind) {
+static void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
+                                    const std::vector<PolyConvex>& polyConvexList,
+                                    CGAL::Union_find<std::size_t>& unionFind) {
     EASY_FUNCTION();
     for (const std::size_t& coverIndex : coverSet) {
         polyConvexList.at(coverIndex).handle = unionFind.push_back(coverIndex);
@@ -54,7 +48,7 @@ void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
  *  - 1 patch:   all polygons are connected (single-piece overlap)
  *  - >2 patches: unexpected topology – throws std::runtime_error
  */
-auto Family::createPatch(const std::vector<PolyConvex>& polyConvexList) -> void {
+static auto Family::createPatch(const std::vector<PolyConvex>& polyConvexList) -> void {
     EASY_FUNCTION();
     std::unordered_set<std::size_t> coverSet;
     for (Intersection const& intersection : _intersections) {

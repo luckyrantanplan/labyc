@@ -46,14 +46,14 @@ namespace laby {
  *   generated this polygon (nullptr for maze-connected polygons).
  */
 struct PolyConvex {
-    Linear_polygon _geometry;
-    Linear_polygon _originalTrapeze;
-    std::vector<std::size_t> _adjacents;
-    mutable std::vector<Node*> _nodes;
+    Linear_polygon _geometry{};
+    Linear_polygon _originalTrapeze{};
+    std::vector<std::size_t> _adjacents{};
+    mutable std::vector<Node*> _nodes{};
     Halfedge* _supportHe = nullptr;
     std::size_t _id = 0;
     mutable int32_t _visited = 0;
-    mutable CGAL::Union_find<std::size_t>::handle handle;
+    mutable CGAL::Union_find<std::size_t>::handle handle{};
     double _average_thickness = 0.0;
 
     auto setAverageThickness(double thickness) -> void {
@@ -65,7 +65,7 @@ struct PolyConvex {
     }
     PolyConvex() = default;
 
-    auto removeAdjacence(std::size_t adjacencyId) -> void {
+    static auto removeAdjacence(std::size_t adjacencyId) -> void {
         auto iterator = std::find(_adjacents.begin(), _adjacents.end(), adjacencyId);
         if (iterator == _adjacents.end()) {
             return;
@@ -95,7 +95,7 @@ struct PolyConvex {
     PolyConvex(Halfedge& halfedge, std::size_t polygonId, basic::LinearGradient& gradient);
     PolyConvex(const Point_2& sourcePoint, const Point_2& targetPoint, std::size_t polygonId,
                basic::LinearGradient& gradient);
-    PolyConvex(Point_2  sourcePoint, Point_2  targetPoint, std::size_t polygonId,
+    PolyConvex(Point_2 sourcePoint, Point_2 targetPoint, std::size_t polygonId,
                Linear_polygon geometry);
 
     auto print(std::ostream& outputStream) const -> void {
@@ -118,14 +118,14 @@ struct PolyConvex {
     static auto connect(std::size_t first, std::size_t second,
                         std::vector<PolyConvex>& polyConvexList) -> void;
 
-    [[nodiscard]] auto getSourcePoint() const -> const CGAL::Point_2<Kernel>& {
+    [[nodiscard]] static auto getSourcePoint() -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->source()->point();
         }
         return _ps;
     }
 
-    [[nodiscard]] auto getTargetPoint() const -> const CGAL::Point_2<Kernel>& {
+    [[nodiscard]] static auto getTargetPoint() -> const CGAL::Point_2<Kernel>& {
         if (_supportHe != nullptr) {
             return _supportHe->target()->point();
         }

@@ -84,10 +84,10 @@ class QueueCost {
         return _futureMemoryTarget;
     }
 
-    auto tie() const {
+    [[nodiscard]] auto tie() const {
         return std::tie(_congestion, //
 
-                        _viaNum,  //
+                        _viaNum,   //
                         _distance, //
                         _randomization);
     }
@@ -107,16 +107,16 @@ class QueueCost {
         return tie() < rhs.tie();
     }
 
-    private:
-        int32_t _distance = -1; // Distance from source to current element
-        int32_t _viaNum = 0;    // Via count from source to current element
-        int32_t _congestion = 0;
+  private:
+    int32_t _distance = -1; // Distance from source to current element
+    int32_t _viaNum = 0;    // Via count from source to current element
+    int32_t _congestion = 0;
 
-        int32_t _randomization = 0;
-        std::unordered_set<int32_t> _memorySource;
-        std::unordered_set<int32_t> _futureMemorySource;
-        std::unordered_set<int32_t> _memoryTarget;
-        std::unordered_set<int32_t> _futureMemoryTarget;
+    int32_t _randomization = 0;
+    std::unordered_set<int32_t> _memorySource{};
+    std::unordered_set<int32_t> _futureMemorySource{};
+    std::unordered_set<int32_t> _memoryTarget{};
+    std::unordered_set<int32_t> _futureMemoryTarget{};
 };
 
 } // namespace laby::aniso

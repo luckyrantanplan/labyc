@@ -8,22 +8,17 @@
 #include "LinearGradient.h"
 #include "GeomData.h"
 
-#include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Vector_2.h>
-#include <CGAL/number_utils.h>
-
-#include <utility>
-
+#include <math.h>
 
 namespace laby::basic {
 
-LinearGradient::LinearGradient(Point_2 startPoint, const double thickness1,
-                               const Point_2& endPoint, const double thickness2) :
-        _thickness1 { thickness1 }, _thickness2 { thickness2 }, _origin {std::move(startPoint)} {
+LinearGradient::LinearGradient(Point_2 startPoint, const double thickness1, const Point_2& endPoint,
+                               const double thickness2)
+    : _thickness1{thickness1}, _thickness2{thickness2}, _origin{std::move(startPoint)} {
 
     _vec = endPoint - _origin;
     _sq_length = CGAL::to_double(_vec.squared_length());
-
 }
 
 auto LinearGradient::f(double position, double startThickness, double endThickness) -> double {
@@ -32,10 +27,10 @@ auto LinearGradient::f(double position, double startThickness, double endThickne
     return (startThickness * (1 - position) + endThickness * position);
 }
 
-auto LinearGradient::thickness(const Point_2& point) -> double {
+auto LinearGradient::thickness(const Point_2& point) const -> double {
 
     CGAL::Vector_2<Kernel> const offsetVector = point - _origin;
-    double const position = CGAL::to_double(offsetVector * _vec) / _sq_length;
+    double const position = NAN = CGAL::to_double(offsetVector * _vec) / _sq_length;
 
     if (position <= 0) {
         return _thickness1;
@@ -52,4 +47,3 @@ auto LinearGradient::thickness(const Point_2& point) -> double {
 }
 
 } // namespace laby::basic
-

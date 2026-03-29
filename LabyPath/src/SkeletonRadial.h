@@ -24,8 +24,8 @@ class SkeletonRadial {
     struct FaceHelper {
         enum class Type : std::uint8_t { Unknown, Lateral, Corner };
         Type _type = Type::Unknown;
-        Kernel::Vector_2 _perp;
-        Kernel::Point_2 _o;
+        Kernel::Vector_2 _perp{};
+        Kernel::Point_2 _o{};
     };
 
     struct Incidence {
@@ -35,7 +35,7 @@ class SkeletonRadial {
         Incidence(Point_2 testPoint, const basic::HalfedgeNode& halfedge)
             : isEmpty(false), _test(std::move(testPoint)), _hedge(&halfedge) {}
         bool isEmpty = true;
-        Point_2 _test;
+        Point_2 _test{};
         const basic::HalfedgeNode* _hedge = nullptr;
 
         [[nodiscard]] auto getTwin() const -> Incidence {
@@ -66,11 +66,11 @@ class SkeletonRadial {
     auto createRadial(const basic::Arrangement_2Node& arrangement,
                       const CGAL::Polygon_with_holes_2<Kernel>& polygonWithHoles) -> void;
 
-    auto getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& polygonWithHoles) const
-        -> CGAL::Point_set_2<Kernel>;
-    auto radialList() const -> std::vector<Kernel::Segment_2>;
+    [[nodiscard]] auto getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& polygonWithHoles)
+        const -> CGAL::Point_set_2<Kernel>;
+    [[nodiscard]] auto radialList() const -> std::vector<Kernel::Segment_2>;
 
-    auto getRibbon() const -> const Ribbon& {
+    [[nodiscard]] auto getRibbon() const -> const Ribbon& {
         return _radial_list;
     }
 
@@ -99,9 +99,9 @@ class SkeletonRadial {
                      const Kernel::Vector_2& direction,
                      std::vector<Kernel::Point_2>& result) const -> Incidence;
 
-    auto filterNewVertex(const std::vector<Kernel::Point_2>& result,
-                         const Kernel::Point_2& vertex) const -> bool;
-    auto polylineLength(const std::vector<Kernel::Point_2>& result) const -> double;
+    [[nodiscard]] auto filterNewVertex(const std::vector<Kernel::Point_2>& result,
+                                       const Kernel::Point_2& vertex) const -> bool;
+    [[nodiscard]] auto polylineLength(const std::vector<Kernel::Point_2>& result) const -> double;
     auto polygonContour(const basic::Arrangement_2Node& arrangement,
                         const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
                         CGAL::Point_set_2<Kernel>& pointSet) -> void;

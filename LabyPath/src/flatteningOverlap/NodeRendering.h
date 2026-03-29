@@ -38,7 +38,7 @@ class NodeOverlap {
   private:
     auto addIdToPolygon(const std::vector<PolyConvex>& polyConvexList) -> void;
 
-    std::vector<Node*> _nodes;
+    std::vector<Node*> _nodes{};
 };
 
 class NodeRendering {

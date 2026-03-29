@@ -72,9 +72,9 @@ struct OffsetTriplet {
     }
 
   private:
-    Kernel::Point_2 _origin;
-    Kernel::Point_2 _offset1;
-    Kernel::Point_2 _offset2;
+    Kernel::Point_2 _origin{};
+    Kernel::Point_2 _offset1{};
+    Kernel::Point_2 _offset2{};
 };
 
 class TrapezeEdgeInfo {

@@ -11,23 +11,19 @@
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
 
-#include "basic/RangeHelper.h"
+#include "basic/AugmentedPolygonSet.h"
 #include <CGAL/box_intersection_d.h>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <unordered_map>
-#include <utility>
-#include <variant>
-#include <vector>
 
 namespace laby {
 
-auto SkeletonRadial::registerFace(
+static auto SkeletonRadial::registerFace(
     const basic::HalfedgeNode& he,
-    std::unordered_map<const basic::FaceNode*, FaceHelper>& vertices_cache) const -> void {
+    std::unordered_map<const basic::FaceNode*, FaceHelper>& vertices_cache) -> void {
     {
         FaceHelper& faceHelper =
             vertices_cache.try_emplace(&*he.face(), FaceHelper()).first->second;
@@ -71,8 +67,8 @@ auto SkeletonRadial::registerFace(
     faceHelper._o = o.point();
 }
 
-auto SkeletonRadial::traverseCorner(const Incidence& incidence, const FaceHelper& faceHelper,
-                                    std::vector<Kernel::Point_2>& result) const -> Incidence {
+static auto SkeletonRadial::traverseCorner(const Incidence& incidence, const FaceHelper& faceHelper,
+                                           std::vector<Kernel::Point_2>& result) -> Incidence {
 
     Kernel::Line_2 line = Kernel::Line_2(incidence._test, faceHelper._o);
 
@@ -94,12 +90,12 @@ auto SkeletonRadial::traverseCorner(const Incidence& incidence, const FaceHelper
     }
 
     result.emplace_back(faceHelper._o);
-    return Incidence();
+    return {};
 }
 
-auto SkeletonRadial::traverseRay(const basic::HalfedgeNode& hedge, const Kernel::Point_2& test,
-                                 const Kernel::Vector_2& dir,
-                                 std::vector<Kernel::Point_2>& result) const -> Incidence {
+static auto SkeletonRadial::traverseRay(const basic::HalfedgeNode& hedge,
+                                        const Kernel::Point_2& test, const Kernel::Vector_2& dir,
+                                        std::vector<Kernel::Point_2>& result) -> Incidence {
 
     Kernel::Line_2 line(test, dir);
     for (const basic::HalfedgeNode& he : RangeHelper::make(hedge.next()->ccb())) {
@@ -124,17 +120,17 @@ auto SkeletonRadial::traverseRay(const basic::HalfedgeNode& hedge, const Kernel:
         std::cout << he.curve() << std::endl;
     }
     std::cout << "no incidence traverse_ray!" << std::endl;
-    return Incidence();
+    return {};
 }
 
-auto SkeletonRadial::traverseFace(
+static auto SkeletonRadial::traverseFace(
     const Incidence& incidence,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache, //
-    std::vector<Kernel::Point_2>& result) const -> SkeletonRadial::Incidence {
+    std::vector<Kernel::Point_2>& result) -> SkeletonRadial::Incidence {
     auto ite = faceCache.find(&*incidence._hedge->face());
 
     if (ite == faceCache.end()) {
-        return Incidence();
+        return {};
     }
     const FaceHelper& faceHelper = ite->second;
     switch (faceHelper._type) {
@@ -158,7 +154,7 @@ auto SkeletonRadial::traverseFace(
         break;
     }
     }
-    return Incidence();
+    return {};
 }
 
 auto SkeletonRadial::filterNewVertex(const std::vector<Kernel::Point_2>& result,
@@ -166,16 +162,16 @@ auto SkeletonRadial::filterNewVertex(const std::vector<Kernel::Point_2>& result,
     if (result.size() < 2) {
         return true;
     }
-    const Kernel::Segment_2 new_seg(result.at(result.size() - 1), vertex);
+    const Kernel::Segment_2 newSeg(result.at(result.size() - 1), vertex);
     for (std::size_t i = result.size() - 1; i > 0; --i) {
         const Kernel::Segment_2 seg(result.at(i - 1), result.at(i));
 
-        double cos_theta =
+        double cosTheta =
             CGAL::to_double(CGAL::scalar_product(new_seg.to_vector(), seg.to_vector())) / //
             (sqrt(CGAL::to_double(new_seg.squared_length())) *
              sqrt(CGAL::to_double(seg.squared_length())));
 
-        if (cos_theta * cos_theta > _config.cosTheta * _config.cosTheta) {
+        if (cosTheta * cosTheta > _config.cosTheta * _config.cosTheta) {
             if (CGAL::squared_distance(new_seg, seg) <
                 _config.filtered_distance * _config.filtered_distance) {
                 const Kernel::Point_2 pa = seg.supporting_line().projection(new_seg.source());
@@ -195,7 +191,7 @@ auto SkeletonRadial::filterNewVertex(const std::vector<Kernel::Point_2>& result,
     return true;
 }
 
-auto SkeletonRadial::polylineLength(const std::vector<Kernel::Point_2>& result) const -> double {
+static auto SkeletonRadial::polylineLength(const std::vector<Kernel::Point_2>& result) -> double {
     double length = 0;
     for (size_t i = 1; i < result.size(); ++i) {
 
@@ -206,15 +202,15 @@ auto SkeletonRadial::polylineLength(const std::vector<Kernel::Point_2>& result) 
 
 auto SkeletonRadial::fillCorner(
     const basic::Arrangement_2Node& arr3,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) const -> void {
     std::vector<Kernel::Point_2> pointVect;
     for (const auto& line : _radial_list.lines()) {
         for (const auto& p : line.points()) {
             pointVect.emplace_back(p);
         }
     }
-    CGAL::Point_set_2<Kernel> pt_set(pointVect.begin(), pointVect.end());
-    double sep = _config.sep; //* M_SQRT1_2;
+    CGAL::Point_set_2<Kernel> ptSet(pointVect.begin(), pointVect.end());
+    double const sep = _config.sep; //* M_SQRT1_2;
 
     // I iterate through arr3 instead of faceCache, in order to be predicatable
     for (const basic::FaceNode& faceNode :
@@ -236,8 +232,8 @@ auto SkeletonRadial::fillCorner(
     }
 }
 
-auto SkeletonRadial::fillRadialList(std::vector<Kernel::Point_2>& result,
-                                    CGAL::Point_set_2<Kernel>& pt_set) -> void {
+static auto SkeletonRadial::fillRadialList(std::vector<Kernel::Point_2>& result,
+                                           CGAL::Point_set_2<Kernel>& pt_set) -> void {
     if (result.size() < 2 || polylineLength(result) < (_config.min_length_polyline)) {
         // do nothing
     } else {
@@ -250,12 +246,12 @@ auto SkeletonRadial::fillRadialList(std::vector<Kernel::Point_2>& result,
 auto SkeletonRadial::startTraverseCorner(
     const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
-    CGAL::Point_set_2<Kernel>& pt_set) -> std::vector<Kernel::Point_2> {
+    CGAL::Point_set_2<Kernel>& pt_set) const -> std::vector<Kernel::Point_2> {
 
     std::vector<Kernel::Point_2> result;
-    auto vertex_handle = pt_set.nearest_neighbor(test);
+    auto vertexHandle = pt_set.nearest_neighbor(test);
     CGAL::Comparison_result compare = CGAL::LARGER;
-    if (vertex_handle == nullptr) {
+    if (vertexHandle == nullptr) {
         compare = CGAL::LARGER;
     } else {
         compare = CGAL::compare_squared_distance(test, vertex_handle->point(), sep * sep);
@@ -279,10 +275,10 @@ auto SkeletonRadial::startTraverseCorner(
 auto SkeletonRadial::startTraverseEdge(
     const Kernel::Point_2& test, const double& sep, const basic::HalfedgeNode& hedge2,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
-    CGAL::Point_set_2<Kernel>& pt_set) -> void {
-    auto vertex_handle = pt_set.nearest_neighbor(test);
+    CGAL::Point_set_2<Kernel>& pt_set) const -> void {
+    auto vertexHandle = pt_set.nearest_neighbor(test);
     CGAL::Comparison_result compare = CGAL::LARGER;
-    if (vertex_handle == nullptr) {
+    if (vertexHandle == nullptr) {
         compare = CGAL::LARGER;
     } else {
         compare = CGAL::compare_squared_distance(test, vertex_handle->point(), sep * sep);
@@ -305,7 +301,7 @@ auto SkeletonRadial::startTraverseEdge(
 
 auto SkeletonRadial::iterateEdge(
     const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) const -> void {
     const Kernel::Point_2& origin = hedge.source()->point();
     const Kernel::Segment_2& curve = hedge.curve();
 
@@ -322,7 +318,7 @@ auto SkeletonRadial::iterateEdge(
 
 auto SkeletonRadial::iterateCorner(
     const basic::HalfedgeNode& hedge, const double& sep, CGAL::Point_set_2<Kernel>& pt_set,
-    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) -> void {
+    const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache) const -> void {
     const Kernel::Point_2& origin = hedge.source()->point();
     const Kernel::Segment_2& curve = hedge.curve();
 
@@ -353,9 +349,9 @@ auto SkeletonRadial::iterateCorner(
     }
 }
 
-void SkeletonRadial::cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2& line,
-                              const Kernel::Iso_rectangle_2 bbox,
-                              std::vector<Kernel::Segment_2>& result2) const {
+static void SkeletonRadial::cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2& line,
+                                     const Kernel::Iso_rectangle_2 bbox,
+                                     std::vector<Kernel::Segment_2>& result2) {
     auto obj = CGAL::intersection(line, bbox);
     if (obj) {
         const Kernel::Segment_2* s = std::get_if<Kernel::Segment_2>(&*obj);
@@ -367,7 +363,7 @@ void SkeletonRadial::cropLine(const Kernel::Vector_2 vect, const Kernel::Line_2&
     }
 }
 
-auto SkeletonRadial::polygonContour(
+static auto SkeletonRadial::polygonContour(
     const basic::Arrangement_2Node& arr3,
     const std::unordered_map<const basic::FaceNode*, FaceHelper>& faceCache,
     CGAL::Point_set_2<Kernel>& pt_set) -> void {
@@ -391,7 +387,7 @@ auto SkeletonRadial::polygonContour(
         }
     }
 }
-auto SkeletonRadial::radialList() const -> std::vector<Kernel::Segment_2> {
+static auto SkeletonRadial::radialList() -> std::vector<Kernel::Segment_2> {
 
     if (_radial_list.lines().empty()) {
         return {};
@@ -400,21 +396,21 @@ auto SkeletonRadial::radialList() const -> std::vector<Kernel::Segment_2> {
         .getSegments();
 }
 
-auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) const
+static auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>& poly_hole)
     -> CGAL::Point_set_2<Kernel> {
     typedef std::vector<Kernel::Segment_2> Segment_2Vect;
     typedef Segment_2Vect::const_iterator Iterator;
     typedef CGAL::Box_intersection_d::Box_with_handle_d<double, 2, Iterator> Box;
 
-    std::vector<Box> radial_boxes;
+    std::vector<Box> radialBoxes;
 
     std::vector<Kernel::Segment_2> list = radialList();
     for (auto i = list.begin(); i != list.end(); ++i) {
-        radial_boxes.push_back(Box(i->bbox(), i));
+        radialBoxes.push_back(Box(i->bbox(), i));
     }
-    CGAL::Point_set_2<Kernel> pt_set;
+    CGAL::Point_set_2<Kernel> ptSet;
 
-    std::vector<Kernel::Segment_2> poly_seg;
+    std::vector<Kernel::Segment_2> polySeg;
     const auto& outer = poly_hole.outer_boundary();
     for (const CGAL::Segment_2<Kernel> seg :
          RangeHelper::make(outer.edges_begin(), outer.edges_end())) {
@@ -427,9 +423,9 @@ auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>&
             poly_seg.emplace_back(seg);
         }
     }
-    std::vector<Box> poly_boxes;
+    std::vector<Box> polyBoxes;
     for (auto i = poly_seg.begin(); i != poly_seg.end(); ++i) {
-        poly_boxes.push_back(Box(i->bbox(), i));
+        polyBoxes.push_back(Box(i->bbox(), i));
     }
     CGAL::box_intersection_d(
         radial_boxes.begin(), radial_boxes.end(), poly_boxes.end(), poly_boxes.end(), //
@@ -442,15 +438,16 @@ auto SkeletonRadial::getPointIntersect(const CGAL::Polygon_with_holes_2<Kernel>&
             auto variant2 = CGAL::intersection(radial, poly);
             if (variant2) {
                 if (const Kernel::Point_2* p2 = std::get_if<Kernel::Point_2>(&*variant2)) {
-                    pt_set.insert(*p2);
+                    ptSet.insert(*p2);
                 }
             }
         });
     return pt_set;
 }
 
-auto SkeletonRadial::createRadial(const basic::Arrangement_2Node& arr3,
-                                  const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) -> void {
+static auto
+SkeletonRadial::createRadial(const basic::Arrangement_2Node& arr3,
+                             const CGAL::Polygon_with_holes_2<Kernel>& poly_hole) -> void {
 
     std::unordered_map<const basic::FaceNode*, FaceHelper> faceCache;
 
@@ -465,7 +462,7 @@ auto SkeletonRadial::createRadial(const basic::Arrangement_2Node& arr3,
             }
         }
     }
-    CGAL::Point_set_2<Kernel> pt_set = getPointIntersect(poly_hole);
+    CGAL::Point_set_2<Kernel> ptSet = getPointIntersect(poly_hole);
     polygonContour(arr3, faceCache, pt_set);
     fillCorner(arr3, faceCache);
 }

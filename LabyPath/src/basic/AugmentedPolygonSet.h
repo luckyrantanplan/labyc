@@ -55,13 +55,13 @@ class FaceNodeInfo : public CGAL::Gps_face_base {
             _polygonIds.emplace(polygonId);
         }
     }
-    std::unordered_set<int32_t> _polygonIds;
+    std::unordered_set<int32_t> _polygonIds{};
 
     void setData(const std::unordered_set<int32_t>& data) {
         _polygonIds = data;
     }
 
-    void set_data(const std::unordered_set<int32_t>& data) {
+    void setData(const std::unordered_set<int32_t>& data) {
         setData(data);
     }
 

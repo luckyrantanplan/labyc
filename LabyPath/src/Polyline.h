@@ -8,11 +8,11 @@
 #ifndef POLYLINE_H_
 #define POLYLINE_H_
 
-#include <cstdint>
 #include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <vector>
@@ -24,8 +24,7 @@ namespace laby {
 
 class Polyline {
 
-public:
-
+  public:
     Polyline() = default;
 
     Polyline(const int32_t polyId, const std::vector<Point_2>& pts) : _id{polyId}, _points{pts} {}
@@ -35,21 +34,37 @@ public:
     explicit Polyline(const CGAL::Polygon_2<Kernel>& poly)
         : _points{poly.container()}, _closed{true} {}
 
-    [[nodiscard]] auto empty() const -> bool { return _points.empty(); }
+    [[nodiscard]] auto empty() const -> bool {
+        return _points.empty();
+    }
 
-    [[nodiscard]] auto id() const -> int32_t { return _id; }
+    [[nodiscard]] auto id() const -> int32_t {
+        return _id;
+    }
 
-    auto setId(const int32_t polylineId) -> void { _id = polylineId; }
+    auto setId(const int32_t polylineId) -> void {
+        _id = polylineId;
+    }
 
-    [[nodiscard]] auto points() const -> const std::vector<Point_2>& { return _points; }
+    [[nodiscard]] auto points() const -> const std::vector<Point_2>& {
+        return _points;
+    }
 
-    auto points() -> std::vector<Point_2>& { return _points; }
+    auto points() -> std::vector<Point_2>& {
+        return _points;
+    }
 
-    [[nodiscard]] auto isClosed() const -> bool { return _closed; }
+    [[nodiscard]] auto isClosed() const -> bool {
+        return _closed;
+    }
 
-    auto setClosed(const bool isClosed) -> void { _closed = isClosed; }
+    auto setClosed(const bool isClosed) -> void {
+        _closed = isClosed;
+    }
 
-    [[nodiscard]] auto minPoint() const -> const Point_2& { return _minPoint; }
+    [[nodiscard]] auto minPoint() const -> const Point_2& {
+        return _minPoint;
+    }
 
     void reverse();
 
@@ -59,17 +74,15 @@ public:
 
     void computeMinLexi() {
         _minPoint = *std::min_element(_points.begin(), _points.end(),
-                                      [](const Point_2& leftPoint,
-                                         const Point_2& rightPoint) {
+                                      [](const Point_2& leftPoint, const Point_2& rightPoint) {
                                           return leftPoint < rightPoint;
                                       });
     }
 
-    [[nodiscard]] auto totalLength() const -> double {
-        double sqdist = 0;
+    [[nodiscard]] static auto totalLength() -> double {
+        double const sqdist = 0;
         for (std::size_t i = 1; i < _points.size(); ++i) {
-            sqdist +=
-                sqrt(CGAL::to_double((_points.at(i) - _points.at(i - 1)).squared_length()));
+            sqdist += sqrt(CGAL::to_double((_points.at(i) - _points.at(i - 1)).squared_length()));
         }
         return sqdist;
     }
@@ -78,11 +91,11 @@ public:
 
     void simplify(double distance);
 
-private:
+  private:
     int32_t _id = 0;
-    std::vector<Point_2> _points;
+    std::vector<Point_2> _points{};
     bool _closed = false;
-    Point_2 _minPoint;
+    Point_2 _minPoint{};
 };
 
 } /* namespace laby */

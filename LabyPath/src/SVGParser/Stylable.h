@@ -185,15 +185,15 @@ class InheritedStyle {
         return _markerEnd;
     }
 
-    void setMarkerStart(std::string markerValue) {
+    void setMarkerStart(const std::string& markerValue) {
         _markerStart = std::move(markerValue);
     }
 
-    void setMarkerMid(std::string markerValue) {
+    void setMarkerMid(const std::string& markerValue) {
         _markerMid = std::move(markerValue);
     }
 
-    void setMarkerEnd(std::string markerValue) {
+    void setMarkerEnd(const std::string& markerValue) {
         _markerEnd = std::move(markerValue);
     }
 
@@ -222,7 +222,7 @@ class InheritedStyle {
     LineCap _lineCap = LineCap::Butt;
     LineJoin _lineJoin = LineJoin::Miter;
     number_t _miterLimit = kDefaultMiterLimit;
-    std::vector<number_t> _strokeDashArray;
+    std::vector<number_t> _strokeDashArray{};
     number_t _strokeDashOffset = 0;
     std::optional<std::string> _markerStart;
     std::optional<std::string> _markerMid;
@@ -258,7 +258,7 @@ class NoninheritedStyle {
         return _maskFragment;
     }
 
-    void setMaskFragment(std::string maskFragmentValue) {
+    void setMaskFragment(const std::string& maskFragmentValue) {
         _maskFragment = std::move(maskFragmentValue);
     }
 
@@ -270,7 +270,7 @@ class NoninheritedStyle {
         return _clipPathFragment;
     }
 
-    void setClipPathFragment(std::string clipPathFragmentValue) {
+    void setClipPathFragment(const std::string& clipPathFragmentValue) {
         _clipPathFragment = std::move(clipPathFragmentValue);
     }
 
@@ -282,7 +282,7 @@ class NoninheritedStyle {
         return _filter;
     }
 
-    void setFilter(std::string filterValue) {
+    void setFilter(const std::string& filterValue) {
         _filter = std::move(filterValue);
     }
 

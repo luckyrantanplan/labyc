@@ -8,21 +8,18 @@
 #ifndef BASIC_RANDOMUNIDIST_H_
 #define BASIC_RANDOMUNIDIST_H_
 
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 #include <random>
-
 
 namespace laby::basic {
 
 class RandomUniDist {
 
-public:
-    RandomUniDist(const double min, const double max, uint32_t seed = std::random_device()()) :
-            _gen { seed }, //
-            _dis { min, max } {
-
-    }
+  public:
+    RandomUniDist(const double min, const double max, uint32_t seed = std::random_device()())
+        : _gen{seed}, //
+          _dis{min, max} {}
 
     auto get() -> double {
         return _dis(_gen);
@@ -34,17 +31,15 @@ public:
         return udis(_gen);
     }
 
-    template<typename CONTAINER>
-    void shuffle(CONTAINER& container) {
+    template <typename CONTAINER> void shuffle(CONTAINER& container) {
         std::shuffle(container.begin(), container.end(), _gen);
     }
 
-private:
+  private:
     std::mt19937 _gen;
-    std::uniform_real_distribution<> _dis;
+    std::uniform_real_distribution<> _dis{};
 };
 
 } // namespace laby::basic
-
 
 #endif /* BASIC_RANDOMUNIDIST_H_ */

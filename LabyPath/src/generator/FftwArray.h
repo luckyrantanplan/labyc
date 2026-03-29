@@ -116,7 +116,7 @@ class Array1D {
         return _data;
     }
 
-    auto operator()(uint32_t sampleIndex) -> ComplexRef {
+    auto operator()(uint32_t sampleIndex) const -> ComplexRef {
         assert(sampleIndex < _nx);
         return ComplexRef{elements()[sampleIndex]};
     }
@@ -209,7 +209,7 @@ class Array2D {
         return _data;
     }
 
-    auto operator()(uint32_t xIndex, uint32_t yIndex) -> ComplexRef {
+    auto operator()(uint32_t xIndex, uint32_t yIndex) const -> ComplexRef {
         assert(xIndex < _nx && yIndex < _ny);
         return ComplexRef{elements()[flatIndex(xIndex, yIndex)]};
     }

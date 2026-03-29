@@ -8,35 +8,35 @@
 #ifndef GEOMDATA_H_
 #define GEOMDATA_H_
 
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
+#include "basic/RangeHelper.h"
 #include <CGAL/Arr_curve_data_traits_2.h>
 #include <CGAL/Arr_extended_dcel.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_trapezoid_ric_point_location.h>
-#include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
 #include <CGAL/Arrangement_2.h>
+#include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
 #include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Iterator_transform.h>
 #include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Polygon_2.h>
+#include <algorithm>
 #include <complex>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "basic/RangeHelper.h"
 
 namespace laby {
 
 // handy for printing datas
 template <class T>
-auto operator<<(std::ostream& outputStream, const T& value)
-    -> decltype(value.print(outputStream), outputStream) {
+auto operator<<(std::ostream& outputStream, const T& value) -> decltype(value.print(outputStream),
+                                                                        outputStream) {
     value.print(outputStream);
     return outputStream;
 }
@@ -92,62 +92,90 @@ using Walk_pl = CGAL::Arr_trapezoid_ric_point_location<Arrangement_2>;
 using PolySegment = std::vector<Halfedge*>;
 
 class EdgeInfo {
-public:
-    enum Type : int8_t { UNDEFINED = 1, HORIZONTAL = 2, VERTICAL = 3, DIAGONAL = 4, SPECIAL = 5, CELL = 6 };
+  public:
+    enum Type : int8_t {
+        UNDEFINED = 1,
+        HORIZONTAL = 2,
+        VERTICAL = 3,
+        DIAGONAL = 4,
+        SPECIAL = 5,
+        CELL = 6
+    };
 
     struct Coordinate {
         std::size_t value;
     };
 
-    EdgeInfo(int32_t direction, Coordinate coordinate) : _direction{direction}, _coordinate{coordinate.value} {}
+    EdgeInfo(int32_t direction, Coordinate coordinate)
+        : _direction{direction}, _coordinate{coordinate.value} {}
 
     explicit EdgeInfo(Type edgeType) : _direction{edgeType} {}
 
     EdgeInfo() = default;
 
-    auto direction() const -> int32_t { return _direction; }
+    auto direction() const -> int32_t {
+        return _direction;
+    }
 
-    auto congestion() const -> int32_t { return static_cast<int32_t>(_path.size()); }
+    auto congestion() const -> int32_t {
+        return static_cast<int32_t>(_path.size());
+    }
 
-    auto hasNet(const int32_t serialId) const -> bool { return _path.count(serialId) != 0; }
+    auto hasNet(const int32_t serialId) const -> bool {
+        return _path.count(serialId) != 0;
+    }
 
-    void addPath(const int32_t serialId) {
+    static void addPath(const int32_t serialId) {
         auto insertResult = _path.emplace(serialId, 1);
         if (!insertResult.second) {
             ++insertResult.first->second;
         }
     }
 
-    void clearAllPath() { _path.clear(); }
+    void clearAllPath() {
+        _path.clear();
+    }
 
-    auto getVisit() const -> int32_t { return _visit; }
+    auto getVisit() const -> int32_t {
+        return _visit;
+    }
 
-    void setVisit(int32_t value = -1) const { _visit = value; }
+    void setVisit(int32_t value = -1) const {
+        _visit = value;
+    }
 
     auto operator==(const EdgeInfo& other) const -> bool {
         return _direction == other._direction;
     }
 
-    auto thickness() const -> double { return _thickness; }
+    auto thickness() const -> double {
+        return _thickness;
+    }
 
-    void setThickness(double thickness = 1) { _thickness = thickness; }
+    void setThickness(double thickness = 1) {
+        _thickness = thickness;
+    }
 
     auto getNextHalfedge(int32_t visited, const Vertex& vertex) const -> const Halfedge*;
 
-    void print(std::ostream& outputStream) const {
+    static void print(std::ostream& outputStream) {
         outputStream << " path ";
         for (const auto& [net_id, count] : _path) {
             outputStream << " " << net_id << "->" << count;
         }
     }
 
-    auto getNet() const -> int32_t { return _path.begin()->first; }
+    auto getNet() const -> int32_t {
+        return _path.begin()->first;
+    }
 
-    auto coordinate() const -> std::size_t { return _coordinate; }
+    auto coordinate() const -> std::size_t {
+        return _coordinate;
+    }
 
-private:
+  private:
     // TODO : replace unordered_map by just an int
-    std::unordered_map<int32_t, int32_t> _path;
+    std::unordered_map<int32_t, int32_t> _path{};
     double _thickness = 1;
     mutable int32_t _visit = -1;
     int32_t _direction = -1;
@@ -155,41 +183,59 @@ private:
 };
 
 class VertexInfo {
-public:
+  public:
     enum Type : int8_t { UNDEFINED = 0, STEINER = 1, PIN = 2 };
 
     VertexInfo() = default;
 
-    auto getType() const -> Type { return _type; }
+    auto getType() const -> Type {
+        return _type;
+    }
 
-    void setType(Type type) { _type = type; }
+    void setType(Type type) {
+        _type = type;
+    }
 
-    auto getVisit() const -> int32_t { return _visit; }
+    auto getVisit() const -> int32_t {
+        return _visit;
+    }
 
     void setVisit(int32_t visitValue, Halfedge* halfedge) {
         _visit = visitValue;
         _halfedge = halfedge;
     }
 
-    void setGlobalCoordinate(const std::complex<int32_t>& global) { _global = {global}; }
+    void setGlobalCoordinate(const std::complex<int32_t>& global) {
+        _global = {global};
+    }
 
-    auto getGlobalCoordinate() const -> const std::optional<std::complex<int32_t>>& { return _global; }
+    auto getGlobalCoordinate() const -> const std::optional<std::complex<int32_t>>& {
+        return _global;
+    }
 
-    auto getDetail() const -> const std::optional<std::complex<int32_t>>& { return _detail; }
+    auto getDetail() const -> const std::optional<std::complex<int32_t>>& {
+        return _detail;
+    }
 
-    void setDetail(const std::optional<std::complex<int32_t>>& detail) { _detail = detail; }
+    void setDetail(const std::optional<std::complex<int32_t>>& detail) {
+        _detail = detail;
+    }
 
     void print(std::ostream& outputStream) const {
         const std::complex<double> defaultCoord{-1., -1.};
-        outputStream << " global " << getGlobalCoordinate().value_or(defaultCoord)
-                     << " detail " << getDetail().value_or(defaultCoord);
+        outputStream << " global " << getGlobalCoordinate().value_or(defaultCoord) << " detail "
+                     << getDetail().value_or(defaultCoord);
     }
 
-    auto id() const -> int32_t { return _id; }
+    auto id() const -> int32_t {
+        return _id;
+    }
 
-    void setId(const int32_t vertexId) { _id = vertexId; }
+    void setId(const int32_t vertexId) {
+        _id = vertexId;
+    }
 
-private:
+  private:
     Halfedge* _halfedge = nullptr;
     mutable int32_t _visit = -1;
 
@@ -201,7 +247,7 @@ private:
 };
 
 class GeomHelper {
-public:
+  public:
     template <typename T>
     static void getNearest(const Vertex& handle, const Vertex*& nearestVertex,
                            RangeIterator<T> range) {
@@ -257,7 +303,7 @@ public:
 };
 
 class GlobalEdge {
-public:
+  public:
     struct Endpoints {
         std::complex<int32_t> start;
         std::complex<int32_t> end;
@@ -269,11 +315,15 @@ public:
         outputStream << " a " << _a << " b " << _b;
     }
 
-    [[nodiscard]] auto a() const -> const std::complex<int32_t>& { return _a; }
+    [[nodiscard]] auto a() const -> const std::complex<int32_t>& {
+        return _a;
+    }
 
-    [[nodiscard]] auto b() const -> const std::complex<int32_t>& { return _b; }
+    [[nodiscard]] auto b() const -> const std::complex<int32_t>& {
+        return _b;
+    }
 
-private:
+  private:
     std::complex<int32_t> _a;
     std::complex<int32_t> _b;
 };

@@ -44,7 +44,7 @@ class PenStroke {
 
       private:
         Polyline _anti;
-        std::vector<double> _sym;
+        std::vector<double> _sym{};
     };
 
     explicit PenStroke(proto::PenStroke config, NoiseConfigs noiseConfigs)
@@ -75,7 +75,7 @@ class PenStroke {
     static auto fillFace(const std::vector<Segment_info_2>& segmentList) -> Ribbon;
 
     static auto smoothstep(double edgeStart, double edgeEnd, double value) -> double;
-    auto smooth(const Point_2& point, const Point_2& origin) const -> double;
+    [[nodiscard]] auto smooth(const Point_2& point, const Point_2& origin) const -> double;
     auto getSegmentFromMedian(const std::unordered_set<std::size_t>& referenceMedianLineSet)
         -> std::vector<Segment_info_2>;
 
@@ -83,7 +83,7 @@ class PenStroke {
     generator::HqNoise2D _hqNoise2DSym;
     generator::HqNoise2D _hqNoise2DAnti;
 
-    std::vector<LineConstruct> _medrib;
+    std::vector<LineConstruct> _medrib{};
 };
 
 } /* namespace laby */

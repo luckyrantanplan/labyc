@@ -10,28 +10,17 @@
 #include "Anisotrop/Net.h"
 #include "Anisotrop/QueueCost.h"
 #include "Anisotrop/QueueElement.h"
-#include "GeomData.h"
+#include "Anisotrop/SpatialIndex.h"
 #include "basic/EasyProfilerCompat.h"
-#include <CGAL/Arr_extended_dcel.h>
-#include <CGAL/Point_set_2.h>
-#include <CGAL/Union_find.h>
 #include <algorithm>
-#include <boost/heap/pairing_heap.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
-#include "../SegmentPS.h"
 #include "../basic/LinearGradient.h"
-#include "../basic/PairInteger.h"
-#include "../basic/PolygonTools.h"
-#include "basic/RangeHelper.h"
 #include "protoc/AllConfig.pb.h"
 
 namespace laby::aniso {
@@ -133,7 +122,8 @@ void initializeMazeUnionFind(std::vector<PolyConvex>& polyConvexList,
 
 void buildMazePointConnectivity(
     const std::vector<PolyConvex>& polyConvexList, PointSet& pointSet,
-    std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t>>& vertexPolyConvexMap,
+    std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t> /*unused*/>&
+        vertexPolyConvexMap,
     std::vector<const PointSet::Vertex*>& orderedVertices, PointConnectivityStats& stats) {
     for (const PolyConvex& polyConvex : polyConvexList) {
         if (!polyConvex.hasPoints()) {
@@ -164,7 +154,8 @@ void buildMazePointConnectivity(
 
 void connectSharedPointPolyConvexes(
     std::vector<PolyConvex>& polyConvexList, CGAL::Union_find<std::size_t>& unionFind,
-    std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t>>& vertexPolyConvexMap,
+    std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t> /*unused*/>&
+        vertexPolyConvexMap,
     const std::vector<const PointSet::Vertex*>& orderedVertices) {
     for (const PointSet::Vertex* vertex : orderedVertices) {
         std::vector<std::size_t>& connectedPolyConvexes = vertexPolyConvexMap.at(vertex);
@@ -207,9 +198,9 @@ Routing::Routing(Arrangement_2& arr, proto::RoutingCost config)
     }
 }
 
-void Routing::connectTwoPinPath(const std::vector<aniso::Net>& nets,
-                                const SpatialIndex& spatialIndex,
-                                std::vector<PolyConvex>& convexList) {
+static void Routing::connectTwoPinPath(const std::vector<aniso::Net>& nets,
+                                       const SpatialIndex& spatialIndex,
+                                       std::vector<PolyConvex>& convexList) {
     std::unordered_map<const Vertex*, std::vector<std::size_t>> mapVertexPolyConvex;
     std::vector<const Vertex*> orderedList; // predictable order
 
@@ -255,7 +246,7 @@ void Routing::connectTwoPinPath(const std::vector<aniso::Net>& nets,
     }
 }
 
-void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
+static void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
 
     // init structures
 
@@ -273,7 +264,7 @@ void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
     // with a map Vertex* -> list of PolyConvex
     std::unordered_map<const PointSet::Vertex*, std::vector<std::size_t>> map;
     std::vector<const PointSet::Vertex*> orderedVertex;
-    PointConnectivityStats connectivityStats;
+    PointConnectivityStats const connectivityStats;
     buildMazePointConnectivity(polyConvexList, pointSet, map, orderedVertex, connectivityStats);
     std::cout << "statPoin " << connectivityStats.pointCount << " statNoPoint "
               << connectivityStats.noPointCount << '\n';
@@ -400,11 +391,11 @@ void Routing::createMaze() {
 }
 
 void Routing::commitNewPath(const int32_t& targetId, Net& net) {
-    Pin& pin1 = net.source();
+    Pin const& pin1 = net.source();
     Pin& pin2 = net.target();
-    const std::size_t begin = _convexList.size();
+    const std::size_t begin = 0 = _convexList.size();
 
-    for (int32_t id = targetId; id != -1;
+    for (int32_t const id = targetId; id != -1;
          id = _edgesQList.at(static_cast<std::size_t>(id)).parent()) {
 
         PolyConvex& polyConvex = _edgesQList.at(static_cast<std::size_t>(id)).polyConvex();
@@ -441,7 +432,7 @@ auto Routing::findRoute(Net& net) -> bool {
 
     QueueElement& sourceQueueElement = _edgesQList.at(static_cast<std::size_t>(sourceId));
     const int32_t& targetId = pin2.vertex().data().id();
-    basic::LinearGradient linearGradient = net.gradient();
+    basic::LinearGradient const linearGradient = net.gradient();
 
     sourceQueueElement.pushIn(queue);
     sourceQueueElement.cost().distance() = 0;
@@ -450,7 +441,7 @@ auto Routing::findRoute(Net& net) -> bool {
 
     std::unordered_set<int32_t> const targetNets = collectCongestedNetIds(pin2.vertex());
 
-    int32_t priorityNumber = 0;
+    int32_t const priorityNumber = 0;
     bool solved = false;
     while (!queue.empty()) {
         // Safe: the pairing heap stores QueueElement* pointers into _edgesQList,

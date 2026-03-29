@@ -39,7 +39,7 @@ class Cell {
         return _randomVertices;
     }
 
-    void createRandomPin(const CGAL::Bbox_2& bbox, std::size_t maxPin);
+    static void createRandomPin(const CGAL::Bbox_2& bbox, std::size_t maxPin);
     void createRandomPinOnExistingVerticesOnly();
     void startNetWithRandomPin();
 
@@ -55,7 +55,7 @@ class Cell {
         return _nets;
     }
 
-    auto selectRandomVertex() -> std::vector<Vertex*>::iterator {
+    static auto selectRandomVertex() -> std::vector<Vertex*>::iterator {
         auto iterator = _randomVertices.begin();
         std::advance(iterator, _random.select(0, _randomVertices.size()));
         return iterator;
@@ -83,15 +83,15 @@ class Cell {
     }
 
   private:
-    void createOutlinedNet(std::size_t begin, double thickness);
+    static void createOutlinedNet(std::size_t begin, double thickness);
     proto::Cell _config;
     CGAL::Bbox_2 _bbox;
     Arrangement_2* _arr = nullptr;
 
-    std::vector<Vertex*> _randomVertices;
-    std::vector<Vertex*> _listVertex;
+    std::vector<Vertex*> _randomVertices{};
+    std::vector<Vertex*> _listVertex{};
 
-    std::vector<aniso::Net> _nets;
+    std::vector<aniso::Net> _nets{};
     basic::RandomUniDist _random;
 };
 

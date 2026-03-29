@@ -38,11 +38,11 @@ class Intersection {
         return (_first == other._first && _second == other._second);
     }
 
-    auto first() const -> std::size_t {
+    [[nodiscard]] auto first() const -> std::size_t {
         return _first;
     }
 
-    auto second() const -> std::size_t {
+    [[nodiscard]] auto second() const -> std::size_t {
         return _second;
     }
 
@@ -63,8 +63,8 @@ class Intersection {
   private:
     std::size_t _first;
     std::size_t _second;
-    mutable Handle _handle;
-    mutable Handle _familyHandle;
+    mutable Handle _handle{};
+    mutable Handle _familyHandle{};
 };
 } /* namespace laby */
 
@@ -73,7 +73,7 @@ namespace std {
 template <> struct hash<laby::Intersection> {
     auto operator()(const laby::Intersection& intersection) const -> std::size_t {
         // Start with a hash value of 0    .
-        std::size_t seed = 0;
+        std::size_t const seed = 0;
 
         // Compute individual hash values for first,
         // second and third and combine them using XOR
@@ -114,9 +114,9 @@ class Family {
                                 CGAL::Union_find<std::size_t>& unionFind);
 
   private:
-    std::vector<Intersection> _intersections;
-    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
-    mutable CGAL::Union_find<std::size_t>::handle _handle;
+    std::vector<Intersection> _intersections{};
+    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches{};
+    mutable CGAL::Union_find<std::size_t>::handle _handle{};
 };
 
 } /* namespace laby */

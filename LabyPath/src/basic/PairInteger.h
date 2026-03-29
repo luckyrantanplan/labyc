@@ -12,13 +12,12 @@
 #include <cstddef>
 #include <unordered_map>
 
-
 namespace laby::basic {
 
 // same as Intersection Class in Family.h
 class PairInteger {
 
-public:
+  public:
     explicit PairInteger(const std::size_t first = 0, const std::size_t second = 0) {
         if (first < second) {
             _first = first;
@@ -27,7 +26,6 @@ public:
             _second = first;
             _first = second;
         }
-
     }
 
     auto operator==(const PairInteger& other) const -> bool {
@@ -50,21 +48,18 @@ public:
         return _second;
     }
 
-private:
+  private:
     std::size_t _first;
     std::size_t _second;
-
 };
 } // namespace laby::basic
 
-
 namespace std {
 
-template<>
-struct hash<laby::basic::PairInteger> {
+template <> struct hash<laby::basic::PairInteger> {
     auto operator()(const laby::basic::PairInteger& c) const -> std::size_t {
         // Start with a hash value of 0    .
-        std::size_t seed = 0;
+        std::size_t const seed = 0;
 
         // Compute individual hash values for first,
         // second and third and combine them using XOR
@@ -74,7 +69,6 @@ struct hash<laby::basic::PairInteger> {
 
         // Return the result.
         return seed;
-
     }
 };
 

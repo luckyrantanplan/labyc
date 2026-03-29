@@ -57,14 +57,14 @@ namespace laby {
 
 struct Node {
     /// Nodes from nearby non-overlapping families (soft alternating-state constraint).
-    std::unordered_set<Node*> _adjacents;
+    std::unordered_set<Node*> _adjacents{};
 
     /// Nodes sharing the same overlap region but from a different patch
     /// (hard different-state constraint for graph coloring).
-    std::vector<Node*> _opposite;
+    std::vector<Node*> _opposite{};
 
     /// Indices into the PolyConvex vector that this node is responsible for.
-    std::vector<std::size_t> _cover;
+    std::vector<std::size_t> _cover{};
 
     /// Rendering state assigned by graph coloring.  -1 = unassigned.
     int32_t _state = -1;
@@ -77,7 +77,7 @@ struct Node {
     mutable int32_t _visited = 0;
 
     /// Geometric union of covered polygons (used for arrangement overlay).
-    basic::Polygon_set_2Node _setPolygons;
+    basic::Polygon_set_2Node _setPolygons{};
 
     explicit Node(const int32_t nodeId) : _nodeId{nodeId} {}
 
@@ -135,7 +135,7 @@ class StateSelect {
         }
     }
 
-    void markOccupied(int32_t state_index) {
+    static void markOccupied(int32_t state_index) {
         if (state_index >= 0 && state_index < static_cast<int32_t>(_occupied_states.size())) {
             _occupied_states.at(static_cast<std::size_t>(state_index)) = true;
         }
@@ -160,7 +160,7 @@ class StateSelect {
 
   private:
     std::size_t _current_index = 0;
-    std::vector<bool> _occupied_states;
+    std::vector<bool> _occupied_states{};
 };
 
 /**

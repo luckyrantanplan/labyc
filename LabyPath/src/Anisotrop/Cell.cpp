@@ -7,36 +7,27 @@
 
 #include "Cell.h"
 
-#include <CGAL/Vector_2.h>
-#include <CGAL/number_utils.h>
 #include <CGAL/Kernel/global_functions_2.h>
+#include <CGAL/Vector_2.h>
 #include <CGAL/enum.h>
+#include <CGAL/number_utils.h>
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <complex>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <utility>
 
-#include <CGAL/Arr_extended_dcel.h>
-#include <CGAL/Arrangement_2/Arrangement_2_iterators.h>
-#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include <CGAL/Arrangement_on_surface_2.h>
 #include <CGAL/Bbox_2.h>
-#include <optional>
-#include <vector>
 
 #include "../basic/NumericRange.h"
-#include "../basic/RandomUniDist.h"
 #include "../generator/PoissonGenerator.h"
 
-#include "../basic/RangeHelper.h"
-#include "protoc/AllConfig.pb.h"
 #include "GeomData.h"
-#include "Ribbon.h"
 #include "Polyline.h"
-#include "Anisotrop/Net.h"
+#include "Ribbon.h"
+#include "protoc/AllConfig.pb.h"
 
 namespace laby::aniso {
 
@@ -82,8 +73,7 @@ auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
     const double subdivisionResolution = resolution();
     for (std::size_t i = 1; i < polyline.points().size(); ++i) {
 
-        CGAL::Vector_2<Kernel> const vec =
-            polyline.points().at(i) - polyline.points().at(i - 1);
+        CGAL::Vector_2<Kernel> const vec = polyline.points().at(i) - polyline.points().at(i - 1);
 
         double const length = std::sqrt(CGAL::to_double(vec.squared_length()));
         if (length > 0) {
@@ -99,8 +89,7 @@ auto Cell::subdivide(const Polyline& polyline) const -> std::vector<Point_2> {
             }
             if (i + 1 == polyline.points().size()) {
 
-                if (polyline.isClosed() or
-                    polyline.points().front() == polyline.points().back()) {
+                if (polyline.isClosed() or polyline.points().front() == polyline.points().back()) {
                 } else {
                     result.emplace_back(polyline.points().at(i));
                 }
@@ -156,7 +145,7 @@ void Cell::startNetWithRandomPin() {
     _random.shuffle(_listVertex);
 }
 
-void Cell::selectNearestPoint(const Point_2& point2) {
+static void Cell::selectNearestPoint(const Point_2& point2) {
 
     // TODO change insert_point by locate
 
@@ -176,7 +165,7 @@ void Cell::selectNearestPoint(const Point_2& point2) {
     }
 }
 
-void Cell::insertPointAndConnect(const Point_2& point2) {
+static void Cell::insertPointAndConnect(const Point_2& point2) {
     Vertex_handle const handle = CGAL::insert_point(*_arr, point2);
     handle->data().setType(VertexInfo::PIN);
     _randomVertices.push_back(handle.ptr());
@@ -213,7 +202,7 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
         allvertices.emplace_back(bbox.xmin(), yCoord);
     }
 
-    std::size_t const begin = _listVertex.size();
+    std::size_t const begin = 0 = _listVertex.size();
     for (std::size_t i = 0; i < allvertices.size(); ++i) {
         if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()),
                                   static_cast<int32_t>(config.quantity))
@@ -233,7 +222,7 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
     for (std::size_t i = begin; i < _listVertex.size(); ++i) {
         Vertex* vertex = _listVertex.at(i);
         std::complex<double> const vertexPoint{CGAL::to_double(vertex->point().x()),
-                                         CGAL::to_double(vertex->point().y())};
+                                               CGAL::to_double(vertex->point().y())};
 
         std::complex<double> vect = vertexPoint - center;
         vect *= config.rayLength / std::abs(vect);

@@ -7,23 +7,11 @@
 
 #include "SkeletonGrid.h"
 
-#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include <CGAL/Polygon_with_holes_2.h>
 #include <cstdint>
 #include <iostream>
 #include <utility>
-#include <vector>
 
-#include "GeomData.h"
-#include "Rendering/GraphicRendering.h"
-#include "Ribbon.h"
 #include "SVGParser/Loader.h"
-#include "SVGShapeToGrid.h"
-#include "SkeletonOffset.h"
-#include "SkeletonRadial.h"
-#include "VoronoiMedialSkeleton.h"
-#include "basic/AugmentedPolygonSet.h"
-#include "basic/Color.h"
 #include "protoc/AllConfig.pb.h"
 
 namespace laby {
@@ -42,7 +30,7 @@ constexpr double kMinimumPolylineDivisor = 2.0;
 
 SkeletonGrid::SkeletonGrid(proto::SkeletonGrid config) : _config(std::move(config)) {
 
-    svgp::Loader load(_config.inputfile());
+    svgp::Loader const load(_config.inputfile());
     for (Ribbon& rib : load.ribList()) {
         rib.simplify(_config.simplificationoforiginalsvg());
     }
@@ -54,7 +42,7 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     std::vector<Ribbon> result;
     result.reserve(load.ribList().size());
 
-    int32_t ribNumber = 0;
+    int32_t const ribNumber = 0;
 
     for (const Ribbon& rib : load.ribList()) {
         std::vector<CGAL::Polygon_with_holes_2<Kernel>> const polygons =
@@ -110,8 +98,9 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
                                      _config.min_sep() / kOutputThicknessDivisor, result);
 }
 
-auto SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
-                               const double& distance) -> void {
+static auto
+SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
+                          const double& distance) -> void {
     _circularList.clear();
     _radialList.clear();
     std::vector<Kernel::Segment_2> const result2;

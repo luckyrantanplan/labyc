@@ -43,7 +43,6 @@
 
 #include "../basic/RandomUniDist.h"
 
-
 namespace laby::generator {
 
 struct SPoint {
@@ -81,15 +80,15 @@ struct SGrid {
     SGrid(int W, int H, double CellSize) : _m_W(W), _m_H(H), _m_CellSize(CellSize) {
         _m_Grid.resize(static_cast<std::size_t>(_m_W));
 
-        for (auto & i : _m_Grid) {
+        for (auto& i : _m_Grid) {
             i.resize(static_cast<std::size_t>(_m_H));
         }
     }
-    void insert(const SPoint& P) {
+    void insert(const SPoint& P) const {
         SGridPoint const g = imageToGrid(P, _m_CellSize);
         _m_Grid[static_cast<std::size_t>(g.x)][static_cast<std::size_t>(g.y)] = P;
     }
-    auto isInNeighbourhood(const SPoint& Point, double sqMinDist, double CellSize) -> bool {
+    auto isInNeighbourhood(const SPoint& Point, double sqMinDist, double CellSize) const -> bool {
         SGridPoint const g = imageToGrid(Point, CellSize);
 
         // number of adjacent cells to look for neighbor points
@@ -119,13 +118,13 @@ struct SGrid {
     int _m_H;
     double _m_CellSize;
 
-    std::vector<std::vector<SPoint>> _m_Grid;
+    std::vector<std::vector<SPoint>> _m_Grid{};
 };
 
 class PoissonPoints {
   public:
     static auto generateRandomPointAround(const SPoint& P, const double sqDist,
-                                            laby::basic::RandomUniDist& Generator) -> SPoint {
+                                          laby::basic::RandomUniDist& Generator) -> SPoint {
         // start with non-uniform distribution
 
         double const sqR1 = (3 * sqDist) * Generator.get() + sqDist;
@@ -151,8 +150,8 @@ class PoissonPoints {
      MinDist - minimal distance estimator, use negative value for default
      **/
 
-    static auto generate(size_t NumPoints, int NewPointsCount = 30,
-                                        bool Circle = true, double MinDist = -1.0) -> std::vector<SPoint> {
+    static auto generate(size_t NumPoints, int NewPointsCount = 30, bool Circle = true,
+                         double MinDist = -1.0) -> std::vector<SPoint> {
 
         laby::basic::RandomUniDist randomDouble(0.0, 1.0, 2);
 
@@ -224,8 +223,8 @@ class PoissonPoints {
         return samplePoints;
     }
 
-    static auto generateRectangle(const CGAL::Bbox_2& bbox,
-                                                               const size_t number_of_point) -> std::vector<std::complex<double>> {
+    static auto generateRectangle(const CGAL::Bbox_2& bbox, const size_t number_of_point)
+        -> std::vector<std::complex<double>> {
 
         double const w = bbox.xmax() - bbox.xmin();
         double const h = bbox.ymax() - bbox.ymin();
@@ -247,4 +246,3 @@ class PoissonPoints {
     }
 };
 } // namespace laby::generator
-

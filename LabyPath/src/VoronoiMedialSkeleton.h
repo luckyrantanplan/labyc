@@ -68,8 +68,8 @@ struct CroppedVoronoiFromDelaunay {
         auto getTangent(const Point_2& p) -> Kernel_sqrt::Line_2;
     };
 
-    std::vector<Segment_2> m_cropped_vd;
-    Iso_rectangle_2 m_bbox;
+    std::vector<Segment_2> m_cropped_vd{};
+    Iso_rectangle_2 m_bbox{};
 
     explicit CroppedVoronoiFromDelaunay(Iso_rectangle_2 i_bbox)
         : m_bbox{std::move(std::move(i_bbox))} {}
@@ -153,7 +153,7 @@ class VoronoiMedialSkeleton {
     static auto extendsAntennaArr(const Arrangement_2& arr) -> Arrangement_2;
     static auto removeAntennaArr(const Arrangement_2& arr) -> Arrangement_2;
 
-    std::vector<Kernel::Segment_2> _result;
+    std::vector<Kernel::Segment_2> _result{};
 };
 
 } /* namespace laby */

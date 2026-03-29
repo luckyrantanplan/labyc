@@ -108,7 +108,7 @@ class Ribbon {
     }
 
   private:
-    std::vector<Polyline> _lines;
+    std::vector<Polyline> _lines{};
     int32_t _fillColor = 0;
     int32_t _strokeColor = 0;
     double _strokeWidth = 1.;

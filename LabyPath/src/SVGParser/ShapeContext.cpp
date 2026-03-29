@@ -7,14 +7,16 @@
 
 #include "ShapeContext.h"
 
-#include <CGAL/Point_2.h>
 #include <CGAL/number_utils.h>
 #include <iostream>
 #include <svgpp/definitions.hpp>
+#include <svgpp/policy/marker_events.hpp>
 #include <variant>
 
-#include "../GeomData.h"
 #include "../agg/agg_curves.h"
+#include "Ribbon.h"
+#include "SVGParser/Context.h"
+#include "SVGParser/Stylable.h"
 
 namespace laby::svgp {
 

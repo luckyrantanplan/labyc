@@ -121,7 +121,7 @@ class Curve3 {
     double _distanceToleranceSquare = 0.0;
     double _angleTolerance = 0.0;
 
-    std::vector<Point> _points;
+    std::vector<Point> _points{};
 };
 
 //-------------------------------------------------------------curve4_points
@@ -323,7 +323,7 @@ class Curve4 {
     double _distanceToleranceSquare = 0.0;
     double _angleTolerance = 0.0;
     double _cuspLimit = 0.0;
-    std::vector<Point> _points;
+    std::vector<Point> _points{};
 };
 
 //-----------------------------------------------------------------curve4
