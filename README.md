@@ -144,7 +144,7 @@ graph TD
 | **Boost** | 1.74+ | Multi-array, geometry utilities |
 | **Protobuf** | 34.1+ | Configuration message serialization |
 | **FFTW3** | 3.3+ | FFT for noise generation (optional) |
-| **SVG++** | 1.3+ | SVG parsing library |
+| **SVG++** | 1.3.1 | SVG parsing library, fetched automatically during CMake configure |
 | **MS GSL** | 4.0+ | Microsoft Guidelines Support Library |
 | **GTest** | 1.14+ | Unit testing framework |
 | **CMake** | 3.20+ | Build system |
@@ -161,9 +161,11 @@ sudo apt-get install -y \
     libgmp-dev libmpfr-dev \
     libboost-all-dev \
     libfftw3-dev \
-    libsvgpp-dev libmsgsl-dev \
+    libmsgsl-dev \
     libgtest-dev
 ```
+
+The build fetches pinned SVG++ 1.3.1 sources during CMake configure, including the bundled `rapidxml_ns` headers, so no separate `libsvgpp-dev` package is required.
 
 ### Install CGAL 6.1.1 locally
 

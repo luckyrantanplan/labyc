@@ -34,14 +34,21 @@ auto MessageIO::parseMessage(const std::vector<std::string_view>& arguments) -> 
     const std::string filename(arguments.at(1));
     std::cout << filename << '\n';
 
-    std::fstream inputFileStream;
-    inputFileStream.open(filename, std::fstream::in);
+    std::ifstream inputFileStream(filename);
+    if (!inputFileStream.is_open()) {
+        std::cerr << "failed to open config file: " << filename << '\n';
+        return 1;
+    }
 
     std::stringstream strStream;
     strStream << inputFileStream.rdbuf(); // read the file
 
     proto::AllConfig message;
-    google::protobuf::util::JsonStringToMessage(strStream.str(), &message);
+    const auto parseStatus = google::protobuf::util::JsonStringToMessage(strStream.str(), &message);
+    if (!parseStatus.ok()) {
+        std::cerr << "failed to parse config JSON: " << parseStatus.ToString() << '\n';
+        return 1;
+    }
 
     if (message.has_skeletongrid()) {
         std::cout << "create Skeleton grid" << '\n';

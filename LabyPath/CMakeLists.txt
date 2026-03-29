@@ -61,6 +61,28 @@ FetchContent_Declare(GSL
     GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(GSL)
+
+# SVG++ is header-only. Pin the upstream 1.3.1 release so we don't depend on
+# the distro's older libsvgpp-dev package and its deprecated Boost Phoenix shim.
+FetchContent_Declare(svgpp
+    URL "https://github.com/svgpp/svgpp/archive/refs/tags/v1.3.1.tar.gz"
+    URL_HASH "SHA256=be8a89df72d01cf062cc9815dd64c9576b4d20910d6d7aee7f0ea26484dc5e76"
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_GetProperties(svgpp)
+if(NOT svgpp_POPULATED)
+    FetchContent_Populate(svgpp)
+endif()
+
+set(LABYPATH_SVGPP_INCLUDE_DIR "${svgpp_SOURCE_DIR}/include")
+set(LABYPATH_RAPIDXML_NS_INCLUDE_DIR "${svgpp_SOURCE_DIR}/third_party")
+if(NOT EXISTS "${LABYPATH_SVGPP_INCLUDE_DIR}/svgpp/svgpp.hpp")
+    message(FATAL_ERROR "Pinned SVG++ archive is missing include/svgpp/svgpp.hpp")
+endif()
+if(NOT EXISTS "${LABYPATH_RAPIDXML_NS_INCLUDE_DIR}/rapidxml_ns/rapidxml_ns.hpp")
+    message(FATAL_ERROR "Pinned SVG++ archive is missing third_party/rapidxml_ns/rapidxml_ns.hpp")
+endif()
+
 # Mark CGAL and Boost as SYSTEM so their headers don't trigger our strict
 # warnings during template instantiation (GCC may inline system-header code
 # into project translation units). Requires CMake ≥ 3.25.
@@ -99,12 +121,10 @@ set(LABYPATH_SOURCES
     src/GridIndex.cpp
     src/MessageIO.cpp
     src/OrientedRibbon.cpp
-    src/PolyConvex.cpp
-    src/PolyVertexList.cpp
+    src/PolyConvex.cpp 
     src/Polyline.cpp
     src/Ribbon.cpp
-    src/SVGShapeToGrid.cpp
-    src/SegmentPS.cpp
+    src/SVGShapeToGrid.cpp 
     src/SkeletonGrid.cpp
     src/SkeletonOffset.cpp
     src/SkeletonRadial.cpp
@@ -128,34 +148,22 @@ set(LABYPATH_SOURCES
     src/Rendering/GraphicRendering.cpp
     src/Rendering/PenStroke.cpp
 
-    # SVGParser
-    src/SVGParser/Common.cpp
+    # SVGParser 
     src/SVGParser/Context.cpp
     src/SVGParser/Loader.cpp
-    src/SVGParser/ShapeContext.cpp
-    src/SVGParser/Stylable.cpp
+    src/SVGParser/ShapeContext.cpp 
     src/SVGParser/UseContext.cpp
 
-    # SVGWriter
-    src/SVGWriter/DocumentSVG.cpp
-
-    # basic
-    src/basic/AugmentedPolygonSet.cpp
-    src/basic/CircleIntersection.cpp
-    src/basic/Color.cpp
+    # basic 
+    src/basic/CircleIntersection.cpp 
     src/basic/LinearGradient.cpp
-    src/basic/NumericRange.cpp
-    src/basic/PairInteger.cpp
+    src/basic/NumericRange.cpp 
     src/basic/PolygonTools.cpp
-    src/basic/ProfileActivate.cpp
-    src/basic/RandomInteger.cpp
-    src/basic/RandomUniDist.cpp
-    src/basic/RangeHelper.cpp
+    src/basic/ProfileActivate.cpp   
     src/basic/SimplifyLines.cpp
 
     # flatteningOverlap
-    src/flatteningOverlap/Family.cpp
-    src/flatteningOverlap/Node.cpp
+    src/flatteningOverlap/Family.cpp 
     src/flatteningOverlap/NodeRendering.cpp
     src/flatteningOverlap/PathRendering.cpp
 
@@ -178,6 +186,9 @@ add_library(labypath_lib STATIC ${LABYPATH_SOURCES})
 target_compile_options(labypath_lib PRIVATE ${LABYPATH_WARNING_FLAGS})
 
 target_include_directories(labypath_lib
+    SYSTEM PUBLIC
+        ${LABYPATH_SVGPP_INCLUDE_DIR}
+        ${LABYPATH_RAPIDXML_NS_INCLUDE_DIR}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
@@ -208,28 +219,8 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-unused-parameter"
 )
 
-# Suppress warnings in third-party code (agg)
-set_source_files_properties(
-    src/agg/agg_arc.cpp
-    src/agg/agg_curve.cpp
-    PROPERTIES COMPILE_FLAGS "-Wno-conversion -Wno-sign-conversion -Wno-shadow -Wno-float-conversion -Wno-double-promotion"
-)
 
-# svgpp still pulls Boost's deprecated Spirit Phoenix compatibility header on
-# modern Boost releases. Limit the compatibility define to the SVG parsing
-# translation units so project code continues to surface its own deprecations.
-set_source_files_properties(
-    src/SVGShapeToGrid.cpp
-    src/SVGParser/Common.cpp
-    src/SVGParser/Context.cpp
-    src/SVGParser/Loader.cpp
-    src/SVGParser/ShapeContext.cpp
-    src/SVGParser/Stylable.cpp
-    src/SVGParser/UseContext.cpp
-    PROPERTIES COMPILE_DEFINITIONS "BOOST_ALLOW_DEPRECATED_HEADERS"
-)
-
-# Suppress -Wmaybe-uninitialized false positives from svgpp headers (system library)
+# Suppress -Wmaybe-uninitialized false positives from svgpp headers.
 # GCC inlines svgpp::arc_to_bezier iterator code and reports uninitialized members
 # that are actually set in the iterator's advance() method.
 set_source_files_properties(

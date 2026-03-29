@@ -7,9 +7,11 @@
 
 #include "ConfigAll.h"
 #include "protoc/AllConfig.pb.h"
+#include <fstream>
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
-#include <fstream>
+#include <iostream>
+#include <sstream>
 
 namespace laby {
 
@@ -32,12 +34,11 @@ void ConfigAll::decodeFenetre(const proto::Fenetre& message) {
         break;
     }
     default: {
-        //do nothing
+        // do nothing
         break;
     }
     }
     set(render_config.fenetre.width_point, message.width_point());
-
 }
 
 void ConfigAll::decodePenStroke(const proto::PenStroke& message) {
@@ -98,19 +99,30 @@ void ConfigAll::printTest() {
     render_config.mutable_penconfig()->set_symmetric_seed(8.);
 
     std::string s;
-    google::protobuf::util::MessageToJsonString(message, &s);
+    const auto printStatus = google::protobuf::util::MessageToJsonString(message, &s);
+    if (!printStatus.ok()) {
+        std::cerr << "failed to encode config JSON: " << printStatus.ToString() << std::endl;
+        return;
+    }
     std::cout << s << std::endl;
 }
 
 void ConfigAll::decodeProtobuf(const std::string& configFilename) {
-    std::fstream fs;
-    fs.open(configFilename, std::fstream::in);
+    std::ifstream fs(configFilename);
+    if (!fs.is_open()) {
+        std::cerr << "failed to open config file: " << configFilename << std::endl;
+        return;
+    }
 
     std::stringstream strStream;
-    strStream << fs.rdbuf(); //read the file
+    strStream << fs.rdbuf(); // read the file
 
     proto::AllConfig message;
-    google::protobuf::util::JsonStringToMessage(strStream.str(), &message);
+    const auto parseStatus = google::protobuf::util::JsonStringToMessage(strStream.str(), &message);
+    if (!parseStatus.ok()) {
+        std::cerr << "failed to parse config JSON: " << parseStatus.ToString() << std::endl;
+        return;
+    }
 
     if (message.has_ggraphicrendering()) {
         const proto::GraphicRendering& rendering = message.ggraphicrendering();
@@ -119,7 +131,6 @@ void ConfigAll::decodeProtobuf(const std::string& configFilename) {
 
     set(simplificationOfOriginalSVG, message.simplificationoforiginalsvg());
     set(filename, message.filename());
-
 }
 
 } /* namespace laby */

@@ -23,8 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libboost-all-dev \
     # FFTW3
     libfftw3-dev \
-    # SVG++ and rapidxml_ns
-    libsvgpp-dev \
     # Microsoft GSL
     libmsgsl-dev \
     # Google Test
