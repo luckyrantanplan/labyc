@@ -67,23 +67,23 @@ TEST(IntersectionTest, UnorderedSetLookup) {
 
 TEST(NodeTest, ConstructorSetsId) {
     Node n(42);
-    EXPECT_EQ(n._nodeId, 42);
-    EXPECT_EQ(n._state, -1);
-    EXPECT_EQ(n._visited, 0);
+    EXPECT_EQ(n.nodeId(), 42);
+    EXPECT_EQ(n.state(), -1);
+    EXPECT_EQ(n.visited(), 0);
 }
 
 TEST(NodeTest, SetState) {
     Node n(1);
     n.setState(3);
-    EXPECT_EQ(n._state, 3);
+    EXPECT_EQ(n.state(), 3);
 }
 
 TEST(NodeTest, HaveOppositeStateReturnsFalseWhenAllDefault) {
     Node n(0);
     Node opp1(1);
     Node opp2(2);
-    n._opposite.push_back(&opp1);
-    n._opposite.push_back(&opp2);
+    n.opposite().push_back(&opp1);
+    n.opposite().push_back(&opp2);
     EXPECT_FALSE(n.haveOppositeState());
 }
 
@@ -92,8 +92,8 @@ TEST(NodeTest, HaveOppositeStateReturnsTrueWhenOneSet) {
     Node opp1(1);
     Node opp2(2);
     opp2.setState(0);
-    n._opposite.push_back(&opp1);
-    n._opposite.push_back(&opp2);
+    n.opposite().push_back(&opp1);
+    n.opposite().push_back(&opp2);
     EXPECT_TRUE(n.haveOppositeState());
 }
 
@@ -105,9 +105,9 @@ TEST(NodeTest, LessThanComparesByOppositesThenAdjacents) {
     Node dummy3(12);
 
     // a has 1 opposite, b has 2 opposites → a < b
-    a._opposite.push_back(&dummy1);
-    b._opposite.push_back(&dummy1);
-    b._opposite.push_back(&dummy2);
+    a.opposite().push_back(&dummy1);
+    b.opposite().push_back(&dummy1);
+    b.opposite().push_back(&dummy2);
     EXPECT_TRUE(a < b);
     EXPECT_FALSE(b < a);
 }
@@ -119,9 +119,9 @@ TEST(NodeTest, LessThanTieBreaksOnAdjacents) {
     Node dummy2(11);
 
     // Same opposites count (0), a has fewer adjacents
-    a._adjacents.insert(&dummy1);
-    b._adjacents.insert(&dummy1);
-    b._adjacents.insert(&dummy2);
+    a.adjacents().insert(&dummy1);
+    b.adjacents().insert(&dummy1);
+    b.adjacents().insert(&dummy2);
     EXPECT_TRUE(a < b);
 }
 
@@ -192,8 +192,8 @@ TEST(NodeQueueTest, WrapsNode) {
     Node n(99);
     n.setState(5);
     NodeQueue nq(n);
-    EXPECT_EQ(nq.node()._nodeId, 99);
-    EXPECT_EQ(nq.node()._state, 5);
+    EXPECT_EQ(nq.node().nodeId(), 99);
+    EXPECT_EQ(nq.node().state(), 5);
 }
 
 TEST(NodeQueueTest, PriorityQueueOrdersSmallerFirst) {
@@ -206,9 +206,9 @@ TEST(NodeQueueTest, PriorityQueueOrdersSmallerFirst) {
     Node dummy3(12);
 
     // a: 0 opposites, b: 1 opposite, c: 2 opposites
-    b._opposite.push_back(&dummy1);
-    c._opposite.push_back(&dummy1);
-    c._opposite.push_back(&dummy2);
+    b.opposite().push_back(&dummy1);
+    c.opposite().push_back(&dummy1);
+    c.opposite().push_back(&dummy2);
 
     std::priority_queue<NodeQueue> pq;
     pq.emplace(c);
@@ -216,11 +216,11 @@ TEST(NodeQueueTest, PriorityQueueOrdersSmallerFirst) {
     pq.emplace(b);
 
     // Top should be 'a' (fewest opposites)
-    EXPECT_EQ(pq.top().node()._nodeId, 1);
+    EXPECT_EQ(pq.top().node().nodeId(), 1);
     pq.pop();
-    EXPECT_EQ(pq.top().node()._nodeId, 2);
+    EXPECT_EQ(pq.top().node().nodeId(), 2);
     pq.pop();
-    EXPECT_EQ(pq.top().node()._nodeId, 3);
+    EXPECT_EQ(pq.top().node().nodeId(), 3);
 }
 
 // ─── Family ──────────────────────────────────────────────────────────────────

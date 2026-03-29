@@ -45,13 +45,13 @@ auto arrangementHasSharedFace(basic::Arrangement_2Node& arrangement) -> bool {
 
 auto buildOverlayArrangement(const std::vector<Node*>& nodes,
                              basic::Arrangement_2Node& overlayArrangement) -> void {
-    overlayArrangement = nodes.front()->_setPolygons.arrangement();
+    overlayArrangement = nodes.front()->setPolygons().arrangement();
     basic::Overlay_traitsNode overlayTraits;
 
     for (std::size_t nodeIndex = 1; nodeIndex < nodes.size(); ++nodeIndex) {
         basic::Arrangement_2Node previousArrangement;
         previousArrangement = overlayArrangement;
-        CGAL::overlay(previousArrangement, nodes.at(nodeIndex)->_setPolygons.arrangement(),
+        CGAL::overlay(previousArrangement, nodes.at(nodeIndex)->setPolygons().arrangement(),
                       overlayArrangement, overlayTraits);
     }
 }
@@ -127,7 +127,7 @@ auto NodeOverlap::addIdToPolygon(const std::vector<PolyConvex>& /*polyConvexList
     int32_t polygonIndex = 0;
 
     for (Node* node : nodes()) {
-        Arrangement_2Node& arrangement = node->_setPolygons.arrangement();
+        Arrangement_2Node& arrangement = node->setPolygons().arrangement();
         for (FaceNode& face :
              RangeHelper::make(arrangement.faces_begin(), arrangement.faces_end())) {
             face.setPolygonId(polygonIndex);
@@ -160,7 +160,7 @@ auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
 
 auto NodeOverlap::sortNode() -> void {
     std::sort(nodes().begin(), nodes().end(), [](const Node* leftNode, const Node* rightNode) {
-        return leftNode->_state < rightNode->_state;
+        return leftNode->state() < rightNode->state();
     });
 }
 
@@ -169,13 +169,13 @@ auto NodeRendering::render(OrientedRibbon& orientedRibbon, std::vector<Node>& no
     EASY_FUNCTION();
 
     for (Node& node : nodes) {
-        if (node._visited != 1) {
+        if (node.visited() != 1) {
 
-            node._visited = 1;
+            node.setVisited(1);
             NodeOverlap nodeOverlap;
             nodeOverlap.nodes().push_back(&node);
-            for (Node* oppositeNode : node._opposite) {
-                oppositeNode->_visited = 1;
+            for (Node* oppositeNode : node.opposite()) {
+                oppositeNode->setVisited(1);
                 nodeOverlap.nodes().push_back(oppositeNode);
             }
 

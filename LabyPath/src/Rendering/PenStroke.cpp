@@ -8,15 +8,15 @@
 #include "PenStroke.h"
 
 #include "../agg/agg_arc.h"
-#include "Polyline.h"
 #include "GeomData.h"
-#include "SVGWriter/DocumentSVG.h"
-#include <CGAL/Bbox_2.h>
-#include "Ribbon.h"
-#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
-#include "basic/RangeHelper.h"
 #include "PolyConvex.h"
+#include "Polyline.h"
+#include "Ribbon.h"
+#include "SVGWriter/DocumentSVG.h"
 #include "basic/PolygonTools.h"
+#include "basic/RangeHelper.h"
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
+#include <CGAL/Bbox_2.h>
 #include <CGAL/Kernel/global_functions_2.h>
 #include <CGAL/Polygon_set_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
@@ -27,8 +27,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <iostream>
+#include <iterator>
 #include <unordered_set>
 #include <vector>
 
@@ -158,7 +158,8 @@ auto PenStroke::getSegmentFromMedian(const std::unordered_set<std::size_t>& refe
     std::vector<Segment_info_2> segmentList;
     for (const std::size_t medianLineIndex : referenceMedianLineSet) {
         const Polyline& medianPolyline = _medrib.at(medianLineIndex).getMedianList();
-        for (std::size_t pointIndex = 1; pointIndex < medianPolyline.points().size(); ++pointIndex) {
+        for (std::size_t pointIndex = 1; pointIndex < medianPolyline.points().size();
+             ++pointIndex) {
             segmentList.emplace_back(Kernel::Segment_2(medianPolyline.points().at(pointIndex - 1),
                                                        medianPolyline.points().at(pointIndex)),
                                      EdgeInfo{1, EdgeInfo::Coordinate{0}});
@@ -278,7 +279,7 @@ void PenStroke::drawOutline(svg::Path& path) const {
             const Point_2& sourcePoint = medianLine.getMedian(pointIndex - 1);
             const Point_2& targetPoint = medianLine.getMedian(pointIndex);
             polyConvexVector.emplace_back(
-                sourcePoint, targetPoint, polyConvexIndex,
+                PolyConvexEndpoints{sourcePoint, targetPoint}, polyConvexIndex,
                 PolygonTools::makeTrapeze(sourcePoint, targetPoint,
                                           medianLine.getBorder(pointIndex - 1),
                                           medianLine.getBorder(pointIndex)));
@@ -289,7 +290,8 @@ void PenStroke::drawOutline(svg::Path& path) const {
         {
             const PolyConvex& firstPolyConvex = polyConvexVector.front();
             agg::Arc const arc(medianLine.getMedian(0), medianLine.getBorder(0) / kHalfWidthScale,
-                         firstPolyConvex._geometry.vertex(0), firstPolyConvex._geometry.vertex(1));
+                               firstPolyConvex._geometry.vertex(0),
+                               firstPolyConvex._geometry.vertex(1));
             polyConvexVector.emplace_back();
             polyConvexVector.back()._geometry.insert(
                 polyConvexVector.back()._geometry.vertices_end(), arc.getPoints().begin(),
@@ -298,8 +300,9 @@ void PenStroke::drawOutline(svg::Path& path) const {
         {
             const PolyConvex& lastPolyConvex = polyConvexVector.at(lastIndex);
             agg::Arc const arc(medianLine.getMedian(pointCount - 1),
-                         medianLine.getBorder(pointCount - 1) / kHalfWidthScale,
-                         lastPolyConvex._geometry.vertex(2), lastPolyConvex._geometry.vertex(3));
+                               medianLine.getBorder(pointCount - 1) / kHalfWidthScale,
+                               lastPolyConvex._geometry.vertex(2),
+                               lastPolyConvex._geometry.vertex(3));
             polyConvexVector.emplace_back();
             polyConvexVector.back()._geometry.insert(
                 polyConvexVector.back()._geometry.vertices_end(), arc.getPoints().begin(),
@@ -340,19 +343,17 @@ void PenStroke::createStroke(const Polyline& polyline) {
             for (int32_t vertexIndex = 1; vertexIndex < length / _config.resolution();
                  ++vertexIndex) {
                 addPoint(medianLine,
-                         barycentre(polyline.points().at(pointIndex - 1), vertexIndex,
-                                    unitVector),
+                         barycentre(polyline.points().at(pointIndex - 1), vertexIndex, unitVector),
                          origin, destination, +1, normalVector);
             }
             if (pointIndex + 1 == polyline.points().size()) {
 
-                if (polyline.isClosed() or
-                    polyline.points().front() == polyline.points().back()) {
+                if (polyline.isClosed() or polyline.points().front() == polyline.points().back()) {
 
                     medianLine.setClosed();
                 } else {
-                    addPoint(medianLine, polyline.points().at(pointIndex), origin, destination,
-                             +1, normalVector);
+                    addPoint(medianLine, polyline.points().at(pointIndex), origin, destination, +1,
+                             normalVector);
                 }
             }
         }

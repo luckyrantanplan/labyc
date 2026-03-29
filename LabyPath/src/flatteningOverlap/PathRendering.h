@@ -49,28 +49,44 @@ class PathRendering {
     static void pathRender(const std::vector<PolyConvex>& polyConvexList, OrientedRibbon& oRibbon);
 
   private:
+    struct PolygonSetData {
+        const std::vector<PolyConvex>& polyConvexList;
+        const std::vector<std::size_t>& cover;
+    };
+
     void createIntersect(OrientedRibbon& oribbon, const std::vector<PolyConvex>& polyConvexList);
     static void createUnion(OrientedRibbon& ribs, const std::vector<PolyConvex>& polyConvexList);
-    static void reCutAllGeometry(const std::vector<const Family*>& families,
-                                 const std::vector<PolyConvex>& polyConvexList,
-                                 const std::unordered_map<std::size_t, Node*>& map);
+    struct ReCutGeometryData {
+        const std::vector<PolyConvex>& polyConvexList;
+        const std::unordered_map<std::size_t, Node*>& map;
+    };
 
-    static void createPolygonSet(const std::vector<PolyConvex>& polyConvexList,
-                                 const std::vector<std::size_t>& cover,
+    static void reCutAllGeometry(const std::vector<const Family*>& families,
+                                 const ReCutGeometryData& reCutGeometryData);
+
+    static void createPolygonSet(const PolygonSetData& polygonSetData,
                                  basic::Polygon_set_2Node& setPolygons);
 
     using BoxIntersection =
         CGAL::Box_intersection_d::Box_with_handle_d<double, 2, std::size_t,
                                                     CGAL::Box_intersection_d::ID_EXPLICIT>;
-    static void unify(std::size_t secondIndex, const std::vector<std::size_t>& adjacentIndices,
-                      std::unordered_set<Intersection>& intersections,
+    struct UnifyData {
+        std::size_t secondIndex;
+        const std::vector<std::size_t>& adjacentIndices;
+    };
+
+    static void unify(const UnifyData& unifyData, std::unordered_set<Intersection>& intersections,
                       CGAL::Union_find<size_t>& unionFind, const Intersection& intersection);
+    struct FamilyProcessingData {
+        const std::vector<PolyConvex>& polyConvexList;
+        std::vector<Family>& familyVector;
+        std::vector<Intersection>& intersections;
+        std::vector<BoxIntersection>& boxIntersectionList;
+        CGAL::Union_find<std::size_t>& unionFind;
+    };
+
     auto processFamilies(std::unordered_map<size_t, std::size_t>& families,
-                         const std::vector<PolyConvex>& polyConvexList,
-                         std::vector<Family>& familyVector,
-                         std::vector<Intersection>& intersections,
-                         std::vector<BoxIntersection>& boxIntersectionList,
-                         CGAL::Union_find<std::size_t>& unionFind) -> std::vector<Node>;
+                         FamilyProcessingData& familyProcessingData) -> std::vector<Node>;
     void mergeFamilies(const std::vector<const Family*>& families,
                        std::unordered_set<Intersection>& intersectOnSinglePiece,
                        const std::vector<PolyConvex>& polyConvexList, std::vector<Node>& nodes);
@@ -78,16 +94,24 @@ class PathRendering {
                               const std::vector<PolyConvex>& polyConvexList);
     static void chooseNodeState(std::vector<Node>& nodes);
 
+    struct FamilyLocationData {
+        std::vector<Family>& familyVector;
+        std::vector<Intersection>& intersections;
+        std::vector<BoxIntersection>& boxIntersectionList;
+        const CGAL::Union_find<std::size_t>& unionFind;
+        const std::vector<PolyConvex>& polyConvexList;
+    };
+
     static auto locateFamilies(const std::unordered_map<std::size_t, std::size_t>& families,
-                               std::vector<Family>& familyVector,
-                               std::vector<Intersection>& intersections,
-                               std::vector<BoxIntersection>& boxIntersectionList,
-                               const CGAL::Union_find<std::size_t>& unionFind,
-                               const std::vector<PolyConvex>& polyConvexList)
+                               FamilyLocationData& familyLocationData)
         -> std::unordered_map<std::size_t, std::vector<const Family*>>;
-    auto createNode(const std::unordered_map<std::size_t, std::vector<const Family*>>& familyMap,
-                    std::unordered_set<Intersection> intersectOnSinglePiece,
-                    const std::vector<PolyConvex>& polyConvexList) -> std::vector<Node>;
+    struct NodeCreationData {
+        const std::unordered_map<std::size_t, std::vector<const Family*>>& familyMap;
+        std::unordered_set<Intersection>& intersectOnSinglePiece;
+        const std::vector<PolyConvex>& polyConvexList;
+    };
+
+    auto createNode(const NodeCreationData& nodeCreationData) -> std::vector<Node>;
 
     static auto doIntersect(Intersection& firstIntersection, Intersection& secondIntersection,
                             const std::vector<PolyConvex>& polyConvexList) -> bool;

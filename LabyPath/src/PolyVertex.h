@@ -18,7 +18,7 @@
 namespace laby {
 
 class PolyVertex {
-public:
+  public:
     [[nodiscard]] auto number() const -> int32_t {
         return _number;
     }
@@ -30,28 +30,24 @@ public:
         return _vertexList;
     }
 
-    explicit PolyVertex(const int32_t number = 0, const std::vector<Vertex*>& vertex = { }) :
-            _number { number }, _vertexList { vertex } {
-    }
+    explicit PolyVertex(const int32_t number = 0, const std::vector<Vertex*>& vertexList = {})
+        : _number{number}, _vertexList{vertexList} {}
 
-    void print(std::ostream& os) const {
-
-        os << " number " << _number << " vertex size " << _vertexList.size();
-
+    void print(std::ostream& outputStream) const {
+        outputStream << " number " << _number << " vertex size " << _vertexList.size();
     }
 
     [[nodiscard]] auto polyline() const -> Polyline {
-        Polyline pl(_number);
-        for (Vertex* v : _vertexList) {
-            pl.points().emplace_back(v->point());
+        Polyline polyline(_number);
+        for (Vertex* vertex : _vertexList) {
+            polyline.points().emplace_back(vertex->point());
         }
-        return pl;
+        return polyline;
     }
-private:
 
-    int32_t _number;
-    std::vector<Vertex*> _vertexList;
-
+  private:
+    int32_t _number = 0;
+    std::vector<Vertex*> _vertexList{};
 };
 
 } /* namespace laby */

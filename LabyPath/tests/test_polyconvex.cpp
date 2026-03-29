@@ -67,7 +67,8 @@ TEST(PolyConvexTest, ConstructFromPointsAndGeometry) {
     const Point_2 targetPoint(kCoordTen, kCoordZero);
     const Linear_polygon geometry = makeSquare(kCoordZero, -kCoordOne, kCoordTen);
 
-    const PolyConvex polyConvex(sourcePoint, targetPoint, kPolyConvexIdFortyTwo, geometry);
+    const PolyConvex polyConvex(PolyConvexEndpoints{sourcePoint, targetPoint},
+                                kPolyConvexIdFortyTwo, geometry);
     EXPECT_EQ(polyConvex._id, kPolyConvexIdFortyTwo);
     EXPECT_FALSE(polyConvex.empty());
     EXPECT_TRUE(polyConvex.hasPoints());
@@ -93,7 +94,7 @@ TEST(PolyConvexTest, ConnectTwoPolygons) {
     polyConvexList.back()._id = kPolyConvexIdOne;
     polyConvexList.back()._geometry = makeSquare(kCoordFive, kCoordZero, kCoordFive);
 
-    PolyConvex::connect(kPolyConvexIdZero, kPolyConvexIdOne, polyConvexList);
+    PolyConvex::connect({kPolyConvexIdZero, kPolyConvexIdOne}, polyConvexList);
 
     EXPECT_EQ(polyConvexList[0]._adjacents.size(), 1U);
     EXPECT_EQ(polyConvexList[0]._adjacents[0], kPolyConvexIdOne);

@@ -23,7 +23,7 @@ class LinearGradient {
     LinearGradient(Point_2 startPoint, double thickness1, const Point_2& endPoint,
                    double thickness2);
 
-    auto thickness(const Point_2& point) -> double;
+    auto thickness(const Point_2& point) const -> double;
     static auto f(double position, double startThickness, double endThickness) -> double;
 
   private:

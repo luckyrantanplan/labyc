@@ -9,7 +9,9 @@
 #include "GeomData.h"
 
 #include <CGAL/Vector_2.h>
-#include <math.h>
+#include <CGAL/number_utils.h>
+#include <cmath>
+#include <utility>
 
 namespace laby::basic {
 
@@ -30,7 +32,7 @@ auto LinearGradient::f(double position, double startThickness, double endThickne
 auto LinearGradient::thickness(const Point_2& point) const -> double {
 
     CGAL::Vector_2<Kernel> const offsetVector = point - _origin;
-    double const position = NAN = CGAL::to_double(offsetVector * _vec) / _sq_length;
+    double const position = CGAL::to_double(offsetVector * _vec) / _sq_length;
 
     if (position <= 0) {
         return _thickness1;

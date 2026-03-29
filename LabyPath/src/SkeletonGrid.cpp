@@ -7,9 +7,16 @@
 
 #include "SkeletonGrid.h"
 
+#include <math.h>
+
+#include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <GeomData.h>
+#include <Ribbon.h>
 #include <cstdint>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 #include "SVGParser/Loader.h"
 #include "protoc/AllConfig.pb.h"
@@ -48,10 +55,10 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
         std::vector<CGAL::Polygon_with_holes_2<Kernel>> const polygons =
             SVGShapeToGrid::getPolygons(rib);
 
-        const double blue =
+        const double blue = NAN =
             laby::basic::Color::getBlueNormalized(static_cast<uint32_t>(rib.fillColor()));
 
-        const uint32_t fillColor = laby::basic::Color::setBlue(
+        const uint32_t fillColor = 0 = laby::basic::Color::setBlue(
             static_cast<uint32_t>(rib.fillColor()), static_cast<uint32_t>(ribNumber));
         ++ribNumber;
 
@@ -94,13 +101,12 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     }
 
     std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << '\n';
-    GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(),
-                                     _config.min_sep() / kOutputThicknessDivisor, result);
+    proto::GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(),
+                                            _config.min_sep() / kOutputThicknessDivisor, result);
 }
 
-static auto
-SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
-                          const double& distance) -> void {
+auto SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
+                               const double& distance) -> void {
     _circularList.clear();
     _radialList.clear();
     std::vector<Kernel::Segment_2> const result2;

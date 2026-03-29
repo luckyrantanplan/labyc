@@ -4,10 +4,10 @@
  *        RangeHelper with mock circulators, and graph pointer-through-queue safety.
  */
 
-#include <gtest/gtest.h>
 #include "basic/NumericRange.h"
 #include "basic/RangeHelper.h"
 #include "flatteningOverlap/Node.h"
+#include <gtest/gtest.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -104,20 +104,25 @@ TEST(NumericRangeIteratorTest, DereferenceIsConst) {
 struct MockCirculator {
     using reference = int32_t&;
 
-    int32_t* data;    
-    std::size_t size; 
-    std::size_t pos;  
+    int32_t* data;
+    std::size_t size;
+    std::size_t pos;
 
-    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0) 
-        : data(d), size(s), pos(p) {}
+    MockCirculator(int32_t* d, std::size_t s, std::size_t p = 0) : data(d), size(s), pos(p) {}
 
-    reference operator*() const { return data[pos]; }
+    reference operator*() const {
+        return data[pos];
+    }
     MockCirculator& operator++() {
         pos = (pos + 1) % size;
         return *this;
     }
-    bool operator==(const MockCirculator& o) const { return pos == o.pos; }
-    bool operator!=(const MockCirculator& o) const { return pos != o.pos; }
+    bool operator==(const MockCirculator& o) const {
+        return pos == o.pos;
+    }
+    bool operator!=(const MockCirculator& o) const {
+        return pos != o.pos;
+    }
 };
 
 TEST(RangeHelperTest, HalfedgeRangeIteratesAll) {
@@ -198,10 +203,10 @@ TEST(NodeQueueTest, PopDoesNotInvalidateNodeReference) {
     nodes.emplace_back(2);
 
     // Give different opposite counts for priority ordering
-    nodes[0]._opposite.push_back(&nodes[1]);
-    nodes[0]._opposite.push_back(&nodes[2]);    // degree 2
-    nodes[1]._opposite.push_back(nodes.data()); // degree 1
-    nodes[2]._opposite.push_back(nodes.data()); // degree 1
+    nodes[0].opposite().push_back(&nodes[1]);
+    nodes[0].opposite().push_back(&nodes[2]);    // degree 2
+    nodes[1].opposite().push_back(nodes.data()); // degree 1
+    nodes[2].opposite().push_back(nodes.data()); // degree 1
 
     std::priority_queue<NodeQueue> queue;
     queue.emplace(nodes[0]);
@@ -210,13 +215,13 @@ TEST(NodeQueueTest, PopDoesNotInvalidateNodeReference) {
 
     // Get reference before pop
     Node& topNode = queue.top().node();
-    const int32_t topId = topNode._nodeId;
+    const int32_t topId = topNode.nodeId();
     queue.pop();
 
     // Node reference should still be valid (points into nodes vector)
-    EXPECT_EQ(topNode._nodeId, topId);
-    topNode._state = 99;
-    EXPECT_EQ(topNode._state, 99);
+    EXPECT_EQ(topNode.nodeId(), topId);
+    topNode.setState(99);
+    EXPECT_EQ(topNode.state(), 99);
 }
 
 TEST(NodeQueueTest, MinDegreeFirst) {
@@ -226,9 +231,9 @@ TEST(NodeQueueTest, MinDegreeFirst) {
     nodes.emplace_back(1);
     nodes.emplace_back(2);
 
-    nodes[0]._opposite = {&nodes[1], &nodes[2]};
-    nodes[1]._opposite = {};
-    nodes[2]._opposite = {nodes.data()};
+    nodes[0].opposite() = {&nodes[1], &nodes[2]};
+    nodes[1].opposite() = {};
+    nodes[2].opposite() = {nodes.data()};
 
     std::priority_queue<NodeQueue> queue;
     queue.emplace(nodes[0]);
@@ -236,11 +241,11 @@ TEST(NodeQueueTest, MinDegreeFirst) {
     queue.emplace(nodes[2]);
 
     // Should come out in ascending degree order: 0, 1, 2
-    EXPECT_EQ(queue.top().node()._nodeId, 1); // degree 0
+    EXPECT_EQ(queue.top().node().nodeId(), 1); // degree 0
     queue.pop();
-    EXPECT_EQ(queue.top().node()._nodeId, 2); // degree 1
+    EXPECT_EQ(queue.top().node().nodeId(), 2); // degree 1
     queue.pop();
-    EXPECT_EQ(queue.top().node()._nodeId, 0); // degree 2
+    EXPECT_EQ(queue.top().node().nodeId(), 0); // degree 2
     queue.pop();
 }
 
@@ -257,7 +262,7 @@ TEST(NodeAnyOfTest, AllUnassigned) {
     Node n0(0);
     Node n1(1);
     Node n2(2);
-    n0._opposite = {&n1, &n2};
+    n0.opposite() = {&n1, &n2};
     EXPECT_FALSE(n0.haveOppositeState());
 }
 
@@ -265,8 +270,8 @@ TEST(NodeAnyOfTest, OneAssigned) {
     Node n0(0);
     Node n1(1);
     Node n2(2);
-    n1._state = 0;
-    n0._opposite = {&n1, &n2};
+    n1.setState(0);
+    n0.opposite() = {&n1, &n2};
     EXPECT_TRUE(n0.haveOppositeState());
 }
 
@@ -274,9 +279,9 @@ TEST(NodeAnyOfTest, AllAssigned) {
     Node n0(0);
     Node n1(1);
     Node n2(2);
-    n1._state = 0;
-    n2._state = 1;
-    n0._opposite = {&n1, &n2};
+    n1.setState(0);
+    n2.setState(1);
+    n0.opposite() = {&n1, &n2};
     EXPECT_TRUE(n0.haveOppositeState());
 }
 

@@ -37,7 +37,7 @@ class RandomUniDist {
 
   private:
     std::mt19937 _gen;
-    std::uniform_real_distribution<> _dis{};
+    std::uniform_real_distribution<> _dis;
 };
 
 } // namespace laby::basic

@@ -55,14 +55,10 @@ class FaceNodeInfo : public CGAL::Gps_face_base {
             _polygonIds.emplace(polygonId);
         }
     }
-    std::unordered_set<int32_t> _polygonIds{};
+    std::unordered_set<int32_t> _polygonIds;
 
     void setData(const std::unordered_set<int32_t>& data) {
         _polygonIds = data;
-    }
-
-    void setData(const std::unordered_set<int32_t>& data) {
-        setData(data);
     }
 
     auto data() -> std::unordered_set<int32_t>& {
@@ -126,8 +122,8 @@ using Overlay_traitsNode = CGAL::Arr_face_overlay_traits<Arrangement_2Node, //
 // which relied on Arr_consolidated_curve_data_traits_2 (incompatible with CGAL 5.x).
 namespace basic {
 inline auto edgeHasPolygonId(const HalfedgeNode& he, int32_t id) -> bool {
-    const bool faceHas = he.face()->data().count(id) > 0;
-    const bool twinFaceHas = he.twin()->face()->data().count(id) > 0;
+    const bool faceHas = he.face()->data().contains(id);
+    const bool twinFaceHas = he.twin()->face()->data().contains(id);
     return faceHas != twinFaceHas;
 }
 } // namespace basic

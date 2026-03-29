@@ -40,7 +40,7 @@ constexpr int32_t kSilverChannel = 192;
 template <typename T>
 inline auto attribute(std::string const& attributeName, T const& value,
                       std::string_view unit = {}) -> std::string {
-    std::stringstream const stream;
+    std::stringstream stream;
     stream << attributeName << "=\"" << value << unit << "\" ";
     return stream.str();
 }

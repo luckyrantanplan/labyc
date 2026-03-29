@@ -12,13 +12,18 @@
 #include "Anisotrop/QueueElement.h"
 #include "Anisotrop/SpatialIndex.h"
 #include "basic/EasyProfilerCompat.h"
+#include <CGAL/Union_find.h>
+#include <GeomData.h>
 #include <algorithm>
+#include <basic/RangeHelper.h>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "../basic/LinearGradient.h"
 #include "protoc/AllConfig.pb.h"
@@ -79,7 +84,7 @@ void applyDegreeCost(QueueCost& cost, std::size_t degree, const proto::RoutingCo
 
 void applyTargetMemoryPenalty(QueueCost& cost) {
     for (const int32_t targetNetId : cost.memoryTarget()) {
-        if (cost.futureMemoryTarget().count(targetNetId) == 0U) {
+        if (!cost.futureMemoryTarget().contains(targetNetId)) {
             ++cost.congestion();
         }
     }
@@ -174,7 +179,7 @@ void connectSharedPointPolyConvexes(
 
             std::cout << "PolyConvex::connect(vec.at(0), vec.at(i) " << connectedPolyConvexes.at(0)
                       << " " << connectedPolyConvexes.at(index) << '\n';
-            PolyConvex::connect(connectedPolyConvexes.at(0), connectedPolyConvexes.at(index),
+            PolyConvex::connect({connectedPolyConvexes.at(0), connectedPolyConvexes.at(index)},
                                 polyConvexList);
             unionFind.unify_sets(firstHandle, currentHandle);
         }
@@ -235,12 +240,12 @@ static void Routing::connectTwoPinPath(const std::vector<aniso::Net>& nets,
             spatialIndex.isPointInside(convexList.at(list.at(0)), *vertexP, index)) {
             std::cout << "orphan PolyConvex connect not empty  list.at(0) index" << list.at(0)
                       << " " << index << '\n';
-            PolyConvex::connect(list.at(0), index, convexList);
+            PolyConvex::connect({list.at(0), index}, convexList);
         }
         for (std::size_t i = 0; i < list.size(); ++i) {
             for (std::size_t j = i + 1; j < list.size(); ++j) {
 
-                PolyConvex::connect(list.at(i), list.at(j), convexList, vertexP->point());
+                PolyConvex::connect({list.at(i), list.at(j)}, convexList, vertexP->point());
             }
         }
     }
@@ -308,14 +313,15 @@ static void Routing::connectMaze(std::vector<PolyConvex>& polyConvexList) {
             basic::LinearGradient lgrad(seg.source()->point(), thickness, seg.target()->point(),
                                         thickness);
 
-            polyConvexList.emplace_back(seg.source()->point(), seg.target()->point(),
-                                        polyConvexList.size(), lgrad);
+            polyConvexList.emplace_back(
+                PolyConvexEndpoints{seg.source()->point(), seg.target()->point()},
+                polyConvexList.size(), lgrad);
             // warning : references are undefined now ( we have increase the size of the vector)
 
             const PolyConvex& newPoly = polyConvexList.back();
 
-            PolyConvex::connect(newPoly._id, pcId1, polyConvexList, seg.source()->point());
-            PolyConvex::connect(newPoly._id, pcId2, polyConvexList, seg.target()->point());
+            PolyConvex::connect({newPoly._id, pcId1}, polyConvexList, seg.source()->point());
+            PolyConvex::connect({newPoly._id, pcId2}, polyConvexList, seg.target()->point());
             // connect with others
 
             unionFind.unify_sets(polyConvexList.at(pcId1).handle, polyConvexList.at(pcId2).handle);

@@ -55,34 +55,61 @@
 
 namespace laby {
 
-struct Node {
+class Node {
+  public:
     /// Nodes from nearby non-overlapping families (soft alternating-state constraint).
-    std::unordered_set<Node*> _adjacents{};
-
-    /// Nodes sharing the same overlap region but from a different patch
-    /// (hard different-state constraint for graph coloring).
-    std::vector<Node*> _opposite{};
-
-    /// Indices into the PolyConvex vector that this node is responsible for.
-    std::vector<std::size_t> _cover{};
-
-    /// Rendering state assigned by graph coloring.  -1 = unassigned.
-    int32_t _state = -1;
-
-    /// Unique identifier for debugging/logging.
-    int32_t _nodeId = 0;
-
-    /// Traversal flag: 0 = unvisited, 1 = visited, -1 = BFS-marked.
-    /// Declared mutable because BFS/DFS traversals modify it on const objects.
-    mutable int32_t _visited = 0;
-
-    /// Geometric union of covered polygons (used for arrangement overlay).
-    basic::Polygon_set_2Node _setPolygons{};
-
     explicit Node(const int32_t nodeId) : _nodeId{nodeId} {}
+
+    [[nodiscard]] auto adjacents() -> std::unordered_set<Node*>& {
+        return _adjacents;
+    }
+
+    [[nodiscard]] auto adjacents() const -> const std::unordered_set<Node*>& {
+        return _adjacents;
+    }
+
+    [[nodiscard]] auto opposite() -> std::vector<Node*>& {
+        return _opposite;
+    }
+
+    [[nodiscard]] auto opposite() const -> const std::vector<Node*>& {
+        return _opposite;
+    }
+
+    [[nodiscard]] auto cover() -> std::vector<std::size_t>& {
+        return _cover;
+    }
+
+    [[nodiscard]] auto cover() const -> const std::vector<std::size_t>& {
+        return _cover;
+    }
+
+    [[nodiscard]] auto state() const -> int32_t {
+        return _state;
+    }
 
     void setState(int32_t state) {
         _state = state;
+    }
+
+    [[nodiscard]] auto nodeId() const -> int32_t {
+        return _nodeId;
+    }
+
+    [[nodiscard]] auto visited() const -> int32_t {
+        return _visited;
+    }
+
+    void setVisited(int32_t visited) const {
+        _visited = visited;
+    }
+
+    [[nodiscard]] auto setPolygons() -> basic::Polygon_set_2Node& {
+        return _setPolygons;
+    }
+
+    [[nodiscard]] auto setPolygons() const -> const basic::Polygon_set_2Node& {
+        return _setPolygons;
     }
 
     auto operator<(const Node& node) const -> bool {
@@ -103,12 +130,12 @@ struct Node {
         outputStream << "id" << _nodeId << " s" << _state;
         outputStream << " opp [";
         for (Node* oppositeNode : _opposite) {
-            outputStream << oppositeNode->_nodeId << " s" << oppositeNode->_state << " ";
+            outputStream << oppositeNode->nodeId() << " s" << oppositeNode->state() << " ";
         }
         outputStream << " ] ";
         outputStream << " adj [";
         for (Node* adjacentNode : _adjacents) {
-            outputStream << adjacentNode->_nodeId << " s" << adjacentNode->_state << " ";
+            outputStream << adjacentNode->nodeId() << " s" << adjacentNode->state() << " ";
         }
         outputStream << " ] ";
     }
@@ -116,8 +143,17 @@ struct Node {
     /// Returns true if any opposite node has been assigned a state (!= -1).
     auto haveOppositeState() const -> bool {
         return std::any_of(_opposite.begin(), _opposite.end(),
-                           [](const Node* n) { return n->_state != -1; });
+                           [](const Node* node) { return node->state() != -1; });
     }
+
+  private:
+    std::unordered_set<Node*> _adjacents;
+    std::vector<Node*> _opposite;
+    std::vector<std::size_t> _cover;
+    int32_t _state = -1;
+    int32_t _nodeId = 0;
+    mutable int32_t _visited = 0;
+    basic::Polygon_set_2Node _setPolygons;
 };
 
 /**
@@ -131,11 +167,11 @@ class StateSelect {
     explicit StateSelect(const std::vector<Node*>& opposite)
         : _occupied_states(opposite.size(), false) {
         for (Node* opp : opposite) {
-            markOccupied(opp->_state);
+            markOccupied(opp->state());
         }
     }
 
-    static void markOccupied(int32_t state_index) {
+    void markOccupied(int32_t state_index) {
         if (state_index >= 0 && state_index < static_cast<int32_t>(_occupied_states.size())) {
             _occupied_states.at(static_cast<std::size_t>(state_index)) = true;
         }
@@ -160,7 +196,7 @@ class StateSelect {
 
   private:
     std::size_t _current_index = 0;
-    std::vector<bool> _occupied_states{};
+    std::vector<bool> _occupied_states;
 };
 
 /**

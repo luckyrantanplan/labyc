@@ -45,64 +45,132 @@
 
 namespace laby::generator {
 
-struct SPoint {
-    SPoint() : x(0), y(0), m_Valid(false) {}
-    SPoint(double X, double Y) : x(X), y(Y), m_Valid(true) {}
-    double x;
-    double y;
-    bool m_Valid;
-    //
+namespace {
+
+constexpr double kUnitIntervalMax = 1.0;
+constexpr double kCircleCenterCoordinate = 0.5;
+constexpr double kCircleRadiusSquared = 0.25;
+constexpr int kNeighbourhoodScanRadius = 5;
+constexpr int kDefaultNewPointsCount = 30;
+constexpr double kDefaultDensityNumerator = 6.3;
+constexpr double kDefaultDensityDenominator = 10.0;
+
+} // namespace
+
+class SPoint {
+  public:
+    struct Coordinates {
+        double xCoord = 0.0;
+        double yCoord = 0.0;
+    };
+
+    SPoint() = default;
+
+    explicit SPoint(Coordinates coordinates)
+        : _xCoord(coordinates.xCoord), _yCoord(coordinates.yCoord), _isValid(true) {}
+
+    [[nodiscard]] auto xCoord() const -> double {
+        return _xCoord;
+    }
+
+    [[nodiscard]] auto yCoord() const -> double {
+        return _yCoord;
+    }
+
+    [[nodiscard]] auto isValid() const -> bool {
+        return _isValid;
+    }
+
     [[nodiscard]] auto isInRectangle() const -> bool {
-        return x >= 0 && y >= 0 && x <= 1 && y <= 1;
+        return _xCoord >= 0.0 && _yCoord >= 0.0 && _xCoord <= kUnitIntervalMax &&
+               _yCoord <= kUnitIntervalMax;
     }
-    //
+
     [[nodiscard]] auto isInCircle() const -> bool {
-        double const fx = x - 0.5;
-        double const fy = y - 0.5;
-        return (fx * fx + fy * fy) <= 0.25;
+        const double xOffset = _xCoord - kCircleCenterCoordinate;
+        const double yOffset = _yCoord - kCircleCenterCoordinate;
+        return (xOffset * xOffset + yOffset * yOffset) <= kCircleRadiusSquared;
     }
+
+  private:
+    double _xCoord = 0.0;
+    double _yCoord = 0.0;
+    bool _isValid = false;
 };
 
-struct SGridPoint {
-    SGridPoint(int X, int Y) : x(X), y(Y) {}
-    int x;
-    int y;
+class SGridPoint {
+  public:
+    struct Coordinates {
+        int xIndex = 0;
+        int yIndex = 0;
+    };
+
+    explicit SGridPoint(Coordinates coordinates)
+        : _xIndex(coordinates.xIndex), _yIndex(coordinates.yIndex) {}
+
+    [[nodiscard]] auto xIndex() const -> int {
+        return _xIndex;
+    }
+
+    [[nodiscard]] auto yIndex() const -> int {
+        return _yIndex;
+    }
+
+  private:
+    int _xIndex = 0;
+    int _yIndex = 0;
 };
 
-struct SGrid {
+class SGrid {
+  public:
+    struct Dimensions {
+        int width = 0;
+        int height = 0;
+    };
 
-    [[nodiscard]] static auto imageToGrid(const SPoint& P, double CellSize) -> SGridPoint {
-        return {(int)(P.x / CellSize), (int)(P.y / CellSize)};
-    }
-    [[nodiscard]] static auto getSqDistance(const SPoint& P1, const SPoint& P2) -> double {
-        return (P1.x - P2.x) * (P1.x - P2.x) + (P1.y - P2.y) * (P1.y - P2.y);
-    }
-    SGrid(int W, int H, double CellSize) : _m_W(W), _m_H(H), _m_CellSize(CellSize) {
-        _m_Grid.resize(static_cast<std::size_t>(_m_W));
+    explicit SGrid(Dimensions dimensions, double cellSize)
+        : _gridWidth(dimensions.width), _gridHeight(dimensions.height), _cellSize(cellSize) {
+        _grid.resize(static_cast<std::size_t>(_gridWidth));
 
-        for (auto& i : _m_Grid) {
-            i.resize(static_cast<std::size_t>(_m_H));
+        for (auto& column : _grid) {
+            column.resize(static_cast<std::size_t>(_gridHeight));
         }
     }
-    void insert(const SPoint& P) const {
-        SGridPoint const g = imageToGrid(P, _m_CellSize);
-        _m_Grid[static_cast<std::size_t>(g.x)][static_cast<std::size_t>(g.y)] = P;
-    }
-    auto isInNeighbourhood(const SPoint& Point, double sqMinDist, double CellSize) const -> bool {
-        SGridPoint const g = imageToGrid(Point, CellSize);
 
-        // number of adjacent cells to look for neighbor points
-        const int d = 5;
+    [[nodiscard]] static auto imageToGrid(const SPoint& point, double cellSize) -> SGridPoint {
+        return SGridPoint({static_cast<int>(point.xCoord() / cellSize),
+                           static_cast<int>(point.yCoord() / cellSize)});
+    }
+
+    [[nodiscard]] static auto getSqDistance(const SPoint& firstPoint,
+                                            const SPoint& secondPoint) -> double {
+        const double deltaX = firstPoint.xCoord() - secondPoint.xCoord();
+        const double deltaY = firstPoint.yCoord() - secondPoint.yCoord();
+        return deltaX * deltaX + deltaY * deltaY;
+    }
+
+    void insert(const SPoint& point) {
+        const SGridPoint gridPoint = imageToGrid(point, _cellSize);
+        _grid[static_cast<std::size_t>(gridPoint.xIndex())]
+             [static_cast<std::size_t>(gridPoint.yIndex())] = point;
+    }
+
+    [[nodiscard]] auto isInNeighbourhood(const SPoint& point,
+                                         double squaredMinDistance) const -> bool {
+        const SGridPoint gridPoint = imageToGrid(point, _cellSize);
 
         // scan the neighborhood of the point in the grid
-        for (int i = g.x - d; i < g.x + d; ++i) {
-            if (i >= 0 && i < _m_W) {
-                for (int j = g.y - d; j < g.y + d; ++j) {
-                    if (j >= 0 && j < _m_H) {
-                        const SPoint& p =
-                            _m_Grid[static_cast<std::size_t>(i)][static_cast<std::size_t>(j)];
+        for (int columnIndex = gridPoint.xIndex() - kNeighbourhoodScanRadius;
+             columnIndex < gridPoint.xIndex() + kNeighbourhoodScanRadius; ++columnIndex) {
+            if (columnIndex >= 0 && columnIndex < _gridWidth) {
+                for (int rowIndex = gridPoint.yIndex() - kNeighbourhoodScanRadius;
+                     rowIndex < gridPoint.yIndex() + kNeighbourhoodScanRadius; ++rowIndex) {
+                    if (rowIndex >= 0 && rowIndex < _gridHeight) {
+                        const SPoint& candidatePoint = _grid[static_cast<std::size_t>(columnIndex)]
+                                                            [static_cast<std::size_t>(rowIndex)];
 
-                        if (p.m_Valid && getSqDistance(p, Point) < sqMinDist) {
+                        if (candidatePoint.isValid() &&
+                            getSqDistance(candidatePoint, point) < squaredMinDistance) {
                             return true;
                         }
                     }
@@ -114,32 +182,39 @@ struct SGrid {
     }
 
   private:
-    int _m_W;
-    int _m_H;
-    double _m_CellSize;
+    int _gridWidth = 0;
+    int _gridHeight = 0;
+    double _cellSize = 0.0;
 
-    std::vector<std::vector<SPoint>> _m_Grid{};
+    std::vector<std::vector<SPoint>> _grid{};
 };
 
 class PoissonPoints {
   public:
-    static auto generateRandomPointAround(const SPoint& P, const double sqDist,
-                                          laby::basic::RandomUniDist& Generator) -> SPoint {
+    struct GenerateConfig {
+        int newPointsCount = kDefaultNewPointsCount;
+        bool circle = true;
+        double minDistance = -1.0;
+    };
+
+    static auto generateRandomPointAround(const SPoint& point, const double squaredDistance,
+                                          laby::basic::RandomUniDist& randomGenerator) -> SPoint {
         // start with non-uniform distribution
 
-        double const sqR1 = (3 * sqDist) * Generator.get() + sqDist;
+        const double squaredRadius =
+            (3.0 * squaredDistance) * randomGenerator.get() + squaredDistance;
         // radius should be between MinDist and 2 * MinDist
-        double const radius = sqrt(sqR1);
-        double const r2 = Generator.get();
+        const double radius = sqrt(squaredRadius);
+        const double angleFactor = randomGenerator.get();
 
         // random angle
-        double const angle = 2. * M_PI * r2;
+        const double angle = 2.0 * M_PI * angleFactor;
 
         // the new point is generated around the point (x, y)
-        double const x = P.x + radius * cos(angle);
-        double const y = P.y + radius * sin(angle);
+        const double xCoord = point.xCoord() + radius * cos(angle);
+        const double yCoord = point.yCoord() + radius * sin(angle);
 
-        return {x, y};
+        return SPoint({xCoord, yCoord});
     }
 
     /**
@@ -150,34 +225,36 @@ class PoissonPoints {
      MinDist - minimal distance estimator, use negative value for default
      **/
 
-    static auto generate(size_t NumPoints, int NewPointsCount = 30, bool Circle = true,
-                         double MinDist = -1.0) -> std::vector<SPoint> {
+    static auto generate(std::size_t targetPointCount,
+                         GenerateConfig config) -> std::vector<SPoint> {
 
         laby::basic::RandomUniDist randomDouble(0.0, 1.0, 2);
 
-        std::cout << " NumPoints " << NumPoints << '\n';
-        if (MinDist < 0.0) {
+        std::cout << " NumPoints " << targetPointCount << '\n';
+        if (config.minDistance < 0.0) {
             // optimal density in circle packing is about π⁄√12 or 90.69
-            MinDist = sqrt(6.3 / (10. * static_cast<double>(NumPoints)));
+            config.minDistance =
+                sqrt(kDefaultDensityNumerator /
+                     (kDefaultDensityDenominator * static_cast<double>(targetPointCount)));
         }
 
-        double const sqMinDist = MinDist * MinDist;
+        const double squaredMinDistance = config.minDistance * config.minDistance;
 
         std::vector<SPoint> samplePoints;
         std::vector<SPoint> processList;
 
         // create the grid
-        double const cellSize = MinDist / M_SQRT2;
+        const double cellSize = config.minDistance / M_SQRT2;
 
-        int const gridW = static_cast<int>(ceil(1.0 / cellSize));
-        int const gridH = static_cast<int>(ceil(1.0 / cellSize));
+        const int gridWidth = static_cast<int>(ceil(1.0 / cellSize));
+        const int gridHeight = static_cast<int>(ceil(1.0 / cellSize));
 
-        SGrid grid(gridW, gridH, cellSize);
+        SGrid grid(SGrid::Dimensions{gridWidth, gridHeight}, cellSize);
 
         SPoint firstPoint;
         while (true) {
-            firstPoint = SPoint(randomDouble.get(), randomDouble.get());
-            if (Circle ? firstPoint.isInCircle() : firstPoint.isInRectangle()) {
+            firstPoint = SPoint({randomDouble.get(), randomDouble.get()});
+            if (config.circle ? firstPoint.isInCircle() : firstPoint.isInRectangle()) {
                 break;
             }
         }
@@ -188,7 +265,7 @@ class PoissonPoints {
         grid.insert(firstPoint);
 
         // generate new points for each point in the queue
-        while (!processList.empty() && samplePoints.size() < 2 * NumPoints) {
+        while (!processList.empty() && samplePoints.size() < 2 * targetPointCount) {
 
             // a progress indicator, kind of
             //  if ( SamplePoints.size() % 100 == 0 ) std::cout << ".";
@@ -196,12 +273,13 @@ class PoissonPoints {
             const std::size_t idx = randomDouble.select(0, processList.size());
             const SPoint& point = processList[idx];
             bool noActive = true;
-            for (int i = 0; i < NewPointsCount; ++i) {
-                SPoint const newPoint = generateRandomPointAround(point, sqMinDist, randomDouble);
+            for (int candidateIndex = 0; candidateIndex < config.newPointsCount; ++candidateIndex) {
+                SPoint const newPoint =
+                    generateRandomPointAround(point, squaredMinDistance, randomDouble);
 
-                bool const fits = Circle ? newPoint.isInCircle() : newPoint.isInRectangle();
+                const bool fits = config.circle ? newPoint.isInCircle() : newPoint.isInRectangle();
 
-                if (fits && !grid.isInNeighbourhood(newPoint, sqMinDist, cellSize)) {
+                if (fits && !grid.isInNeighbourhood(newPoint, squaredMinDistance)) {
                     processList.push_back(newPoint);
                     samplePoints.push_back(newPoint);
                     grid.insert(newPoint);
@@ -217,28 +295,34 @@ class PoissonPoints {
         }
 
         randomDouble.shuffle(samplePoints);
-        if (samplePoints.size() > NumPoints) {
-            samplePoints.resize(NumPoints);
+        if (samplePoints.size() > targetPointCount) {
+            samplePoints.resize(targetPointCount);
         }
         return samplePoints;
     }
 
-    static auto generateRectangle(const CGAL::Bbox_2& bbox, const size_t number_of_point)
+    static auto generate(std::size_t targetPointCount) -> std::vector<SPoint> {
+        return generate(targetPointCount, GenerateConfig{});
+    }
+
+    static auto generateRectangle(const CGAL::Bbox_2& bbox, const std::size_t numberOfPoints)
         -> std::vector<std::complex<double>> {
 
-        double const w = bbox.xmax() - bbox.xmin();
-        double const h = bbox.ymax() - bbox.ymin();
+        const double width = bbox.xmax() - bbox.xmin();
+        const double height = bbox.ymax() - bbox.ymin();
 
-        double const maxLength = std::max(w, h);
-        double const ratio = maxLength * maxLength / (w * h);
+        const double maxLength = std::max(width, height);
+        const double ratio = maxLength * maxLength / (width * height);
 
-        std::vector<SPoint> const points = generate(
-            static_cast<std::size_t>(ratio * static_cast<double>(number_of_point) + 1), 30, false);
+        std::vector<SPoint> const points =
+            generate(static_cast<std::size_t>(ratio * static_cast<double>(numberOfPoints) + 1),
+                     GenerateConfig{.circle = false});
 
         std::vector<std::complex<double>> result;
         for (const SPoint& pt : points) {
-            if (pt.x * maxLength < w and pt.y * maxLength < h) {
-                result.emplace_back(pt.x * maxLength + bbox.xmin(), pt.y * maxLength + bbox.ymin());
+            if (pt.xCoord() * maxLength < width && pt.yCoord() * maxLength < height) {
+                result.emplace_back(pt.xCoord() * maxLength + bbox.xmin(),
+                                    pt.yCoord() * maxLength + bbox.ymin());
             }
         }
 

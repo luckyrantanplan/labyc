@@ -12,15 +12,16 @@
 #include <CGAL/Vector_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
+#include <basic/RangeHelper.h>
 #include <cmath>
 #include <iostream>
 #include <ostream>
 
 namespace laby {
 
-static auto PolygonTools::makeTrapeze(const Point_2& sourcePoint, const Point_2& targetPoint,
-                                      const double& thickness1,
-                                      const double& thickness2) -> Linear_polygon {
+auto PolygonTools::makeTrapeze(const Point_2& sourcePoint, const Point_2& targetPoint,
+                               const double& thickness1,
+                               const double& thickness2) -> Linear_polygon {
 
     Linear_polygon polygon;
     makeTrapeze(polygon, sourcePoint, targetPoint, thickness1, thickness2);
@@ -28,9 +29,9 @@ static auto PolygonTools::makeTrapeze(const Point_2& sourcePoint, const Point_2&
     return polygon;
 }
 
-static void PolygonTools::makeTrapeze(Linear_polygon& polygon, const Point_2& sourcePoint,
-                                      const Point_2& targetPoint, const double& thickness1,
-                                      const double& thickness2) {
+void PolygonTools::makeTrapeze(Linear_polygon& polygon, const Point_2& sourcePoint,
+                               const Point_2& targetPoint, const double& thickness1,
+                               const double& thickness2) {
     CGAL::Vector_2<Kernel> const direction(sourcePoint, targetPoint);
     CGAL::Vector_2<Kernel> const perpendicular = direction.perpendicular(CGAL::LEFT_TURN);
 
@@ -48,11 +49,11 @@ static void PolygonTools::makeTrapeze(Linear_polygon& polygon, const Point_2& so
     polygon.push_back(targetPoint + secondOffset);
 }
 
-static void PolygonTools::insertPointPolygon(const Point_2& firstCurrentPoint,
-                                             const Point_2& secondCurrentPoint,
-                                             const Point_2& firstExtensionPoint,
-                                             const Point_2& secondExtensionPoint,
-                                             Linear_polygon& polygon) {
+void PolygonTools::insertPointPolygon(const Point_2& firstCurrentPoint,
+                                      const Point_2& secondCurrentPoint,
+                                      const Point_2& firstExtensionPoint,
+                                      const Point_2& secondExtensionPoint,
+                                      Linear_polygon& polygon) {
     Kernel::Orientation const orientation =
         CGAL::orientation(firstCurrentPoint, secondCurrentPoint, firstExtensionPoint);
     if (orientation == CGAL::RIGHT_TURN) {
@@ -70,8 +71,7 @@ static void PolygonTools::insertPointPolygon(const Point_2& firstCurrentPoint,
     }
 }
 
-static void PolygonTools::extendPolygon(Linear_polygon& polygon,
-                                        const Linear_polygon& extensionPolygon) {
+void PolygonTools::extendPolygon(Linear_polygon& polygon, const Linear_polygon& extensionPolygon) {
     const Point_2& firstExtensionVertex = extensionPolygon.vertex(0);
     const Point_2& secondExtensionVertex = extensionPolygon.vertex(1);
 
@@ -82,9 +82,8 @@ static void PolygonTools::extendPolygon(Linear_polygon& polygon,
                        secondExtensionVertex, polygon);
 }
 
-static auto
-PolygonTools::getSegmentContainingPoint(const Linear_polygon& polygon,
-                                        const Point_2& center) -> Linear_polygon::Segment_2 {
+auto PolygonTools::getSegmentContainingPoint(const Linear_polygon& polygon,
+                                             const Point_2& center) -> Linear_polygon::Segment_2 {
     for (const Linear_polygon::Segment_2& segment :
          RangeHelper::make(polygon.edges_begin(), polygon.edges_end())) {
         if (segment.has_on(center)) {
@@ -96,9 +95,9 @@ PolygonTools::getSegmentContainingPoint(const Linear_polygon& polygon,
     return {};
 }
 
-static auto PolygonTools::createJoinTriangle(const Linear_polygon& firstPolygon,
-                                             const Linear_polygon& secondPolygon,
-                                             const Point_2& center) -> Linear_polygon {
+auto PolygonTools::createJoinTriangle(const Linear_polygon& firstPolygon,
+                                      const Linear_polygon& secondPolygon,
+                                      const Point_2& center) -> Linear_polygon {
     Linear_polygon joinTriangle;
 
     const Linear_polygon::Segment_2 firstSegment = getSegmentContainingPoint(firstPolygon, center);

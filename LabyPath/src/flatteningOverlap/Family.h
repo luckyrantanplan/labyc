@@ -72,16 +72,9 @@ namespace std {
 
 template <> struct hash<laby::Intersection> {
     auto operator()(const laby::Intersection& intersection) const -> std::size_t {
-        // Start with a hash value of 0    .
-        std::size_t const seed = 0;
-
-        // Compute individual hash values for first,
-        // second and third and combine them using XOR
-        // and bit shifting:
+        std::size_t seed = 0;
         boost::hash_combine(seed, hash<std::size_t>()(intersection.first()));
         boost::hash_combine(seed, hash<std::size_t>()(intersection.second()));
-
-        // Return the result.
         return seed;
     }
 };

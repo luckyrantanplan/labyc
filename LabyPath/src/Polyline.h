@@ -79,12 +79,12 @@ class Polyline {
                                       });
     }
 
-    [[nodiscard]] static auto totalLength() -> double {
-        double const sqdist = 0;
+    [[nodiscard]] auto totalLength() const -> double {
+        double length = 0.0;
         for (std::size_t i = 1; i < _points.size(); ++i) {
-            sqdist += sqrt(CGAL::to_double((_points.at(i) - _points.at(i - 1)).squared_length()));
+            length += sqrt(CGAL::to_double((_points.at(i) - _points.at(i - 1)).squared_length()));
         }
-        return sqdist;
+        return length;
     }
 
     void removeConsecutiveDuplicatePoints(double epsilon = 0.0);
@@ -93,9 +93,9 @@ class Polyline {
 
   private:
     int32_t _id = 0;
-    std::vector<Point_2> _points{};
+    std::vector<Point_2> _points;
     bool _closed = false;
-    Point_2 _minPoint{};
+    Point_2 _minPoint;
 };
 
 } /* namespace laby */

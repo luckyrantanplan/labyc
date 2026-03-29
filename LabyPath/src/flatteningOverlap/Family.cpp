@@ -13,8 +13,13 @@
 #include "Family.h"
 
 #include "basic/EasyProfilerCompat.h"
+#include <CGAL/Union_find.h>
+#include <PolyConvex.h>
+#include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace laby {
 
@@ -22,9 +27,9 @@ namespace laby {
  * Build a Union-Find structure over the polygon indices in @p coverSet,
  * merging any two indices that are adjacent in @p polyConvexList.
  */
-static void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
-                                    const std::vector<PolyConvex>& polyConvexList,
-                                    CGAL::Union_find<std::size_t>& unionFind) {
+void Family::createUnionFind(const std::unordered_set<std::size_t>& coverSet,
+                             const std::vector<PolyConvex>& polyConvexList,
+                             CGAL::Union_find<std::size_t>& unionFind) {
     EASY_FUNCTION();
     for (const std::size_t& coverIndex : coverSet) {
         polyConvexList.at(coverIndex).handle = unionFind.push_back(coverIndex);
@@ -33,7 +38,7 @@ static void Family::createUnionFind(const std::unordered_set<std::size_t>& cover
         const PolyConvex& polyConvex = polyConvexList.at(coverIndex);
 
         for (std::size_t const adjacentIndex : polyConvex._adjacents) {
-            if (coverSet.count(adjacentIndex) > 0) {
+            if (coverSet.contains(adjacentIndex)) {
                 unionFind.unify_sets(polyConvex.handle, polyConvexList.at(adjacentIndex).handle);
             }
         }
@@ -48,7 +53,7 @@ static void Family::createUnionFind(const std::unordered_set<std::size_t>& cover
  *  - 1 patch:   all polygons are connected (single-piece overlap)
  *  - >2 patches: unexpected topology – throws std::runtime_error
  */
-static auto Family::createPatch(const std::vector<PolyConvex>& polyConvexList) -> void {
+auto Family::createPatch(const std::vector<PolyConvex>& polyConvexList) -> void {
     EASY_FUNCTION();
     std::unordered_set<std::size_t> coverSet;
     for (Intersection const& intersection : _intersections) {

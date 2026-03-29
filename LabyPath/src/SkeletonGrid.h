@@ -35,10 +35,10 @@ class SkeletonGrid {
 
   private:
     proto::SkeletonGrid _config;
-    std::vector<Kernel::Segment_2> _radialList{};
-    std::vector<Kernel::Segment_2> _circularList{};
+    std::vector<Kernel::Segment_2> _radialList;
+    std::vector<Kernel::Segment_2> _circularList;
     CGAL::Bbox_2 _bbox;
-    std::vector<Segment_info_2> _segResult{};
+    std::vector<Segment_info_2> _segResult;
 };
 
 } /* namespace laby */

@@ -9,11 +9,19 @@
 
 #include <CGAL/Arrangement_2/Arrangement_on_surface_2_global.h>
 #include <CGAL/Intersections_2/Line_2_Segment_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
 
+#include <GeomData.h>
+#include <basic/RangeHelper.h>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <unordered_map>
+#include <variant>
+#include <vector>
 
 #include "basic/AugmentedPolygonSet.h"
 
@@ -25,7 +33,7 @@ constexpr double kHalfDistanceDivisor = 2.0;
 
 } // namespace
 
-static auto SkeletonOffset::offsetFace(
+auto SkeletonOffset::offsetFace(
     const basic::HalfedgeNode& halfedge, std::vector<Kernel::Segment_2>& resultSegments,
     const double& offsetDistance,
     std::unordered_map<const basic::SegmentNode*, IntersectType>& verticesCache) -> void {
@@ -40,7 +48,7 @@ static auto SkeletonOffset::offsetFace(
     perpendicular *= offsetDistance / std::sqrt(CGAL::to_double(perpendicular.squared_length()));
     Kernel::Line_2 const line(halfedge.target()->point() + perpendicular, vector);
     bool const winding = false;
-    Kernel::Point_2 lastPoint;
+    Kernel::Point_2 const lastPoint;
     for (const basic::HalfedgeNode& currentHalfedge : RangeHelper::make(halfedge.next()->ccb())) {
         const auto& intersectionPoints =
             verticesCache
@@ -51,14 +59,13 @@ static auto SkeletonOffset::offsetFace(
     }
 }
 
-static auto SkeletonOffset::getSegment(const basic::HalfedgeNode& halfedge) -> Kernel::Segment_2 {
+auto SkeletonOffset::getSegment(const basic::HalfedgeNode& halfedge) -> Kernel::Segment_2 {
     return {halfedge.source()->point(), halfedge.target()->point()};
 }
 
-static auto
-SkeletonOffset::createAllOffsets(const double& distance,
-                                 const basic::Arrangement_2Node& arrangement,
-                                 std::vector<Kernel::Segment_2>& resultSegments) -> void {
+auto SkeletonOffset::createAllOffsets(const double& distance,
+                                      const basic::Arrangement_2Node& arrangement,
+                                      std::vector<Kernel::Segment_2>& resultSegments) -> void {
     std::size_t previousSize = resultSegments.size() + 1;
     double offsetDistance = distance / kHalfDistanceDivisor;
     while (resultSegments.size() != previousSize) {
@@ -68,7 +75,7 @@ SkeletonOffset::createAllOffsets(const double& distance,
     }
 }
 
-static auto SkeletonOffset::getPolygonOffset(const std::vector<Kernel::Segment_2>& resultSegments)
+auto SkeletonOffset::getPolygonOffset(const std::vector<Kernel::Segment_2>& resultSegments)
     -> std::vector<CGAL::Polygon_with_holes_2<Kernel>> {
 
     std::vector<Segment_info_2> segResult;
@@ -109,9 +116,9 @@ static auto SkeletonOffset::getPolygonOffset(const std::vector<Kernel::Segment_2
     return polygonWithHoles;
 }
 
-static auto SkeletonOffset::createOffset(const basic::Arrangement_2Node& arrangement,
-                                         double offsetDistance,
-                                         std::vector<Kernel::Segment_2>& resultSegments) -> void {
+auto SkeletonOffset::createOffset(const basic::Arrangement_2Node& arrangement,
+                                  double offsetDistance,
+                                  std::vector<Kernel::Segment_2>& resultSegments) -> void {
 
     if (offsetDistance <= 0.0) {
         for (const basic::HalfedgeNode& halfedge :
@@ -151,7 +158,7 @@ auto SkeletonOffset::addToSegmentsList(const IntersectType& intersectionPoints, 
     }
 }
 
-static auto SkeletonOffset::getLineSegmentIntersect(
+auto SkeletonOffset::getLineSegmentIntersect(
     const Kernel::Line_2& line, const Kernel::Segment_2& segment) -> SkeletonOffset::IntersectType {
 
     IntersectType result;
@@ -164,7 +171,7 @@ static auto SkeletonOffset::getLineSegmentIntersect(
     return result;
 }
 
-static auto SkeletonOffset::offsetCorner(
+auto SkeletonOffset::offsetCorner(
     const basic::HalfedgeNode& halfedge, std::vector<Kernel::Segment_2>& resultSegments,
     const double& offsetDistance,
     std::unordered_map<const basic::SegmentNode*, IntersectType>& verticesCache) -> void {

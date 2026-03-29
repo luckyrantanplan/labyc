@@ -125,7 +125,7 @@ class EdgeInfo {
         return _path.count(serialId) != 0;
     }
 
-    static void addPath(const int32_t serialId) {
+    void addPath(const int32_t serialId) {
         auto insertResult = _path.emplace(serialId, 1);
         if (!insertResult.second) {
             ++insertResult.first->second;
@@ -158,7 +158,7 @@ class EdgeInfo {
 
     auto getNextHalfedge(int32_t visited, const Vertex& vertex) const -> const Halfedge*;
 
-    static void print(std::ostream& outputStream) {
+    void print(std::ostream& outputStream) const {
         outputStream << " path ";
         for (const auto& [net_id, count] : _path) {
             outputStream << " " << net_id << "->" << count;

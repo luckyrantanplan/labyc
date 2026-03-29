@@ -8,15 +8,18 @@
 #include "PathRendering.h"
 
 #include <CGAL/Bbox_2.h>
+#include <CGAL/Polygon_set_2.h>
 #include <CGAL/box_intersection_d.h>
+#include <basic/AugmentedPolygonSet.h>
+#include <basic/PolygonTools.h>
 #include <cstddef>
 #include <cstdint>
 
 #include "PolyConvex.h"
 #include "basic/EasyProfilerCompat.h"
+#include "flatteningOverlap/NodeRendering.h"
 #include <algorithm>
 #include <iostream>
-#include <iterator>
 
 #include "../OrientedRibbon.h"
 #include "flatteningOverlap/Family.h"
@@ -31,6 +34,19 @@ namespace {
 constexpr int32_t kUnassignedState = -1;
 constexpr int32_t kPrimaryAdjacentState = 0;
 constexpr int32_t kSecondaryAdjacentState = 1;
+
+struct CoverUnionData {
+    const std::vector<PolyConvex>& polyConvexList;
+    const std::unordered_set<Intersection>& intersectOnSinglePiece;
+    CGAL::Union_find<std::size_t>& unionFind;
+};
+
+struct NodeMapBuildData {
+    const std::vector<PolyConvex>& polyConvexList;
+    CGAL::Union_find<std::size_t>& unionFind;
+    std::vector<Node>& nodes;
+    int32_t& nodeId;
+};
 
 auto enqueueUnvisitedAdjacentPolyConvexes(Node& node, const PolyConvex& polyConvex,
                                           const std::vector<PolyConvex>& polyConvexList,
@@ -48,15 +64,15 @@ auto connectPolyConvexNodes(const PolyConvex& polyConvex) -> void {
         Node& node = *polyConvexNodes.back();
         polyConvexNodes.resize(polyConvexNodes.size() - 1U);
         for (Node* adjacentNode : polyConvexNodes) {
-            node._adjacents.emplace(adjacentNode);
-            adjacentNode->_adjacents.emplace(&node);
+            node.adjacents().emplace(adjacentNode);
+            adjacentNode->adjacents().emplace(&node);
         }
     }
 }
 
 auto seedNodeAdjacenceQueue(Node& node, const std::vector<PolyConvex>& polyConvexList,
                             std::queue<QueueNodePolyConvex>& queue) -> void {
-    for (const std::size_t coverIndex : node._cover) {
+    for (const std::size_t coverIndex : node.cover()) {
         const PolyConvex& polyConvex = polyConvexList.at(coverIndex);
         if (polyConvex._visited != -1) {
             queue.emplace(node, polyConvex);
@@ -77,24 +93,24 @@ auto processQueuedPolyConvex(QueueNodePolyConvex queuedPolyConvex,
     }
 
     Node& adjacentNode = *polyConvex._nodes.front();
-    adjacentNode._adjacents.emplace(&queuedPolyConvex.node());
-    queuedPolyConvex.node()._adjacents.emplace(&adjacentNode);
+    adjacentNode.adjacents().emplace(&queuedPolyConvex.node());
+    queuedPolyConvex.node().adjacents().emplace(&adjacentNode);
     enqueueUnvisitedAdjacentPolyConvexes(adjacentNode, polyConvex, polyConvexList, queue);
 }
 
 auto initializeBeginNodeState(Node& beginNode) -> void {
-    StateSelect stateSelect(beginNode._opposite);
+    StateSelect stateSelect(beginNode.opposite());
     beginNode.setState(stateSelect.getNext());
 }
 
 auto enqueueOppositeNodes(Node& node, std::priority_queue<NodeQueue>& queue) -> void {
-    StateSelect stateSelect(node._opposite);
-    stateSelect.markOccupied(node._state);
+    StateSelect stateSelect(node.opposite());
+    stateSelect.markOccupied(node.state());
 
-    for (Node* oppositeNode : node._opposite) {
-        int32_t& oppositeState = oppositeNode->_state;
+    for (Node* oppositeNode : node.opposite()) {
+        const int32_t oppositeState = oppositeNode->state();
         if (oppositeState == kUnassignedState) {
-            oppositeState = stateSelect.getNext();
+            oppositeNode->setState(stateSelect.getNext());
             queue.emplace(*oppositeNode);
         }
     }
@@ -102,11 +118,11 @@ auto enqueueOppositeNodes(Node& node, std::priority_queue<NodeQueue>& queue) -> 
 
 auto enqueueAdjacentNodes(Node& node, std::priority_queue<NodeQueue>& queue) -> void {
     const int32_t adjacentState =
-        (node._state == kPrimaryAdjacentState) ? kSecondaryAdjacentState : kPrimaryAdjacentState;
-    for (Node* adjacentNode : node._adjacents) {
-        int32_t& nodeState = adjacentNode->_state;
+        (node.state() == kPrimaryAdjacentState) ? kSecondaryAdjacentState : kPrimaryAdjacentState;
+    for (Node* adjacentNode : node.adjacents()) {
+        const int32_t nodeState = adjacentNode->state();
         if (nodeState == kUnassignedState && !adjacentNode->haveOppositeState()) {
-            nodeState = adjacentState;
+            adjacentNode->setState(adjacentState);
             queue.emplace(*adjacentNode);
         }
     }
@@ -141,62 +157,60 @@ auto extendCoverSetFromSinglePatchFamilies(const std::vector<const Family*>& fam
 }
 
 auto unifyIntersectingCoverSet(const std::vector<std::size_t>& heads,
-                               const std::vector<PolyConvex>& polyConvexList,
-                               const std::unordered_set<Intersection>& intersectOnSinglePiece,
-                               CGAL::Union_find<std::size_t>& unionFind) -> void {
+                               const CoverUnionData& coverUnionData) -> void {
     for (std::size_t firstIndex = 0; firstIndex < heads.size(); ++firstIndex) {
         const std::size_t first = heads.at(firstIndex);
         for (std::size_t secondIndex = firstIndex + 1; secondIndex < heads.size(); ++secondIndex) {
             const std::size_t second = heads.at(secondIndex);
-            const PolyConvex& firstPolyConvex = polyConvexList.at(first);
-            const PolyConvex& secondPolyConvex = polyConvexList.at(second);
-            if (!unionFind.same_set(firstPolyConvex.handle, secondPolyConvex.handle) &&
-                intersectOnSinglePiece.count({first, second}) > 0) {
-                unionFind.unify_sets(firstPolyConvex.handle, secondPolyConvex.handle);
+            const PolyConvex& firstPolyConvex = coverUnionData.polyConvexList.at(first);
+            const PolyConvex& secondPolyConvex = coverUnionData.polyConvexList.at(second);
+            if (!coverUnionData.unionFind.same_set(firstPolyConvex.handle,
+                                                   secondPolyConvex.handle) &&
+                coverUnionData.intersectOnSinglePiece.count({first, second}) > 0) {
+                coverUnionData.unionFind.unify_sets(firstPolyConvex.handle,
+                                                    secondPolyConvex.handle);
             }
         }
     }
 }
 
 auto buildNodeMapFromCoverSet(const std::unordered_set<std::size_t>& coverSet,
-                              const std::vector<PolyConvex>& polyConvexList,
-                              CGAL::Union_find<std::size_t>& unionFind, std::vector<Node>& nodes,
-                              int32_t& nodeId) -> std::unordered_map<std::size_t, Node*> {
+                              NodeMapBuildData& nodeMapBuildData)
+    -> std::unordered_map<std::size_t, Node*> {
     std::unordered_map<std::size_t, Node*> nodeMap;
     for (const std::size_t& coverIndex : coverSet) {
-        const std::size_t head = *unionFind.find(polyConvexList.at(coverIndex).handle);
+        const std::size_t head =
+            *nodeMapBuildData.unionFind.find(nodeMapBuildData.polyConvexList.at(coverIndex).handle);
 
         auto iterator = nodeMap.try_emplace(head, nullptr);
         Node*& nodePointer = iterator.first->second;
         if (nodePointer == nullptr) {
-            nodes.emplace_back(nodeId);
-            ++nodeId;
-            nodePointer = &nodes.back();
+            nodeMapBuildData.nodes.emplace_back(nodeMapBuildData.nodeId);
+            ++nodeMapBuildData.nodeId;
+            nodePointer = &nodeMapBuildData.nodes.back();
         }
-        nodePointer->_cover.emplace_back(coverIndex);
+        nodePointer->cover().emplace_back(coverIndex);
     }
     return nodeMap;
 }
 
 } // namespace
 
-static void PathRendering::unify(std::size_t secondIndex,
-                                 const std::vector<std::size_t>& adjacentIndices,
-                                 std::unordered_set<Intersection>& intersections,
-                                 CGAL::Union_find<size_t>& unionFind,
-                                 const Intersection& intersection) {
+void PathRendering::unify(const UnifyData& unifyData,
+                          std::unordered_set<Intersection>& intersections,
+                          CGAL::Union_find<size_t>& unionFind, const Intersection& intersection) {
 
     EASY_FUNCTION();
-    for (std::size_t const adjacentIndex : adjacentIndices) {
-        const auto iterator = intersections.find({adjacentIndex, secondIndex});
+    for (std::size_t const adjacentIndex : unifyData.adjacentIndices) {
+        const auto iterator = intersections.find({adjacentIndex, unifyData.secondIndex});
         if (iterator != intersections.end()) {
             unionFind.unify_sets(intersection.handle(), iterator->handle());
         }
     }
 }
 
-static void PathRendering::createUnion(OrientedRibbon& ribs,
-                                       const std::vector<PolyConvex>& polyConvexList) {
+void PathRendering::createUnion(OrientedRibbon& ribs,
+                                const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
     CGAL::Polygon_set_2<Kernel> set;
 
@@ -226,9 +240,8 @@ static void PathRendering::createUnion(OrientedRibbon& ribs,
     }
 }
 
-static auto PathRendering::doIntersect(Intersection& firstIntersection,
-                                       Intersection& secondIntersection,
-                                       const std::vector<PolyConvex>& polyConvexList) -> bool {
+auto PathRendering::doIntersect(Intersection& firstIntersection, Intersection& secondIntersection,
+                                const std::vector<PolyConvex>& polyConvexList) -> bool {
     EASY_FUNCTION();
     const Linear_polygon& secondLeftPolygon =
         polyConvexList.at(secondIntersection.first())._geometry;
@@ -265,11 +278,8 @@ static auto PathRendering::doIntersect(Intersection& firstIntersection,
     return false;
 }
 
-static auto PathRendering::locateFamilies(
-    const std::unordered_map<std::size_t, std::size_t>& families, std::vector<Family>& familyVector,
-    std::vector<Intersection>& intersections,
-    std::vector<PathRendering::BoxIntersection>& boxIntersectionList,
-    const CGAL::Union_find<std::size_t>& unionFind, const std::vector<PolyConvex>& polyConvexList)
+auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::size_t>& families,
+                                   FamilyLocationData& familyLocationData)
     -> std::unordered_map<std::size_t, std::vector<const Family*>> {
 
     EASY_FUNCTION();
@@ -277,25 +287,32 @@ static auto PathRendering::locateFamilies(
 
     for (const auto& familyEntry : families) {
         std::size_t const intersectionIndex = familyEntry.first;
-        intersections.at(intersectionIndex)
+        familyLocationData.intersections.at(intersectionIndex)
             .setFamilyHandle(familyUnionFind.push_back(intersectionIndex));
     }
     CGAL::box_self_intersection_d(
-        boxIntersectionList.begin(), boxIntersectionList.end(),
+        familyLocationData.boxIntersectionList.begin(),
+        familyLocationData.boxIntersectionList.end(),
         [&](const BoxIntersection& firstBoxIntersection,
             const BoxIntersection& secondBoxIntersection) {
-            Intersection firstIntersection = intersections.at(firstBoxIntersection.handle());
-            Intersection secondIntersection = intersections.at(secondBoxIntersection.handle());
+            Intersection firstIntersection =
+                familyLocationData.intersections.at(firstBoxIntersection.handle());
+            Intersection secondIntersection =
+                familyLocationData.intersections.at(secondBoxIntersection.handle());
 
-            const std::size_t firstFamilyHead = *unionFind.find(firstIntersection.handle());
-            const std::size_t secondFamilyHead = *unionFind.find(secondIntersection.handle());
+            const std::size_t firstFamilyHead =
+                *familyLocationData.unionFind.find(firstIntersection.handle());
+            const std::size_t secondFamilyHead =
+                *familyLocationData.unionFind.find(secondIntersection.handle());
             if (firstFamilyHead != secondFamilyHead) {
-                Intersection const firstHeadIntersection = intersections.at(firstFamilyHead);
-                Intersection const secondHeadIntersection = intersections.at(secondFamilyHead);
+                Intersection const firstHeadIntersection =
+                    familyLocationData.intersections.at(firstFamilyHead);
+                Intersection const secondHeadIntersection =
+                    familyLocationData.intersections.at(secondFamilyHead);
                 if (!familyUnionFind.same_set(firstHeadIntersection.familyHandle(),
                                               secondHeadIntersection.familyHandle())) {
-                    bool const intersects = false =
-                        doIntersect(firstIntersection, secondIntersection, polyConvexList);
+                    const bool intersects = doIntersect(firstIntersection, secondIntersection,
+                                                        familyLocationData.polyConvexList);
                     if (intersects) {
                         familyUnionFind.unify_sets(firstHeadIntersection.familyHandle(),
                                                    secondHeadIntersection.familyHandle());
@@ -307,17 +324,18 @@ static auto PathRendering::locateFamilies(
 
     for (const auto& familyEntry : families) {
         std::size_t const intersectionIndex = familyEntry.first;
-        std::size_t const head =
-            *familyUnionFind.find(intersections.at(intersectionIndex).familyHandle());
+        std::size_t const head = *familyUnionFind.find(
+            familyLocationData.intersections.at(intersectionIndex).familyHandle());
         auto iterator = groupedFamilies.try_emplace(head);
-        iterator.first->second.emplace_back(&familyVector.at(familyEntry.second));
+        iterator.first->second.emplace_back(
+            &familyLocationData.familyVector.at(familyEntry.second));
     }
 
     return groupedFamilies;
 }
 
-static void PathRendering::createIntersect(OrientedRibbon& oribbon,
-                                           const std::vector<PolyConvex>& polyConvexList) {
+void PathRendering::createIntersect(OrientedRibbon& oribbon,
+                                    const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
     std::cout << "start intersect\n";
 
@@ -375,8 +393,8 @@ static void PathRendering::createIntersect(OrientedRibbon& oribbon,
         const std::vector<std::size_t>& secondAdjacents =
             polyConvexList.at(intersection.second())._adjacents;
 
-        unify(intersection.second(), firstAdjacents, intersectionsSet, unionFind, intersection);
-        unify(intersection.first(), secondAdjacents, intersectionsSet, unionFind, intersection);
+        unify({intersection.second(), firstAdjacents}, intersectionsSet, unionFind, intersection);
+        unify({intersection.first(), secondAdjacents}, intersectionsSet, unionFind, intersection);
     }
 
     std::cout << "unify\n";
@@ -394,19 +412,20 @@ static void PathRendering::createIntersect(OrientedRibbon& oribbon,
         familyVector.at(iterator.first->second).intersections().emplace_back(intersection);
     }
 
-    std::vector<Node> nodes = processFamilies(families, polyConvexList, familyVector, intersections,
-                                              boxIntersectionList, unionFind);
+    FamilyProcessingData familyProcessingData{polyConvexList, familyVector, intersections,
+                                              boxIntersectionList, unionFind};
+    std::vector<Node> nodes = processFamilies(families, familyProcessingData);
     std::cout << "processFamilies\n";
     chooseNodeState(nodes);
     std::cout << "chooseNodeState\n";
     NodeRendering::render(oribbon, nodes, polyConvexList);
 }
 
-static void PathRendering::nodeAdjacence(std::vector<Node>& nodes,
-                                         const std::vector<PolyConvex>& polyConvexList) {
+void PathRendering::nodeAdjacence(std::vector<Node>& nodes,
+                                  const std::vector<PolyConvex>& polyConvexList) {
     EASY_FUNCTION();
     for (Node& node : nodes) {
-        for (const std::size_t coverIndex : node._cover) {
+        for (const std::size_t coverIndex : node.cover()) {
             polyConvexList.at(coverIndex)._nodes.emplace_back(&node);
         }
     }
@@ -426,10 +445,10 @@ static void PathRendering::nodeAdjacence(std::vector<Node>& nodes,
     }
 }
 
-static void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
+void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
     EASY_FUNCTION();
     for (Node& beginNode : nodes) {
-        if (beginNode._state == kUnassignedState) {
+        if (beginNode.state() == kUnassignedState) {
             initializeBeginNodeState(beginNode);
 
             std::priority_queue<NodeQueue> queue;
@@ -444,61 +463,62 @@ static void PathRendering::chooseNodeState(std::vector<Node>& nodes) {
     }
 }
 
-static auto PathRendering::createNode(
-    const std::unordered_map<std::size_t, std::vector<const Family*>>& familyMap,
-    std::unordered_set<Intersection> intersectOnSinglePiece,
-    const std::vector<PolyConvex>& polyConvexList) -> std::vector<Node> {
+auto PathRendering::createNode(const NodeCreationData& nodeCreationData) -> std::vector<Node> {
     EASY_FUNCTION();
     std::vector<Node> nodes;
     {
         std::size_t nbNodes = 0;
-        for (const auto& familyEntry : familyMap) {
+        for (const auto& familyEntry : nodeCreationData.familyMap) {
             nbNodes += 2 * familyEntry.second.size();
         }
         nodes.reserve(nbNodes);
     }
-    std::cout << "map number : " << familyMap.size() << '\n';
-    for (const auto& familyEntry : familyMap) {
-        mergeFamilies(familyEntry.second, intersectOnSinglePiece, polyConvexList, nodes);
+    std::cout << "map number : " << nodeCreationData.familyMap.size() << '\n';
+    for (const auto& familyEntry : nodeCreationData.familyMap) {
+        mergeFamilies(familyEntry.second, nodeCreationData.intersectOnSinglePiece,
+                      nodeCreationData.polyConvexList, nodes);
     }
-    nodeAdjacence(nodes, polyConvexList);
+    nodeAdjacence(nodes, nodeCreationData.polyConvexList);
     return nodes;
 }
 
-static auto PathRendering::processFamilies(
-    std::unordered_map<size_t, std::size_t>& families,
-    const std::vector<PolyConvex>& polyConvexList, std::vector<Family>& familyVector,
-    std::vector<Intersection>& intersections, std::vector<BoxIntersection>& boxIntersectionList,
-    CGAL::Union_find<std::size_t>& unionFind) -> std::vector<Node> {
+auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& families,
+                                    FamilyProcessingData& familyProcessingData)
+    -> std::vector<Node> {
     EASY_FUNCTION();
 
     std::unordered_set<Intersection> intersectOnSinglePiece;
 
     for (const auto& familyEntry : families) {
         std::size_t const familyIndex = familyEntry.second;
-        Family& family = familyVector.at(familyIndex);
-        family.createPatch(polyConvexList);
+        Family& family = familyProcessingData.familyVector.at(familyIndex);
+        family.createPatch(familyProcessingData.polyConvexList);
         if (family.patches().size() == 1) {
             intersectOnSinglePiece.insert(family.intersections().begin(),
                                           family.intersections().end());
         }
     }
 
-    std::unordered_map<std::size_t, std::vector<const Family*>> const map = locateFamilies(
-        families, familyVector, intersections, boxIntersectionList, unionFind, polyConvexList);
+    FamilyLocationData familyLocationData{
+        familyProcessingData.familyVector, familyProcessingData.intersections,
+        familyProcessingData.boxIntersectionList, familyProcessingData.unionFind,
+        familyProcessingData.polyConvexList};
+    std::unordered_map<std::size_t, std::vector<const Family*>> const map =
+        locateFamilies(families, familyLocationData);
 
-    std::vector<Node> nodes = createNode(map, intersectOnSinglePiece, polyConvexList);
+    NodeCreationData nodeCreationData{map, intersectOnSinglePiece,
+                                      familyProcessingData.polyConvexList};
+    std::vector<Node> nodes = createNode(nodeCreationData);
     return nodes;
 }
 
-static void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyConvexList,
-                                            const std::vector<std::size_t>& cover,
-                                            basic::Polygon_set_2Node& setPolygons) {
+void PathRendering::createPolygonSet(const PolygonSetData& polygonSetData,
+                                     basic::Polygon_set_2Node& setPolygons) {
 
     std::vector<basic::Polygon_2Node> polygonVector;
-    polygonVector.reserve(cover.size());
-    for (const std::size_t coverIndex : cover) {
-        const PolyConvex& polyConvex = polyConvexList.at(coverIndex);
+    polygonVector.reserve(polygonSetData.cover.size());
+    for (const std::size_t coverIndex : polygonSetData.cover) {
+        const PolyConvex& polyConvex = polygonSetData.polyConvexList.at(coverIndex);
         polygonVector.emplace_back(polyConvex._geometry.vertices_begin(),
                                    polyConvex._geometry.vertices_end());
     }
@@ -508,9 +528,8 @@ static void PathRendering::createPolygonSet(const std::vector<PolyConvex>& polyC
     }
 }
 
-static void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
-                                            const std::vector<PolyConvex>& polyConvexList,
-                                            const std::unordered_map<std::size_t, Node*>& map) {
+void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
+                                     const ReCutGeometryData& reCutGeometryData) {
     EASY_FUNCTION();
     std::cout << "reCutAllGeometry\n";
 
@@ -521,10 +540,12 @@ static void PathRendering::reCutAllGeometry(const std::vector<const Family*>& fa
             intersectGeometryList.emplace_back();
             basic::Polygon_set_2Node& setPolygons = intersectGeometryList.back();
             auto patchIterator = family->patches().begin();
-            createPolygonSet(polyConvexList, patchIterator->second, setPolygons);
+            createPolygonSet({reCutGeometryData.polyConvexList, patchIterator->second},
+                             setPolygons);
             basic::Polygon_set_2Node secondaryPolygonSet;
             ++patchIterator;
-            createPolygonSet(polyConvexList, patchIterator->second, secondaryPolygonSet);
+            createPolygonSet({reCutGeometryData.polyConvexList, patchIterator->second},
+                             secondaryPolygonSet);
             setPolygons.intersection(secondaryPolygonSet);
         }
     }
@@ -532,9 +553,9 @@ static void PathRendering::reCutAllGeometry(const std::vector<const Family*>& fa
     for (basic::Polygon_set_2Node const& setPolygons : intersectGeometryList) {
         unionFamilies.join(setPolygons);
     }
-    for (const auto& nodeEntry : map) {
+    for (const auto& nodeEntry : reCutGeometryData.map) {
         Node& node = *nodeEntry.second;
-        node._setPolygons.intersection(unionFamilies);
+        node.setPolygons().intersection(unionFamilies);
     }
 }
 
@@ -544,7 +565,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
                                   std::vector<Node>& nodes) {
     EASY_FUNCTION();
 
-    int32_t const nodeId = _nextNodeId;
+    int32_t nodeId = _nextNodeId;
 
     std::unordered_set<std::size_t> coverSet = collectMultiPatchCoverSet(families);
     extendCoverSetFromSinglePatchFamilies(families, coverSet);
@@ -554,32 +575,34 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
 
     std::vector<std::size_t> const heads(coverSet.begin(), coverSet.end());
 
-    unifyIntersectingCoverSet(heads, polyConvexList, intersectOnSinglePiece, unionFind);
+    CoverUnionData coverUnionData{polyConvexList, intersectOnSinglePiece, unionFind};
+    unifyIntersectingCoverSet(heads, coverUnionData);
 
     if (unionFind.number_of_sets() > 1) {
+        NodeMapBuildData nodeMapBuildData{polyConvexList, unionFind, nodes, nodeId};
         std::unordered_map<std::size_t, Node*> const map =
-            buildNodeMapFromCoverSet(coverSet, polyConvexList, unionFind, nodes, nodeId);
+            buildNodeMapFromCoverSet(coverSet, nodeMapBuildData);
         for (const auto& nodeEntry : map) {
             Node& node = *nodeEntry.second;
 
-            createPolygonSet(polyConvexList, node._cover, node._setPolygons);
+            createPolygonSet({polyConvexList, node.cover()}, node.setPolygons());
 
             for (const auto& oppositeEntry : map) {
                 if (nodeEntry.first != oppositeEntry.first) {
-                    node._opposite.push_back(oppositeEntry.second);
+                    node.opposite().push_back(oppositeEntry.second);
                 }
             }
         }
 
         if (unionFind.number_of_sets() > 2) {
-            reCutAllGeometry(families, polyConvexList, map);
+            reCutAllGeometry(families, {polyConvexList, map});
         }
     }
     _nextNodeId = nodeId;
 }
-static void PathRendering::pathRender(const std::vector<PolyConvex>& polyConvexList,
-                                      OrientedRibbon& oRibbon) {
-    PathRendering const pathRenderer;
+void PathRendering::pathRender(const std::vector<PolyConvex>& polyConvexList,
+                               OrientedRibbon& oRibbon) {
+    PathRendering pathRenderer;
     std::cout << "polyConvexList.size() " << polyConvexList.size() << '\n';
 
     pathRenderer.createIntersect(oRibbon, polyConvexList);

@@ -85,10 +85,10 @@ void connectSharedColorPolyConvexes(const ColorPolyConvexMap& colorPlcMap,
         const std::vector<std::size_t>& vect = item.second;
         if (vect.size() > 1) {
             for (std::size_t i = 1; i < vect.size(); ++i) {
-                PolyConvex::connect(vect.at(i - 1), vect.at(i), polyConvexVect, connectionPoint);
+                PolyConvex::connect({vect.at(i - 1), vect.at(i)}, polyConvexVect, connectionPoint);
             }
             for (const std::size_t orphanIndex : orphan) {
-                PolyConvex::connect(vect.at(0), orphanIndex, polyConvexVect, connectionPoint);
+                PolyConvex::connect({vect.at(0), orphanIndex}, polyConvexVect, connectionPoint);
             }
         }
     }
@@ -98,7 +98,7 @@ void connectOrphanPolyConvexes(const std::vector<std::size_t>& orphan,
                                std::vector<PolyConvex>& polyConvexVect,
                                const Kernel::Point_2& connectionPoint) {
     for (std::size_t i = 1; i < orphan.size(); ++i) {
-        PolyConvex::connect(orphan.at(0), orphan.at(i), polyConvexVect, connectionPoint);
+        PolyConvex::connect({orphan.at(0), orphan.at(i)}, polyConvexVect, connectionPoint);
     }
 }
 

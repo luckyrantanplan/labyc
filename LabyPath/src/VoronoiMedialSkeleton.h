@@ -65,11 +65,11 @@ struct CroppedVoronoiFromDelaunay {
             return p2;
         }
 
-        auto getTangent(const Point_2& p) -> Kernel_sqrt::Line_2;
+        auto getTangent(const Point_2& point) -> Kernel_sqrt::Line_2;
     };
 
-    std::vector<Segment_2> m_cropped_vd{};
-    Iso_rectangle_2 m_bbox{};
+    std::vector<Segment_2> m_cropped_vd;
+    Iso_rectangle_2 m_bbox;
 
     explicit CroppedVoronoiFromDelaunay(Iso_rectangle_2 i_bbox)
         : m_bbox{std::move(std::move(i_bbox))} {}
@@ -80,10 +80,10 @@ struct CroppedVoronoiFromDelaunay {
         if (!rsl.is_degenerate()) {
             auto obj = CGAL::intersection(rsl, m_bbox);
             if (obj) {
-                const Segment_2* s = std::get_if<Segment_2>(&*obj);
+                const Segment_2* segmentPointer = std::get_if<Segment_2>(&*obj);
 
-                if (s) {
-                    m_cropped_vd.push_back(*s);
+                if (segmentPointer) {
+                    m_cropped_vd.push_back(*segmentPointer);
                 }
             }
         }
@@ -91,15 +91,16 @@ struct CroppedVoronoiFromDelaunay {
 
     void drawDual(const SDG2& sdg);
 
-    [[nodiscard]] static auto samePoints(const SDG2& sdg, const SDG2::Site_2& p,
-                                         const SDG2::Site_2& q) -> bool {
-        return sdg.geom_traits().equal_2_object()(p, q);
+    [[nodiscard]] static auto samePoints(const SDG2& sdg, const SDG2::Site_2& firstSite,
+                                         const SDG2::Site_2& secondSite) -> bool {
+        return sdg.geom_traits().equal_2_object()(firstSite, secondSite);
     }
 
-    [[nodiscard]] static auto isEndpointOfSegment(const SDG2& sdg, const SDG2::Site_2& p,
-                                                  const SDG2::Site_2& s) -> bool {
+    [[nodiscard]] static auto isEndpointOfSegment(const SDG2& sdg, const SDG2::Site_2& site,
+                                                  const SDG2::Site_2& segmentSite) -> bool {
 
-        return (samePoints(sdg, p, s.source_site()) || samePoints(sdg, p, s.target_site()));
+        return (samePoints(sdg, site, segmentSite.source_site()) ||
+                samePoints(sdg, site, segmentSite.target_site()));
     }
 };
 
@@ -130,7 +131,7 @@ class VoronoiMedialSkeleton {
     static void addSimplePolygon(const CGAL::Polygon_2<Kernel>& outerBoundary,
                                  std::vector<Gt::Point_2>& points,
                                  std::vector<std::pair<std::size_t, std::size_t>>& indices);
-    static void addPolyline(const Polyline& pl, std::vector<Gt::Point_2>& points,
+    static void addPolyline(const Polyline& polyline, std::vector<Gt::Point_2>& points,
                             std::vector<std::pair<std::size_t, std::size_t>>& indices);
 
     static auto
@@ -139,21 +140,22 @@ class VoronoiMedialSkeleton {
 
     // hidden parameter in getCachePoint : double epsilon = 0.00001;
 
-    static auto getCachePoint(const Point_2& pt,
-                              CGAL::Point_set_2<Kernel>& pt_set) -> const Point_2;
-    static void setCachePoint(const Point_2& pt, CGAL::Point_set_2<Kernel>& pt_set,
-                              std::map<Point_2, Point_2>& map_cache);
+    static auto getCachePoint(const Point_2& point,
+                              CGAL::Point_set_2<Kernel>& pointSet) -> const Point_2;
+    static void setCachePoint(const Point_2& point, CGAL::Point_set_2<Kernel>& pointSet,
+                              std::map<Point_2, Point_2>& pointCache);
 
-    static auto getConstCachePoint(const Point_2& pt,
-                                   CGAL::Point_set_2<Kernel>& pt_set) -> const Point_2&;
-    static auto snapPoint(const Point_2& pt, CGAL::Point_set_2<Kernel>& pt_set) -> bool;
-    [[nodiscard]] auto snapRoundingArr(CGAL::Point_set_2<Kernel> pt_set,
+    static auto getConstCachePoint(const Point_2& point,
+                                   CGAL::Point_set_2<Kernel>& pointSet) -> const Point_2&;
+    static auto snapPoint(const Point_2& point, CGAL::Point_set_2<Kernel>& pointSet) -> bool;
+    [[nodiscard]] auto snapRoundingArr(CGAL::Point_set_2<Kernel> pointSet,
                                        const Arrangement_2& arr) const -> Arrangement_2;
-    static auto extendsToProjection(const Kernel::Point_2& a, const Halfedge& he2) -> Point_2;
+    static auto extendsToProjection(const Kernel::Point_2& projectionPoint,
+                                    const Halfedge& halfedge) -> Point_2;
     static auto extendsAntennaArr(const Arrangement_2& arr) -> Arrangement_2;
     static auto removeAntennaArr(const Arrangement_2& arr) -> Arrangement_2;
 
-    std::vector<Kernel::Segment_2> _result{};
+    std::vector<Kernel::Segment_2> _result;
 };
 
 } /* namespace laby */

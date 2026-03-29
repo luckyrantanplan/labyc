@@ -21,36 +21,54 @@ namespace laby {
 
 class SkeletonRadial {
 
+    static constexpr double kDefaultEpsilon = 1e-50;
+    static constexpr double kDefaultCosTheta = 0.93;
+
+  public:
     struct FaceHelper {
         enum class Type : std::uint8_t { Unknown, Lateral, Corner };
         Type _type = Type::Unknown;
-        Kernel::Vector_2 _perp{};
-        Kernel::Point_2 _o{};
+        Kernel::Vector_2 _perp;
+        Kernel::Point_2 _o;
     };
 
     struct Incidence {
-
+      public:
         Incidence() = default;
 
         Incidence(Point_2 testPoint, const basic::HalfedgeNode& halfedge)
-            : isEmpty(false), _test(std::move(testPoint)), _hedge(&halfedge) {}
-        bool isEmpty = true;
-        Point_2 _test{};
-        const basic::HalfedgeNode* _hedge = nullptr;
+            : _isEmpty(false), _testPoint(std::move(testPoint)), _halfedge(&halfedge) {}
+
+        [[nodiscard]] auto isEmpty() const -> bool {
+            return _isEmpty;
+        }
+
+        [[nodiscard]] auto testPoint() const -> const Point_2& {
+            return _testPoint;
+        }
+
+        [[nodiscard]] auto halfedge() const -> const basic::HalfedgeNode* {
+            return _halfedge;
+        }
 
         [[nodiscard]] auto getTwin() const -> Incidence {
             Incidence twinIncidence(*this);
-            if (twinIncidence._hedge != nullptr) {
-                twinIncidence._hedge = &*twinIncidence._hedge->twin();
+            if (twinIncidence._halfedge != nullptr) {
+                twinIncidence._halfedge = &*twinIncidence._halfedge->twin();
             }
             return twinIncidence;
         }
+
+      private:
+        bool _isEmpty = true;
+        Point_2 _testPoint;
+        const basic::HalfedgeNode* _halfedge = nullptr;
     };
 
   public:
     struct Config {
-        double epsilon = 1e-50;
-        double cosTheta = 0.93;
+        double epsilon = kDefaultEpsilon;
+        double cosTheta = kDefaultCosTheta;
         double filtered_distance = 0.2;
         double sep = 1.5;
         double sep_subdivision = 100;

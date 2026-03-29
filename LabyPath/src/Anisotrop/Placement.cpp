@@ -28,16 +28,16 @@
 #include "Cell.h"
 #include "GeomData.h"
 #include "Net.h"
-#include "PolyConvex.h"
 #include "OrientedRibbon.h"
+#include "PolyConvex.h"
 #include "PolyVertex.h"
 #include "Polyline.h"
 #include "Routing.h"
 #include "SpatialIndex.h"
 
 #include "../flatteningOverlap/PathRendering.h"
-#include "protoc/AllConfig.pb.h"
 #include "basic/RangeHelper.h"
+#include "protoc/AllConfig.pb.h"
 
 namespace laby::aniso {
 
@@ -111,8 +111,8 @@ auto Placement::createRoute(Cell& cell) -> Routing {
             if (&vertex2 != &queue.front().vertex()) {
 
                 Pin const pinTarget{vertex2,
-                              std::max(queue.front().thickness() / _config.decrement_factor(),
-                                       _config.minimal_thickness())};
+                                    std::max(queue.front().thickness() / _config.decrement_factor(),
+                                             _config.minimal_thickness())};
                 Net netCandidate(Net::SourcePin{queue.front()}, Net::TargetPin{pinTarget},
                                  static_cast<int32_t>(nets.size()));
 
@@ -223,8 +223,9 @@ auto Placement::refinePath(Cell& cell, const std::vector<PolyConvex>& initialCon
         basic::LinearGradient lgrad = net.gradient();
         std::size_t const begin = polyConvexList.size();
         for (std::size_t i = 1; i < poly.points().size(); ++i) {
-            polyConvexList.emplace_back(poly.points().at(i - 1), poly.points().at(i),
-                                        polyConvexList.size(), lgrad);
+            polyConvexList.emplace_back(
+                PolyConvexEndpoints{poly.points().at(i - 1), poly.points().at(i)},
+                polyConvexList.size(), lgrad);
         }
         PolyConvex::connect(begin, polyConvexList);
         net.target().setPolyConvexIndex(begin);
