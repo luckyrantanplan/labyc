@@ -596,7 +596,9 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
     }
     for (const auto& nodeEntry : reCutGeometryData.map) {
         Node& node = *nodeEntry.second;
-        node.setPolygons().intersection(unionFamilies);
+        if (reCutGeometryData.map.size() <= 2U) {
+            node.setPolygons().intersection(unionFamilies);
+        }
     }
 }
 
