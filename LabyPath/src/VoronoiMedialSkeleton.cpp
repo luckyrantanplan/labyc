@@ -101,8 +101,7 @@ void CroppedVoronoiFromDelaunay::drawDual(const SDG2& sdg) {
             auto startPoint = customParabola.getP1();
             auto endPoint = customParabola.getP2();
             agg::Curve3 curve(CGAL::to_double(startPoint.x()), CGAL::to_double(startPoint.y()),
-                              CGAL::to_double(controlPoint.x()),
-                              CGAL::to_double(controlPoint.y()),
+                              CGAL::to_double(controlPoint.x()), CGAL::to_double(controlPoint.y()),
                               CGAL::to_double(endPoint.x()), CGAL::to_double(endPoint.y()));
 
             Kernel_sqrt::Point_2 previousPoint = startPoint;
@@ -369,8 +368,8 @@ VoronoiMedialSkeleton::snapRounding(const std::vector<basic::SegmentNode>& resul
     std::vector<basic::SegmentNode> result;
     CGAL::Point_set_2<Kernel> ptSet;
     std::vector<Point_2> pointList;
-    for (const auto& vertex :
-         RangeHelper::make(polygonArrangement.vertices_begin(), polygonArrangement.vertices_end())) {
+    for (const auto& vertex : RangeHelper::make(polygonArrangement.vertices_begin(),
+                                                polygonArrangement.vertices_end())) {
         pointList.emplace_back(vertex.point());
     }
     ptSet.insert(pointList.begin(), pointList.end());
@@ -426,8 +425,8 @@ static auto VoronoiMedialSkeleton::extendsToProjection(const Kernel::Point_2& pr
     Kernel::Segment_2 const segment;
 
     for (const Halfedge& currentHalfedge : RangeHelper::make(halfedge.ccb())) {
-        Kernel::FT distance = CGAL::squared_distance(
-            projectionPoint, Kernel::Segment_2(currentHalfedge.curve()));
+        Kernel::FT distance =
+            CGAL::squared_distance(projectionPoint, Kernel::Segment_2(currentHalfedge.curve()));
         if (distance < minDistance and distance > 0) {
             minDistance = distance;
             segment = currentHalfedge.curve();
