@@ -36,45 +36,45 @@ class BaseContext : public Stylable {
 
     // SVG++ discovers these hooks by exact name.
 
+    void on_exit_element() {
+        onExitElement();
+    }
+
     void onExitElement() {}
 
-    void onExitElement() {
-        onExitElement();
+    void transform_matrix(const boost::array<double, kTransformMatrixSize>& matrix) {
+        transformMatrix(matrix);
     }
 
     void transformMatrix(const boost::array<double, kTransformMatrixSize>& /*matrix*/) {}
 
-    void transformMatrix(const boost::array<double, kTransformMatrixSize>& matrix) {
-        transformMatrix(matrix);
+    // Viewport Events Policy
+    void set_viewport(double viewport_x, double viewport_y, double viewport_width,
+                      double viewport_height) {
+        setViewport(viewport_x, viewport_y, viewport_width, viewport_height);
     }
 
-    // Viewport Events Policy
-    static void setViewport(double viewport_x, double viewport_y, double viewport_width,
-                            double viewport_height) {
+    void setViewport(double viewport_x, double viewport_y, double viewport_width,
+                     double viewport_height) {
 
         std::cout << "set viewport" << viewport_x << " " << viewport_y << " " << viewport_width
                   << " " << viewport_height << '\n';
     }
 
-    static void setViewport(double viewport_x, double viewport_y, double viewport_width,
-                            double viewport_height) {
-        setViewport(viewport_x, viewport_y, viewport_width, viewport_height);
+    void set_viewbox_size(double viewbox_width, double viewbox_height) {
+        setViewboxSize(viewbox_width, viewbox_height);
     }
 
-    static void setViewboxSize(double viewbox_width, double viewbox_height) {
+    void setViewboxSize(double viewbox_width, double viewbox_height) {
         std::cout << "set_viewbox_size" << viewbox_width << " " << viewbox_height << '\n';
         _viewbox = CGAL::Bbox_2(0, 0, viewbox_width, viewbox_height);
     }
 
-    void setViewboxSize(double viewbox_width, double viewbox_height) {
-        setViewboxSize(viewbox_width, viewbox_height);
+    void disable_rendering() {
+        disableRendering();
     }
 
     void disableRendering() {}
-
-    void disableRendering() {
-        disableRendering();
-    }
 
     [[nodiscard]] auto getRibbon() const -> const std::vector<Ribbon>& {
         return *_vectRibbonRef;

@@ -18,7 +18,13 @@
 #include <utility>
 #include <vector>
 
+#include "Rendering/GraphicRendering.h"
 #include "SVGParser/Loader.h"
+#include "SVGShapeToGrid.h"
+#include "SkeletonOffset.h"
+#include "SkeletonRadial.h"
+#include "VoronoiMedialSkeleton.h"
+#include "basic/Color.h"
 #include "protoc/AllConfig.pb.h"
 
 namespace laby {
@@ -37,7 +43,7 @@ constexpr double kMinimumPolylineDivisor = 2.0;
 
 SkeletonGrid::SkeletonGrid(proto::SkeletonGrid config) : _config(std::move(config)) {
 
-    svgp::Loader const load(_config.inputfile());
+    svgp::Loader load(_config.inputfile());
     for (Ribbon& rib : load.ribList()) {
         rib.simplify(_config.simplificationoforiginalsvg());
     }
@@ -49,16 +55,16 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     std::vector<Ribbon> result;
     result.reserve(load.ribList().size());
 
-    int32_t const ribNumber = 0;
+    int32_t ribNumber = 0;
 
     for (const Ribbon& rib : load.ribList()) {
         std::vector<CGAL::Polygon_with_holes_2<Kernel>> const polygons =
             SVGShapeToGrid::getPolygons(rib);
 
-        const double blue = NAN =
+        const double blue =
             laby::basic::Color::getBlueNormalized(static_cast<uint32_t>(rib.fillColor()));
 
-        const uint32_t fillColor = 0 = laby::basic::Color::setBlue(
+        const uint32_t fillColor = laby::basic::Color::setBlue(
             static_cast<uint32_t>(rib.fillColor()), static_cast<uint32_t>(ribNumber));
         ++ribNumber;
 
@@ -101,21 +107,20 @@ auto SkeletonGrid::create(const svgp::Loader& load) -> void {
     }
 
     std::cout << "GraphicRendering::printRibbonSvg(load.viewBox()" << load.viewBox() << '\n';
-    proto::GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(),
-                                            _config.min_sep() / kOutputThicknessDivisor, result);
+    GraphicRendering::printRibbonSvg(load.viewBox(), _config.outputfile(),
+                                     _config.min_sep() / kOutputThicknessDivisor, result);
 }
 
 auto SkeletonGrid::medialGraph(const std::vector<CGAL::Polygon_with_holes_2<Kernel>>& polygons,
                                const double& distance) -> void {
     _circularList.clear();
     _radialList.clear();
-    std::vector<Kernel::Segment_2> const result2;
 
     for (const CGAL::Polygon_with_holes_2<Kernel>& polygon : polygons) {
-        VoronoiMedialSkeleton const vor = VoronoiMedialSkeleton(polygon);
+        const VoronoiMedialSkeleton vor(polygon);
         std::cout << " cut ok " << '\n';
 
-        laby::basic::Arrangement_2Node const arr3 = vor.cutAndGetArrangementSkeleton(polygon);
+        const basic::Arrangement_2Node arr3 = vor.cutAndGetArrangementSkeleton(polygon);
 
         SkeletonRadial::Config configRadial;
         configRadial.sep = distance;

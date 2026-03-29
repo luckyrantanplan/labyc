@@ -145,7 +145,7 @@ void Cell::startNetWithRandomPin() {
     _random.shuffle(_listVertex);
 }
 
-static void Cell::selectNearestPoint(const Point_2& point2) {
+void Cell::selectNearestPoint(const Point_2& point2) {
 
     // TODO change insert_point by locate
 
@@ -165,7 +165,7 @@ static void Cell::selectNearestPoint(const Point_2& point2) {
     }
 }
 
-static void Cell::insertPointAndConnect(const Point_2& point2) {
+void Cell::insertPointAndConnect(const Point_2& point2) {
     Vertex_handle const handle = CGAL::insert_point(*_arr, point2);
     handle->data().setType(VertexInfo::PIN);
     _randomVertices.push_back(handle.ptr());
@@ -202,7 +202,7 @@ void Cell::drawRectOutline(const CGAL::Bbox_2& bbox, RectOutlineConfig config) {
         allvertices.emplace_back(bbox.xmin(), yCoord);
     }
 
-    std::size_t const begin = 0 = _listVertex.size();
+    std::size_t const begin = _listVertex.size();
     for (std::size_t i = 0; i < allvertices.size(); ++i) {
         if (NumericHelper::reduce(static_cast<int32_t>(i), static_cast<int32_t>(allvertices.size()),
                                   static_cast<int32_t>(config.quantity))

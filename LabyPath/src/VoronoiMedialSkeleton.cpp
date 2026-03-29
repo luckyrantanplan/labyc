@@ -31,6 +31,7 @@
 
 #include "Polyline.h"
 #include "Ribbon.h"
+#include "agg/agg_curves.h"
 #include "basic/KernelConverter.h"
 
 namespace laby {
@@ -75,7 +76,6 @@ auto CroppedVoronoiFromDelaunay::CustomParabola::computeBezier()
 
 void CroppedVoronoiFromDelaunay::drawDual(const SDG2& sdg) {
     To_sqrt_kernel const toSqrtKernel;
-    static_cast<void>(toSqrtKernel);
 
     for (const auto& edge : RangeHelper::make(sdg.finite_edges_begin(), sdg.finite_edges_end())) {
 
@@ -105,9 +105,9 @@ void CroppedVoronoiFromDelaunay::drawDual(const SDG2& sdg) {
                               CGAL::to_double(endPoint.x()), CGAL::to_double(endPoint.y()));
 
             Kernel_sqrt::Point_2 previousPoint = startPoint;
-            auto& curvePoints = curve.getPoints();
+            const auto& curvePoints = curve.getPoints();
             for (std::size_t pointIndex = 1; pointIndex < curvePoints.size() - 1; ++pointIndex) {
-                Kernel_sqrt::Point_2 curvePoint = to_sqrt_kernel(curvePoints.at(pointIndex));
+                Kernel_sqrt::Point_2 curvePoint = toSqrtKernel(curvePoints.at(pointIndex));
                 cropAndExtractSegment(Segment_2(previousPoint, curvePoint));
                 previousPoint = curvePoint;
             }
@@ -125,14 +125,13 @@ void VoronoiMedialSkeleton::addSimplePolygon(
     std::size_t const savedIndex = points.size();
     To_sqrt_kernel const toSqrtKernel;
     CGAL::Polygon_2<Kernel>::Edge_const_iterator const ite = outerBoundary.edges_begin();
-    site = SDG2::Site_2::construct_site_2(To_sqrt_kernel(ite->source()),
-                                          To_sqrt_kernel(ite->target()));
+    site = SDG2::Site_2::construct_site_2(toSqrtKernel(ite->source()), toSqrtKernel(ite->target()));
 
     points.push_back(site.source_of_supporting_site());
     for (const CGAL::Segment_2<Kernel> seg :
          RangeHelper::make(outerBoundary.edges_begin(), outerBoundary.edges_end())) {
-        site = SDG2::Site_2::construct_site_2(To_sqrt_kernel(seg.source()),
-                                              To_sqrt_kernel(seg.target()));
+        site =
+            SDG2::Site_2::construct_site_2(toSqrtKernel(seg.source()), toSqrtKernel(seg.target()));
         indices.emplace_back(pointIndex, pointIndex + 1);
         points.push_back(site.target_of_supporting_site());
         ++pointIndex;
@@ -153,14 +152,14 @@ void VoronoiMedialSkeleton::addPolyline(const Polyline& polyline, std::vector<Gt
     std::size_t const savedIndex = points.size();
     To_sqrt_kernel const toSqrtKernel;
 
-    site = SDG2::Site_2::construct_site_2(To_sqrt_kernel(polylinePoints.at(0)),
-                                          To_sqrt_kernel(polylinePoints.at(1)));
+    site = SDG2::Site_2::construct_site_2(toSqrtKernel(polylinePoints.at(0)),
+                                          toSqrtKernel(polylinePoints.at(1)));
     points.push_back(site.source_of_supporting_site());
 
     for (std::size_t sourceIndex = 1; sourceIndex < polylinePoints.size(); ++sourceIndex) {
         const Point_2& source = polylinePoints.at(sourceIndex - 1);
         const Point_2& target = polylinePoints.at(sourceIndex);
-        site = SDG2::Site_2::construct_site_2(To_sqrt_kernel(source), To_sqrt_kernel(target));
+        site = SDG2::Site_2::construct_site_2(toSqrtKernel(source), toSqrtKernel(target));
         indices.emplace_back(pointIndex, pointIndex + 1);
         points.push_back(site.target_of_supporting_site());
         ++pointIndex;
@@ -170,8 +169,8 @@ void VoronoiMedialSkeleton::addPolyline(const Polyline& polyline, std::vector<Gt
     }
 }
 
-static void VoronoiMedialSkeleton::addPolygon(const CGAL::Polygon_with_holes_2<Kernel>& polygon,
-                                              SDG2& sdg) {
+void VoronoiMedialSkeleton::addPolygon(const CGAL::Polygon_with_holes_2<Kernel>& polygon,
+                                       SDG2& sdg) {
 
     std::vector<Gt::Point_2> points;
     // segments of the polygon as a pair of point indices
@@ -186,7 +185,7 @@ static void VoronoiMedialSkeleton::addPolygon(const CGAL::Polygon_with_holes_2<K
 }
 
 VoronoiMedialSkeleton::VoronoiMedialSkeleton(const std::vector<Segment_info_2>& seg_list,
-                                             const CGAL::Bbox_2& /*bbox*/) {
+                                             const CGAL::Bbox_2& bbox) {
     SDG2 sdg;
     std::vector<SDG2::Site_2> sites;
     // segments of the polygon as a pair of point indices
@@ -194,8 +193,8 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const std::vector<Segment_info_2>& 
     To_sqrt_kernel const toSqrtKernel;
 
     for (const Segment_info_2& seg : seg_list) {
-        sites.emplace_back(SDG2::Site_2::construct_site_2(to_sqrt_kernel(seg.source()),
-                                                          to_sqrt_kernel(seg.target())));
+        sites.emplace_back(
+            SDG2::Site_2::construct_site_2(toSqrtKernel(seg.source()), toSqrtKernel(seg.target())));
         pointsK.emplace_back(seg.source());
         pointsK.emplace_back(seg.target());
     }
@@ -206,7 +205,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const std::vector<Segment_info_2>& 
     Kernel_sqrt::Iso_rectangle_2 rect(bbox.xmin() - 1, bbox.ymin() - 1, bbox.xmax() + 1,
                                       bbox.ymax() + 1);
 
-    auto vor(rect)->CroppedVoronoiFromDelaunay;
+    auto vor = CroppedVoronoiFromDelaunay(rect);
     std::cout << "CroppedVoronoiFromDelaunay " << std::endl;
 
     vor.drawDual(sdg);
@@ -219,7 +218,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const std::vector<Segment_info_2>& 
 
     From_sqrt_kernel fromSqrtKernel;
     for (const auto& segment : vor.m_cropped_vd) {
-        auto kernelSeg = from_sqrt_kernel(segment);
+        auto kernelSeg = fromSqrtKernel(segment);
         const Point_2 sourcePoint = getCachePoint(kernelSeg.source(), pointSet);
         const Point_2 targetPoint = getCachePoint(kernelSeg.target(), pointSet);
         CGAL::Comparison_result compare =
@@ -231,7 +230,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const std::vector<Segment_info_2>& 
     }
 }
 
-VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::Bbox_2& /*bbox*/) {
+VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::Bbox_2& bbox) {
     std::cout << "add ribbon   " << std::endl;
 
     SDG2 sdg;
@@ -249,7 +248,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::B
     Kernel_sqrt::Iso_rectangle_2 rect(bbox.xmin() - 1, bbox.ymin() - 1, bbox.xmax() + 1,
                                       bbox.ymax() + 1);
 
-    auto vor(rect)->CroppedVoronoiFromDelaunay;
+    auto vor = CroppedVoronoiFromDelaunay(rect);
     std::cout << "CroppedVoronoiFromDelaunay " << std::endl;
 
     vor.drawDual(sdg);
@@ -264,8 +263,7 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::B
     _result.reserve(vor.m_cropped_vd.size());
 
     for (const Kernel_sqrt::Segment_2& segment : vor.m_cropped_vd) {
-
-        const Kernel::Segment_2 kernelSeg = from_sqrt_kernel(segment);
+        const Kernel::Segment_2 kernelSeg = fromSqrtKernel(segment);
         _result.emplace_back(kernelSeg);
     }
 
@@ -285,19 +283,19 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const CGAL::Polygon_with_holes_2<Ke
     Kernel_sqrt::Iso_rectangle_2 rect(bbox.xmin() - 1, bbox.ymin() - 1, bbox.xmax() + 1,
                                       bbox.ymax() + 1);
 
-    auto vor(rect)->CroppedVoronoiFromDelaunay;
+    auto vor = CroppedVoronoiFromDelaunay(rect);
     std::cout << "CroppedVoronoiFromDelaunay " << std::endl;
 
     vor.drawDual(sdg);
     std::cout << " sdg.drawDual " << std::endl;
     From_sqrt_kernel fromSqrtKernel;
     for (const auto& segment : vor.m_cropped_vd) {
-        _result.emplace_back(from_sqrt_kernel(segment));
+        _result.emplace_back(fromSqrtKernel(segment));
     }
 }
 
-static auto VoronoiMedialSkeleton::getCachePoint(const Point_2& point,
-                                                 CGAL::Point_set_2<Kernel>& pointSet) -> Point_2 {
+auto VoronoiMedialSkeleton::getCachePoint(const Point_2& point,
+                                          CGAL::Point_set_2<Kernel>& pointSet) -> const Point_2 {
     auto vertexHandle = pointSet.nearest_neighbor(point);
 
     // TODO Epsilon parameter : to put in the config
@@ -305,17 +303,17 @@ static auto VoronoiMedialSkeleton::getCachePoint(const Point_2& point,
     double epsilon = 0.0000001;
     epsilon *= epsilon;
     CGAL::Comparison_result compare =
-        CGAL::compare_squared_distance(point, vertex_handle->point(), epsilon);
+        CGAL::compare_squared_distance(point, vertexHandle->point(), epsilon);
 
     if (compare == CGAL::LARGER) {
         pointSet.insert(point);
         return point;
     }
-    return vertex_handle->point();
+    return vertexHandle->point();
 }
 
-static auto VoronoiMedialSkeleton::snapPoint(const Point_2& point,
-                                             CGAL::Point_set_2<Kernel>& pointSet) -> bool {
+auto VoronoiMedialSkeleton::snapPoint(const Point_2& point,
+                                      CGAL::Point_set_2<Kernel>& pointSet) -> bool {
     auto vertexHandle = pointSet.nearest_neighbor(point);
 
     // TODO Epsilon parameter : to put in the config
@@ -323,20 +321,18 @@ static auto VoronoiMedialSkeleton::snapPoint(const Point_2& point,
     double epsilon = 0.0000001;
     epsilon *= epsilon;
     CGAL::Comparison_result compare =
-        CGAL::compare_squared_distance(point, vertex_handle->point(), epsilon);
+        CGAL::compare_squared_distance(point, vertexHandle->point(), epsilon);
 
     return (compare == CGAL::SMALLER);
 }
 
-static Point_2auto
-VoronoiMedialSkeleton::getConstCachePoint(const Point_2& point,
-                                          CGAL::Point_set_2<Kernel>& pointSet) -> & {
+auto VoronoiMedialSkeleton::getConstCachePoint(
+    const Point_2& point, CGAL::Point_set_2<Kernel>& pointSet) -> const Point_2& {
     return pointSet.nearest_neighbor(point)->point();
 }
 
-static void VoronoiMedialSkeleton::setCachePoint(const Point_2& point,
-                                                 CGAL::Point_set_2<Kernel>& pointSet,
-                                                 std::map<Point_2, Point_2>& pointCache) {
+void VoronoiMedialSkeleton::setCachePoint(const Point_2& point, CGAL::Point_set_2<Kernel>& pointSet,
+                                          std::map<Point_2, Point_2>& pointCache) {
     auto vertexHandle = pointSet.nearest_neighbor(point);
 
     // TODO Epsilon parameter : to put in the config
@@ -351,17 +347,17 @@ static void VoronoiMedialSkeleton::setCachePoint(const Point_2& point,
     epsilon *= epsilon;
 
     CGAL::Comparison_result compare =
-        CGAL::compare_squared_distance(point, vertex_handle->point(), epsilon);
+        CGAL::compare_squared_distance(point, vertexHandle->point(), epsilon);
 
     if (compare == CGAL::LARGER) {
         pointSet.insert(point);
         pointCache.emplace(point, point);
     } else {
-        pointCache.emplace(point, vertex_handle->point());
+        pointCache.emplace(point, vertexHandle->point());
     }
 }
 
-static std::vector<basic::SegmentNode>
+std::vector<basic::SegmentNode>
 VoronoiMedialSkeleton::snapRounding(const std::vector<basic::SegmentNode>& result2,
                                     const basic::Arrangement_2Node& polygonArrangement) {
 
@@ -386,8 +382,8 @@ VoronoiMedialSkeleton::snapRounding(const std::vector<basic::SegmentNode>& resul
     return result;
 }
 
-static auto VoronoiMedialSkeleton::snapRoundingArr(CGAL::Point_set_2<Kernel> pointSet,
-                                                   const Arrangement_2& arr) -> Arrangement_2 {
+auto VoronoiMedialSkeleton::snapRoundingArr(CGAL::Point_set_2<Kernel> pointSet,
+                                            const Arrangement_2& arr) const -> Arrangement_2 {
 
     std::vector<Segment_info_2> result2;
     std::cout << " populating cache " << std::endl;
@@ -418,11 +414,11 @@ static auto VoronoiMedialSkeleton::snapRoundingArr(CGAL::Point_set_2<Kernel> poi
     return arr2;
 }
 
-static auto VoronoiMedialSkeleton::extendsToProjection(const Kernel::Point_2& projectionPoint,
-                                                       const Halfedge& halfedge) -> Point_2 {
+auto VoronoiMedialSkeleton::extendsToProjection(const Kernel::Point_2& projectionPoint,
+                                                const Halfedge& halfedge) -> Point_2 {
 
     Kernel::FT minDistance = 100;
-    Kernel::Segment_2 const segment;
+    Kernel::Segment_2 segment;
 
     for (const Halfedge& currentHalfedge : RangeHelper::make(halfedge.ccb())) {
         Kernel::FT distance =
@@ -440,7 +436,7 @@ static auto VoronoiMedialSkeleton::extendsToProjection(const Kernel::Point_2& pr
     return projectionPoint;
 }
 
-static auto VoronoiMedialSkeleton::removeAntennaArr(const Arrangement_2& arr) -> Arrangement_2 {
+auto VoronoiMedialSkeleton::removeAntennaArr(const Arrangement_2& arr) -> Arrangement_2 {
     std::vector<Segment_info_2> resultConvert;
     for (Edge_const_iterator eit = arr.edges_begin(); eit != arr.edges_end(); ++eit) {
         const Halfedge& he2 = *eit;
@@ -449,12 +445,12 @@ static auto VoronoiMedialSkeleton::removeAntennaArr(const Arrangement_2& arr) ->
             resultConvert.emplace_back(he2.curve());
         }
     }
-    Arrangement_2 const arrWithoutAntenna;
-    CGAL::insert(arr_without_antenna, result_convert.begin(), result_convert.end());
-    return arr_without_antenna;
+    Arrangement_2 arrWithoutAntenna;
+    CGAL::insert(arrWithoutAntenna, resultConvert.begin(), resultConvert.end());
+    return arrWithoutAntenna;
 }
 
-static auto VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr) -> Arrangement_2 {
+auto VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr) -> Arrangement_2 {
     std::map<Point_2, Point_2> pmap;
 
     std::vector<Segment_info_2> resultConvert;
@@ -474,7 +470,7 @@ static auto VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr) -
 
             CGAL::Comparison_result compare = CGAL::compare_squared_distance(source, target, 0.);
             if (compare == CGAL::LARGER) {
-                result_convert.emplace_back(Segment_info_2(
+                resultConvert.emplace_back(Segment_info_2(
                     Kernel::Segment_2(source, target),
                     EdgeInfo(he2.curve().data().direction(), EdgeInfo::Coordinate{0})));
             }
@@ -482,13 +478,13 @@ static auto VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr) -
             resultConvert.emplace_back(he2.curve());
         }
     }
-    Arrangement_2 const arrWithoutAntenna;
-    CGAL::insert(arr_without_antenna, result_convert.begin(), result_convert.end());
+    Arrangement_2 arrWithoutAntenna;
+    CGAL::insert(arrWithoutAntenna, resultConvert.begin(), resultConvert.end());
 
     resultConvert.clear();
 
     for (const Halfedge& halfedge :
-         RangeHelper::make(arr_without_antenna.edges_begin(), arr_without_antenna.edges_end())) {
+         RangeHelper::make(arrWithoutAntenna.edges_begin(), arrWithoutAntenna.edges_end())) {
 
         Point_2 sourcePoint;
         {
@@ -513,66 +509,64 @@ static auto VoronoiMedialSkeleton::extendsAntennaArr(const Arrangement_2& arr) -
         CGAL::Comparison_result compare =
             CGAL::compare_squared_distance(sourcePoint, targetPoint, 0.);
         if (compare == CGAL::LARGER) {
-            result_convert.emplace_back(Segment_2(sourcePoint, targetPoint),
-                                        halfedge.curve().data());
+            resultConvert.emplace_back(Segment_2(sourcePoint, targetPoint),
+                                       halfedge.curve().data());
         }
     }
     Arrangement_2 arr2;
-    CGAL::insert(arr2, result_convert.begin(), result_convert.end());
+    CGAL::insert(arr2, resultConvert.begin(), resultConvert.end());
     return arr2;
 }
 
-static auto VoronoiMedialSkeleton::getSimpleArr(const Ribbon& rib,
-                                                const Ribbon& ribLimit) -> Arrangement_2 {
+auto VoronoiMedialSkeleton::getSimpleArr(const Ribbon& rib,
+                                         const Ribbon& ribLimit) const -> Arrangement_2 {
     std::vector<Segment_info_2> resultConvert;
 
-    rib.addToSegments(result_convert);
+    rib.addToSegments(resultConvert);
     std::vector<Point_2> pointsK = rib.getPoints();
 
     for (const Kernel::Segment_2& segment : _result) {
-        result_convert.emplace_back(segment,
-                                    EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
+        resultConvert.emplace_back(segment, EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
     }
     for (const Kernel::Segment_2& segment : ribLimit.getSegments()) {
-        result_convert.emplace_back(segment,
-                                    EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
+        resultConvert.emplace_back(segment, EdgeInfo(rib.fillColor() + 1, EdgeInfo::Coordinate{0}));
     }
 
-    Arrangement_2 const arr;
-    CGAL::insert(arr, result_convert.begin(), result_convert.end());
+    Arrangement_2 arr;
+    CGAL::insert(arr, resultConvert.begin(), resultConvert.end());
 
     CGAL::Point_set_2<Kernel> ptSet;
     ptSet.insert(pointsK.begin(), pointsK.end());
 
-    Arrangement_2 arr2 = snapRoundingArr(pt_set, arr);
+    Arrangement_2 arr2 = snapRoundingArr(ptSet, arr);
 
     arr2 = extendsAntennaArr(arr2);
 
-    arr2 = snapRoundingArr(pt_set, arr2);
+    arr2 = snapRoundingArr(ptSet, arr2);
     std::cout << " arr2 ok " << std::endl;
     return arr2;
 }
 
-static auto VoronoiMedialSkeleton::cutAndGetArrangementSkeleton(
-    const CGAL::Polygon_with_holes_2<Kernel>& polygon) -> basic::Arrangement_2Node {
+auto VoronoiMedialSkeleton::cutAndGetArrangementSkeleton(
+    const CGAL::Polygon_with_holes_2<Kernel>& polygon) const -> basic::Arrangement_2Node {
 
-    basic::Polygon_with_holes_2Node const pHoleNode;
+    basic::Polygon_with_holes_2Node pHoleNode;
 
     for (const auto& hole : RangeHelper::make(polygon.holes_begin(), polygon.holes_end())) {
         basic::Polygon_2Node polygon_node;
 
         polygon_node.insert(polygon_node.vertices_end(), hole.vertices_begin(),
                             hole.vertices_end());
-        p_hole_node.add_hole(polygon_node);
+        pHoleNode.add_hole(polygon_node);
     }
     const CGAL::Polygon_2<Kernel>& outer = polygon.outer_boundary();
 
-    pHoleNode.outer_boundary().insert(p_hole_node.outer_boundary().vertices_end(),
+    pHoleNode.outer_boundary().insert(pHoleNode.outer_boundary().vertices_end(),
                                       outer.vertices_begin(), outer.vertices_end());
 
-    auto polygonSet(p_hole_node)->basic::Polygon_set_2Node;
+    basic::Polygon_set_2Node polygonSet(pHoleNode);
 
-    basic::Arrangement_2Node& arr = polygon_set.arrangement();
+    basic::Arrangement_2Node& arr = polygonSet.arrangement();
 
     for (basic::FaceNode& face : RangeHelper::make(arr.faces_begin(), arr.faces_end())) {
         // the test if this is a hole or not is done inside setPolygonId
@@ -592,17 +586,16 @@ static auto VoronoiMedialSkeleton::cutAndGetArrangementSkeleton(
     std::vector<basic::SegmentNode> resultConvert;
 
     for (const Kernel::Segment_2& segment : _result) {
-
-        result_convert.emplace_back(segment);
+        resultConvert.emplace_back(segment);
     }
 
-    basic::Arrangement_2Node const arr2;
-    CGAL::insert(arr2, result_convert.begin(), result_convert.end());
+    basic::Arrangement_2Node arr2;
+    CGAL::insert(arr2, resultConvert.begin(), resultConvert.end());
 
     basic::Overlay_traitsNode overlayTraits;
-    basic::Arrangement_2Node const arr3;
+    basic::Arrangement_2Node arr3;
 
-    CGAL::overlay(arr, arr2, arr3, overlay_traits);
+    CGAL::overlay(arr, arr2, arr3, overlayTraits);
 
     // remove inner  antenna
     std::vector<basic::SegmentNode> result2;
@@ -622,7 +615,7 @@ static auto VoronoiMedialSkeleton::cutAndGetArrangementSkeleton(
 
     basic::Overlay_traitsNode overlayTraits2;
     basic::Arrangement_2Node arr5;
-    CGAL::overlay(arr, arr4, arr5, overlay_traits2);
+    CGAL::overlay(arr, arr4, arr5, overlayTraits2);
     return arr5;
 }
 

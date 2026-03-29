@@ -290,7 +290,7 @@ class Fill : public Serializeable {
     explicit Fill(Color::Defaults colorValue) : _color(colorValue) {}
     explicit Fill(const Color& color = Color(Color::Defaults::Transparent)) : _color(color) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << attribute("fill", _color.toString(layout));
         return ss.str();
     }
@@ -311,7 +311,7 @@ class Stroke : public Serializeable {
             return {};
         }
 
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << attribute("stroke-width", translateScale(_width, layout))
            << attribute("stroke", _color.toString(layout));
         ss << attribute("stroke-linecap", "round");
@@ -333,7 +333,7 @@ class Font : public Serializeable {
     explicit Font(double fontSize = kDefaultFontSize, const std::string& family = "Verdana")
         : _size(fontSize), _family(std::move(family)) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << attribute("font-size", translateScale(_size, layout))
            << attribute("font-family", _family);
         return ss.str();
@@ -384,7 +384,7 @@ class Circle : public Shape {
            Stroke const& strokeValue = Stroke())
         : Shape(fillValue, strokeValue), _center(std::move(centerPoint)), _radius(diameter / 2) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << elemStart("circle") << attribute("cx", translateX(_center, layout))
            << attribute("cy", translateY(_center, layout))
            << attribute("r", translateScale(_radius, layout)) << fillStyle().toString(layout)
@@ -407,7 +407,7 @@ class Elipse : public Shape {
         : Shape(fillValue, strokeValue), _center(std::move(centerPoint)),
           _radius_width(widthValue / 2), _radius_height(heightValue / 2) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << elemStart("ellipse") << attribute("cx", translateX(_center, layout))
            << attribute("cy", translateY(_center, layout))
            << attribute("rx", translateScale(_radius_width, layout))
@@ -433,7 +433,7 @@ class Rectangle : public Shape {
         : Shape(fillValue, strokeValue), _edge(std::move(edgePoint)), _width(widthValue),
           _height(heightValue) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << elemStart("rect") << attribute("x", translateX(_edge, layout))
            << attribute("y", translateY(_edge, layout))
            << attribute("width", translateScale(_width, layout))
@@ -458,7 +458,7 @@ class Line : public Shape {
         : Shape(Fill(), strokeValue), _start_point(std::move(startPoint)),
           _end_point(std::move(endPoint)) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << elemStart("line") << attribute("x1", translateX(_start_point, layout))
            << attribute("y1", translateY(_start_point, layout))
            << attribute("x2", translateX(_end_point, layout))
@@ -523,7 +523,7 @@ class Path : public Shape {
         return *this;
     }
 
-    static void startNewSubPath() {
+    void startNewSubPath() {
         if (_paths.empty() || !_paths.back().points().empty()) {
             _paths.emplace_back();
         }
@@ -614,7 +614,7 @@ class Text : public Shape {
         : Shape(fillValue, strokeValue), _origin(std::move(originPoint)),
           _content(std::move(textContent)), _font(std::move(fontValue)) {}
     [[nodiscard]] auto toString(Layout const& layout) const -> std::string override {
-        std::stringstream const ss;
+        std::stringstream ss;
         ss << elemStart("text") << attribute("x", translateX(_origin, layout))
            << attribute("y", translateY(_origin, layout)) << fillStyle().toString(layout)
            << strokeStyle().toString(layout) << _font.toString(layout) << ">" << _content
@@ -642,8 +642,8 @@ class DocumentSVG {
         _body_nodes_str += shape.toString(_layout);
         return *this;
     }
-    [[nodiscard]] static auto toString() -> std::string {
-        std::stringstream const ss;
+    [[nodiscard]] auto toString() const -> std::string {
+        std::stringstream ss;
         ss << "<?xml " << attribute("version", "1.0") <<                      //
             attribute("standalone", "no") <<                                  //
             "?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " <<        //

@@ -408,8 +408,9 @@ auto AlternateRoute::buildPolyConvexVector(
          RangeHelper::make(arrTrapeze.edges_begin(), arrTrapeze.edges_end())) {
         const alter::SegmentTrapezeInfo2& curve = edgeIt.curve();
         const std::size_t index = polyConvexVect.size();
-        polyConvexVect.emplace_back(edgeIt.source()->point(), edgeIt.target()->point(), index,
-                                    curve.data().getGeometry(curve));
+        polyConvexVect.emplace_back(
+            PolyConvexEndpoints{edgeIt.source()->point(), edgeIt.target()->point()}, index,
+            curve.data().getGeometry(curve));
         curvePlcMap.emplace(&curve, polyConvexVect.back()._id);
     }
     return polyConvexVect;

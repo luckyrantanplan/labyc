@@ -46,11 +46,11 @@ class Routing {
 
     auto findRoute(Net& net) -> bool;
 
-    static void createMaze();
+    void createMaze();
     static void connectMaze(std::vector<PolyConvex>& polyConvexList);
 
   private:
-    static void commitNewPath(const int32_t& targetId, Net& net);
+    void commitNewPath(const int32_t& targetId, Net& net);
     proto::RoutingCost _config;
     Arrangement_2* _arr = nullptr;
     std::vector<PolyConvex> _convexList{};

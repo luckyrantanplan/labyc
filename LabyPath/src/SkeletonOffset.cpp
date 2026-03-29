@@ -23,7 +23,9 @@
 #include <variant>
 #include <vector>
 
+#include "agg/agg_arc.h"
 #include "basic/AugmentedPolygonSet.h"
+#include "basic/CircleIntersection.h"
 
 namespace laby {
 
@@ -47,8 +49,8 @@ auto SkeletonOffset::offsetFace(
 
     perpendicular *= offsetDistance / std::sqrt(CGAL::to_double(perpendicular.squared_length()));
     Kernel::Line_2 const line(halfedge.target()->point() + perpendicular, vector);
-    bool const winding = false;
-    Kernel::Point_2 const lastPoint;
+    bool winding = false;
+    Kernel::Point_2 lastPoint;
     for (const basic::HalfedgeNode& currentHalfedge : RangeHelper::make(halfedge.next()->ccb())) {
         const auto& intersectionPoints =
             verticesCache
@@ -192,7 +194,7 @@ auto SkeletonOffset::offsetCorner(
     }
 
     const basic::HalfedgeNode& cornerHalfedge = *(circulator->next());
-    bool const winding = false;
+    bool winding = false;
     Kernel::Point_2 lastPoint;
     std::vector<Kernel::Segment_2> arcList;
     for (const basic::HalfedgeNode& ringHalfedge : RangeHelper::make(cornerHalfedge.ccb())) {

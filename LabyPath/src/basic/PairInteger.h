@@ -59,7 +59,7 @@ namespace std {
 template <> struct hash<laby::basic::PairInteger> {
     auto operator()(const laby::basic::PairInteger& c) const -> std::size_t {
         // Start with a hash value of 0    .
-        std::size_t const seed = 0;
+        std::size_t seed = 0;
 
         // Compute individual hash values for first,
         // second and third and combine them using XOR
