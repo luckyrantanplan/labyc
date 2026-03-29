@@ -48,6 +48,43 @@ struct NodeMapBuildData {
     int32_t& nodeId;
 };
 
+auto shouldDebugTripleOverlap(const std::vector<PolyConvex>& polyConvexList) -> bool {
+    return polyConvexList.size() <= 30U;
+}
+
+auto logCoverSet(const std::unordered_set<std::size_t>& coverSet) -> void {
+    std::cout << " cover={";
+    bool first = true;
+    for (const std::size_t coverIndex : coverSet) {
+        if (!first) {
+            std::cout << ',';
+        }
+        std::cout << coverIndex;
+        first = false;
+    }
+    std::cout << '}';
+}
+
+auto logFamiliesSummary(const std::vector<const Family*>& families) -> void {
+    std::cout << "[mergeFamilies] families=" << families.size() << '\n';
+    for (std::size_t familyIndex = 0; familyIndex < families.size(); ++familyIndex) {
+        const Family& family = *families.at(familyIndex);
+        std::cout << "  family " << familyIndex
+                  << " intersections=" << family.intersections().size()
+                  << " patches=" << family.patches().size() << '\n';
+    }
+}
+
+auto logNodeMapSummary(const std::unordered_map<std::size_t, Node*>& map) -> void {
+    std::cout << "[mergeFamilies] created nodes=" << map.size() << '\n';
+    for (const auto& nodeEntry : map) {
+        const Node& node = *nodeEntry.second;
+        std::cout << "  head=" << nodeEntry.first << " nodeId=" << node.nodeId();
+        logCoverSet(std::unordered_set<std::size_t>(node.cover().begin(), node.cover().end()));
+        std::cout << '\n';
+    }
+}
+
 auto enqueueUnvisitedAdjacentPolyConvexes(Node& node, const PolyConvex& polyConvex,
                                           const std::vector<PolyConvex>& polyConvexList,
                                           std::queue<QueueNodePolyConvex>& queue) -> void {
@@ -414,11 +451,15 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
 
     FamilyProcessingData familyProcessingData{polyConvexList, familyVector, intersections,
                                               boxIntersectionList, unionFind};
+    std::cout << "before processFamilies\n";
     std::vector<Node> nodes = processFamilies(families, familyProcessingData);
-    std::cout << "processFamilies\n";
+    std::cout << "after processFamilies nodes=" << nodes.size() << '\n';
+    std::cout << "before chooseNodeState\n";
     chooseNodeState(nodes);
-    std::cout << "chooseNodeState\n";
+    std::cout << "after chooseNodeState\n";
+    std::cout << "before NodeRendering::render\n";
     NodeRendering::render(oribbon, nodes, polyConvexList);
+    std::cout << "after NodeRendering::render\n";
 }
 
 void PathRendering::nodeAdjacence(std::vector<Node>& nodes,
@@ -565,10 +606,20 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
                                   std::vector<Node>& nodes) {
     EASY_FUNCTION();
 
+    if (shouldDebugTripleOverlap(polyConvexList)) {
+        logFamiliesSummary(families);
+    }
+
     int32_t nodeId = _nextNodeId;
 
     std::unordered_set<std::size_t> coverSet = collectMultiPatchCoverSet(families);
     extendCoverSetFromSinglePatchFamilies(families, coverSet);
+
+    if (shouldDebugTripleOverlap(polyConvexList)) {
+        std::cout << "[mergeFamilies] after cover collection";
+        logCoverSet(coverSet);
+        std::cout << '\n';
+    }
 
     CGAL::Union_find<std::size_t> unionFind;
     Family::createUnionFind(coverSet, polyConvexList, unionFind);
@@ -578,10 +629,17 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
     CoverUnionData coverUnionData{polyConvexList, intersectOnSinglePiece, unionFind};
     unifyIntersectingCoverSet(heads, coverUnionData);
 
+    if (shouldDebugTripleOverlap(polyConvexList)) {
+        std::cout << "[mergeFamilies] union sets=" << unionFind.number_of_sets() << '\n';
+    }
+
     if (unionFind.number_of_sets() > 1) {
         NodeMapBuildData nodeMapBuildData{polyConvexList, unionFind, nodes, nodeId};
         std::unordered_map<std::size_t, Node*> const map =
             buildNodeMapFromCoverSet(coverSet, nodeMapBuildData);
+        if (shouldDebugTripleOverlap(polyConvexList)) {
+            logNodeMapSummary(map);
+        }
         for (const auto& nodeEntry : map) {
             Node& node = *nodeEntry.second;
 
@@ -595,6 +653,9 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
         }
 
         if (unionFind.number_of_sets() > 2) {
+            if (shouldDebugTripleOverlap(polyConvexList)) {
+                std::cout << "[mergeFamilies] invoking reCutAllGeometry\n";
+            }
             reCutAllGeometry(families, {polyConvexList, map});
         }
     }

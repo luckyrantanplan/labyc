@@ -51,6 +51,11 @@ struct ParsedViewBox {
     double height;
 };
 
+struct ExpectedSegment {
+    laby::Point_2 start;
+    laby::Point_2 end;
+};
+
 constexpr double kBoundsMargin = 1.0;
 constexpr double kDefaultStrokeWidth = 1.0;
 constexpr double kThickStrokeWidth = 2.0;
@@ -83,6 +88,7 @@ constexpr int kSquareSeed = 42;
 constexpr int kDrawingSeed = 123;
 constexpr std::uintmax_t kMinimumSubstantialSvgSize = 100U;
 constexpr double kEmptySvgBoxMax = 100.0;
+constexpr double kRenderedSegmentTolerance = 1e-3;
 constexpr std::size_t kExpectedViewBoxMatchCount = 5U;
 constexpr std::size_t kSegmentedCircleSegmentCount = 18U;
 constexpr std::size_t kSimplifiedSegmentedCircleSegmentCount = 12U;
@@ -300,6 +306,55 @@ auto extractViewBox(const std::string& content) -> std::optional<ParsedViewBox> 
                              std::stod(match[4])};
     }
     return std::nullopt;
+}
+
+auto pointsAreNear(const laby::Point_2& left, const laby::Point_2& right,
+                   double tolerance = kRenderedSegmentTolerance) -> bool {
+    const double deltaX = CGAL::to_double(left.x()) - CGAL::to_double(right.x());
+    const double deltaY = CGAL::to_double(left.y()) - CGAL::to_double(right.y());
+    return std::hypot(deltaX, deltaY) <= tolerance;
+}
+
+auto collectRenderedSegments(const std::vector<laby::Ribbon>& ribbonList)
+    -> std::vector<laby::Kernel::Segment_2> {
+    std::vector<laby::Kernel::Segment_2> segments;
+
+    for (const laby::Ribbon& ribbon : ribbonList) {
+        for (const laby::Polyline& polyline : ribbon.lines()) {
+            const std::vector<laby::Point_2>& points = polyline.points();
+            if (points.size() < 2U) {
+                continue;
+            }
+
+            for (std::size_t pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
+                segments.emplace_back(points.at(pointIndex - 1U), points.at(pointIndex));
+            }
+            if (polyline.isClosed()) {
+                segments.emplace_back(points.back(), points.front());
+            }
+        }
+    }
+
+    return segments;
+}
+
+auto containsExpectedSegment(const std::vector<laby::Kernel::Segment_2>& renderedSegments,
+                             const ExpectedSegment& expectedSegment) -> bool {
+    return std::any_of(renderedSegments.begin(), renderedSegments.end(),
+                       [&](const laby::Kernel::Segment_2& segment) {
+                           return (pointsAreNear(segment.source(), expectedSegment.start) &&
+                                   pointsAreNear(segment.target(), expectedSegment.end)) ||
+                                  (pointsAreNear(segment.source(), expectedSegment.end) &&
+                                   pointsAreNear(segment.target(), expectedSegment.start));
+                       });
+}
+
+auto containsExpectedSegmentChain(const std::vector<laby::Kernel::Segment_2>& renderedSegments,
+                                  const std::vector<ExpectedSegment>& expectedSegments) -> bool {
+    return std::all_of(expectedSegments.begin(), expectedSegments.end(),
+                       [&](const ExpectedSegment& expectedSegment) {
+                           return containsExpectedSegment(renderedSegments, expectedSegment);
+                       });
 }
 
 } // namespace
@@ -738,11 +793,30 @@ TEST_F(OverlapRenderingQualTest, GeneratesTwoSegmentedCirclesWithHorizontalBarVi
     const std::vector<laby::PolyConvex> polyConvexList =
         makeTwoSegmentedCirclesWithHorizontalBarPolyConvexList();
     laby::OrientedRibbon orientedRibbon;
+    const ExpectedSegment greenSegment{laby::Point_2(46.00248881780865418, 68.0),
+                                       laby::Point_2(54.28469826108931784, 68.0)};
+    const std::vector<ExpectedSegment> redArtifactSegments{
+        {laby::Point_2(46.00248881780865418, 68.0),
+         laby::Point_2(47.35168700401719377, 73.03527618041007941)},
+        {laby::Point_2(47.35168700401719377, 73.03527618041007941),
+         laby::Point_2(48.38696318442728739, 74.82842712474618452)},
+        {laby::Point_2(48.38696318442728739, 74.82842712474618452),
+         laby::Point_2(49.55853605968108866, 76.0)}};
 
     EXPECT_NO_THROW({ laby::PathRendering::pathRender(polyConvexList, orientedRibbon); });
+    const std::vector<laby::Ribbon> ribbonList = orientedRibbon.getResult();
+    const std::vector<laby::Kernel::Segment_2> renderedSegments =
+        collectRenderedSegments(ribbonList);
+    const bool hasGreenSegment = containsExpectedSegment(renderedSegments, greenSegment);
+    const bool hasRedArtifactSegments =
+        containsExpectedSegmentChain(renderedSegments, redArtifactSegments);
+
+    EXPECT_FALSE(hasGreenSegment && hasRedArtifactSegments)
+        << "The top horizontal overlap segment and the descending red artifact chain must not "
+           "both appear in the reduced two-circle overlap rendering";
     EXPECT_NO_THROW({
         laby::GraphicRendering::printRibbonSvg(CGAL::Bbox_2(12.0, 28.0, 108.0, 92.0), svgOut, 0.5,
-                                               orientedRibbon.getResult());
+                                               ribbonList);
     });
 
     ASSERT_TRUE(fs::exists(svgOut)) << "Visual regression SVG should be created at: " << svgOut;

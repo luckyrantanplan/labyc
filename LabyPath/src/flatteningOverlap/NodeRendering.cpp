@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 #include <unordered_set>
 #include <vector>
 
@@ -30,6 +31,37 @@ namespace {
 
 auto edgeMatchesPolygonId(const int32_t polygonIndex, const basic::HalfedgeNode& halfedge) -> bool {
     return basic::edgeHasPolygonId(halfedge, polygonIndex);
+}
+
+auto shouldDebugNodeOverlap(const std::vector<Node*>& nodes) -> bool {
+    return nodes.size() >= 3U;
+}
+
+auto logNodeOrdering(const std::vector<Node*>& nodes) -> void {
+    std::cout << "[NodeOverlap] sorted nodes=" << nodes.size() << '\n';
+    for (std::size_t polygonIndex = 0; polygonIndex < nodes.size(); ++polygonIndex) {
+        const Node& node = *nodes.at(polygonIndex);
+        std::cout << "  polygonId=" << polygonIndex << " nodeId=" << node.nodeId()
+                  << " state=" << node.state() << " cover=";
+        for (const std::size_t coverIndex : node.cover()) {
+            std::cout << coverIndex << ' ';
+        }
+        std::cout << '\n';
+    }
+}
+
+auto logOverlappingFaceChoice(const std::unordered_set<int32_t>& polygonIds,
+                              const int32_t polygonIndex) -> void {
+    std::cout << "[NodeOverlap] 3-way face polygons={";
+    bool first = true;
+    for (const int32_t polygonId : polygonIds) {
+        if (!first) {
+            std::cout << ',';
+        }
+        std::cout << polygonId;
+        first = false;
+    }
+    std::cout << "} chosen=" << polygonIndex << '\n';
 }
 
 auto arrangementHasSharedFace(basic::Arrangement_2Node& arrangement) -> bool {
@@ -114,6 +146,9 @@ auto renderOverlappingFaces(OrientedRibbon& orientedRibbon,
         }
 
         const int32_t polygonIndex = *minPolygonIt;
+        if (polygonIds.size() >= 3U) {
+            logOverlappingFaceChoice(polygonIds, polygonIndex);
+        }
         addOuterBoundarySegments(orientedRibbon, polygonIndex, face);
         addHoleBoundarySegments(orientedRibbon, polygonIndex, face);
     }
@@ -141,6 +176,10 @@ auto NodeOverlap::render(OrientedRibbon& orientedRibbon,
     EASY_FUNCTION();
 
     sortNode();
+
+    if (shouldDebugNodeOverlap(nodes())) {
+        logNodeOrdering(nodes());
+    }
 
     addIdToPolygon(polyConvexList);
 
