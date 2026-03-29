@@ -30,8 +30,6 @@
 #include <CGAL/intersection_2.h>
 #include <CGAL/number_utils.h>
 #include <boost/optional/optional.hpp>
-#include <boost/variant/get.hpp>
-#include <boost/variant/variant.hpp>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>

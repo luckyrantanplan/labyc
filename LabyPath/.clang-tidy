@@ -13,7 +13,8 @@ Checks: >
   misc-*,
   modernize-*,
   performance-*,
-  readability-*
+  readability-*,
+  -modernize-use-constraints
   
 
 WarningsAsErrors: ''

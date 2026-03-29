@@ -13,7 +13,6 @@
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
-#include <boost/variant/get.hpp>
 
 #include <cmath>
 #include <cstddef>

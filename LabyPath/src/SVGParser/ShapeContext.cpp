@@ -9,9 +9,9 @@
 
 #include <CGAL/Point_2.h>
 #include <CGAL/number_utils.h>
-#include <boost/variant/get.hpp>
 #include <iostream>
 #include <svgpp/definitions.hpp>
+#include <variant>
 
 #include "../GeomData.h"
 #include "../agg/agg_curves.h"
@@ -32,8 +32,7 @@ void ShapeContext::path_move_to(double xCoordinate, double yCoordinate,
                                 svgpp::tag::coordinate::absolute coordinateTag) {
     static_cast<void>(coordinateTag);
 
-    if (currentRibbon().lines().empty() or
-        !currentRibbon().lines().back().points().empty()) {
+    if (currentRibbon().lines().empty() or !currentRibbon().lines().back().points().empty()) {
         currentRibbon().lines().emplace_back();
     }
 
@@ -96,12 +95,10 @@ void ShapeContext::path_close_subpath() {
     currentRibbon().lines().emplace_back();
 }
 
-
-
 auto ShapeContext::getColor(const Paint& paint) -> color_t {
     EffectivePaint epaint = style().getEffectivePaint(paint);
-    if (boost::get<color_t>(&epaint) != nullptr) {
-        return boost::get<color_t>(epaint);
+    if (const color_t* color = std::get_if<color_t>(&epaint)) {
+        return *color;
     }
     return 0;
 }
@@ -111,7 +108,6 @@ void ShapeContext::path_exit() {
     currentRibbon().setStrokeColor(getColor(style().strokePaint()));
     currentRibbon().setStrokeWidth(style().strokeWidth());
 }
-
 
 void ShapeContext::marker(svgpp::marker_vertex vertex, double xCoordinate, double yCoordinate,
                           double directionality, unsigned markerIndex) {

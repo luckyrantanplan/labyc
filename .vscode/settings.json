@@ -15,11 +15,24 @@
     // ─── C/C++ ─────────────────────────────────────────────────────────
     "C_Cpp.default.compilerPath": "/usr/bin/g++-14",
     "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "C_Cpp.default.compileCommands": "${workspaceFolder}/.cmake/build/compile_commands.json",
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",
     "C_Cpp.clang_format_path": "/usr/bin/clang-format",
     "C_Cpp.clang_format_style": "file",
+    "C_Cpp.codeAnalysis.exclude": {
+        "**/.cmake/**": true,
+        "**/build/**": true,
+        "LabyPath/src/protoc/**": true
+    },
+    "C_Cpp.codeAnalysis.runAutomatically": true,
     "C_Cpp.codeAnalysis.clangTidy.enabled": true,
     "C_Cpp.codeAnalysis.clangTidy.path": "/usr/bin/clang-tidy",
+    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+    "C_Cpp.codeAnalysis.clangTidy.headerFilter": "^/workspace/LabyPath/src/.*",
+    "C_Cpp.codeAnalysis.clangTidy.args": [
+        "--system-headers=0"
+    ],
     // ─── Python ────────────────────────────────────────────────────────
     "python.defaultInterpreterPath": "/home/vscode/venv/bin/python",
     "python.testing.pytestEnabled": true,

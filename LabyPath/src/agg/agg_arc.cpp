@@ -9,6 +9,7 @@
 #include <CGAL/number_utils.h>
 #include <algorithm> // std::reverse
 #include <cmath>
+#include <numbers>
 
 //----------------------------------------------------------------------------
 // Anti-Grain Geometry - Version 2.4
@@ -32,7 +33,7 @@
 namespace agg {
 
 namespace {
-constexpr double kPi = 3.14159265358979323846;
+constexpr double kPi = std::numbers::pi;
 constexpr double kAngleStepMultiplier = 2.0;
 constexpr double kFullTurn = 2.0 * kPi;
 constexpr double kQuarterTurnSegments = 4.0;

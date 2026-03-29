@@ -6,7 +6,7 @@ usage() {
     cat <<'EOF'
 Usage: ./run-clang-tidy-all.sh [options]
 
-Runs clang-tidy sequentially on all C++ translation units in LabyPath/src and
+Runs clang-tidy on all C++ translation units in LabyPath/src and
 LabyPath/tests using the compile database in .cmake/build.
 
 Options:
@@ -23,6 +23,7 @@ BUILD_DIR="${ROOT_DIR}/.cmake/build"
 LOG_DIR="${ROOT_DIR}/.logs/clang-tidy"
 FORCE_CONFIGURE=0
 APPLY_FIXES=0
+MAX_PARALLEL=3
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -89,6 +90,7 @@ configure_if_needed() {
 require_command cmake
 require_command clang-tidy
 require_command find
+require_command mktemp
 require_command sort
 
 configure_if_needed
@@ -117,24 +119,79 @@ fi
 
 failed_count=0
 processed_count=0
+temp_dir=$(mktemp -d "${LOG_DIR}/.${mode_name}-${timestamp}.XXXXXX")
 
-for file in "${files[@]}"; do
-    processed_count=$((processed_count + 1))
-    relative_file=${file#"${ROOT_DIR}/"}
+cleanup() {
+    rm -rf -- "${temp_dir}"
+}
 
-    printf '\n== %s ==\n' "${relative_file}" | tee -a "${log_file}"
+run_clang_tidy_job() {
+    local file="$1"
+    local output_file="$2"
+    local relative_file=${file#"${ROOT_DIR}/"}
+    local tidy_cmd=(clang-tidy -p "${BUILD_DIR}")
 
-    tidy_cmd=(clang-tidy -p "${BUILD_DIR}")
     if [[ ${APPLY_FIXES} -eq 1 ]]; then
         tidy_cmd+=(-fix)
     fi
     tidy_cmd+=("${file}")
 
-    if ! "${tidy_cmd[@]}" 2>&1 | tee -a "${log_file}"; then
-        echo "${relative_file}" | tee -a "${failure_file}"
-        failed_count=$((failed_count + 1))
+    {
+        printf '\n== %s ==\n' "${relative_file}"
+        "${tidy_cmd[@]}"
+    } >"${output_file}" 2>&1
+}
+
+wait_for_batch() {
+    local index
+    local pid
+    local status
+
+    for index in "${!batch_pids[@]}"; do
+        pid=${batch_pids[$index]}
+        status=0
+        if ! wait "${pid}"; then
+            status=$?
+        fi
+
+        cat -- "${batch_logs[$index]}" | tee -a "${log_file}"
+
+        if [[ ${status} -ne 0 ]]; then
+            echo "${batch_files[$index]}" | tee -a "${failure_file}"
+            failed_count=$((failed_count + 1))
+        fi
+    done
+
+    batch_pids=()
+    batch_files=()
+    batch_logs=()
+}
+
+trap cleanup EXIT
+
+batch_pids=()
+batch_files=()
+batch_logs=()
+
+for file in "${files[@]}"; do
+    processed_count=$((processed_count + 1))
+    relative_file=${file#"${ROOT_DIR}/"}
+
+    batch_log="${temp_dir}/$(printf '%05d' "${processed_count}").log"
+    run_clang_tidy_job "${file}" "${batch_log}" &
+
+    batch_pids+=("$!")
+    batch_files+=("${relative_file}")
+    batch_logs+=("${batch_log}")
+
+    if [[ ${#batch_pids[@]} -eq ${MAX_PARALLEL} ]]; then
+        wait_for_batch
     fi
 done
+
+if [[ ${#batch_pids[@]} -gt 0 ]]; then
+    wait_for_batch
+fi
 
 echo
 echo "Processed files: ${processed_count}"

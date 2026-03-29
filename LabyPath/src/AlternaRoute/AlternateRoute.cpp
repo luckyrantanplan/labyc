@@ -13,7 +13,6 @@
 #include <CGAL/enum.h>
 #include <CGAL/number_utils.h>
 #include <algorithm>
-#include <boost/variant/get.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>

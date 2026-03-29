@@ -8,25 +8,25 @@
 #ifndef SVGPARSER_STYLABLE_H_
 #define SVGPARSER_STYLABLE_H_
 
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
-
 #include "Common.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
+#include <string>
+#include <svgpp/definitions.hpp>
+#include <svgpp/factory/icc_color_stub.hpp>
 #include <svgpp/svgpp.hpp>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace laby::svgp {
 
-namespace {
 constexpr number_t kDefaultOpacity = 1.0;
 constexpr number_t kDefaultStrokeWidth = 1.0;
 constexpr number_t kDefaultMiterLimit = 4.0;
-} // namespace
 
 enum class LineCap : std::uint8_t { Butt, Square, Round };
 
@@ -41,29 +41,28 @@ enum class LineJoin : std::uint8_t {
 enum class InnerJoin : std::uint8_t { Bevel, Miter, Jag, Round };
 
 using color_t = int;
-using SolidPaint =
-    boost::variant<svgpp::tag::value::none, svgpp::tag::value::currentColor, color_t>;
+using SolidPaint = std::variant<svgpp::tag::value::none, svgpp::tag::value::currentColor, color_t>;
 class IRIPaint {
   public:
     explicit IRIPaint(std::string fragment,
-                      boost::optional<SolidPaint> const& fallback = boost::optional<SolidPaint>())
+                      std::optional<SolidPaint> const& fallback = std::optional<SolidPaint>())
         : _fragment(std::move(fragment)), _fallback(fallback) {}
 
     [[nodiscard]] auto fragment() const -> const std::string& {
         return _fragment;
     }
 
-    [[nodiscard]] auto fallback() const -> const boost::optional<SolidPaint>& {
+    [[nodiscard]] auto fallback() const -> const std::optional<SolidPaint>& {
         return _fallback;
     }
 
   private:
     std::string _fragment;
-    boost::optional<SolidPaint> _fallback;
+    std::optional<SolidPaint> _fallback;
 };
 
-using Paint = boost::variant<SolidPaint, IRIPaint>;
-using EffectivePaint = boost::variant<svgpp::tag::value::none, color_t>;
+using Paint = std::variant<SolidPaint, IRIPaint>;
+using EffectivePaint = std::variant<svgpp::tag::value::none, color_t>;
 
 class InheritedStyle {
   public:
@@ -174,15 +173,15 @@ class InheritedStyle {
         _strokeDashOffset = strokeDashOffsetValue;
     }
 
-    [[nodiscard]] auto markerStart() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto markerStart() const -> const std::optional<std::string>& {
         return _markerStart;
     }
 
-    [[nodiscard]] auto markerMid() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto markerMid() const -> const std::optional<std::string>& {
         return _markerMid;
     }
 
-    [[nodiscard]] auto markerEnd() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto markerEnd() const -> const std::optional<std::string>& {
         return _markerEnd;
     }
 
@@ -225,9 +224,9 @@ class InheritedStyle {
     number_t _miterLimit = kDefaultMiterLimit;
     std::vector<number_t> _strokeDashArray;
     number_t _strokeDashOffset = 0;
-    boost::optional<std::string> _markerStart;
-    boost::optional<std::string> _markerMid;
-    boost::optional<std::string> _markerEnd;
+    std::optional<std::string> _markerStart;
+    std::optional<std::string> _markerMid;
+    std::optional<std::string> _markerEnd;
 };
 
 class NoninheritedStyle {
@@ -255,7 +254,7 @@ class NoninheritedStyle {
         _display = displayValue;
     }
 
-    [[nodiscard]] auto maskFragment() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto maskFragment() const -> const std::optional<std::string>& {
         return _maskFragment;
     }
 
@@ -267,7 +266,7 @@ class NoninheritedStyle {
         _maskFragment.reset();
     }
 
-    [[nodiscard]] auto clipPathFragment() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto clipPathFragment() const -> const std::optional<std::string>& {
         return _clipPathFragment;
     }
 
@@ -279,7 +278,7 @@ class NoninheritedStyle {
         _clipPathFragment.reset();
     }
 
-    [[nodiscard]] auto filter() const -> const boost::optional<std::string>& {
+    [[nodiscard]] auto filter() const -> const std::optional<std::string>& {
         return _filter;
     }
 
@@ -302,9 +301,9 @@ class NoninheritedStyle {
   private:
     number_t _opacity = kDefaultOpacity;
     bool _display = true;
-    boost::optional<std::string> _maskFragment;
-    boost::optional<std::string> _clipPathFragment;
-    boost::optional<std::string> _filter;
+    std::optional<std::string> _maskFragment;
+    std::optional<std::string> _clipPathFragment;
+    std::optional<std::string> _filter;
     bool _overflowClip = true;
 };
 
@@ -323,7 +322,7 @@ class Style : public InheritedStyle, public NoninheritedStyle {
 
     [[nodiscard]] auto getEffectivePaint(Paint const& paint) const -> EffectivePaint {
         SolidPaint const* solidPaint = nullptr;
-        if (IRIPaint const* iri = boost::get<IRIPaint>(&paint)) {
+        if (IRIPaint const* iri = std::get_if<IRIPaint>(&paint)) {
             // do not manage Gradient yet
             if (iri->fallback()) {
                 solidPaint = &*iri->fallback();
@@ -331,15 +330,18 @@ class Style : public InheritedStyle, public NoninheritedStyle {
                 throw std::runtime_error("Can't find paint server");
             }
         } else {
-            solidPaint = boost::get<SolidPaint>(&paint);
+            solidPaint = std::get_if<SolidPaint>(&paint);
         }
-        if (boost::get<svgpp::tag::value::none>(solidPaint) != nullptr) {
+        if (solidPaint == nullptr) {
+            throw std::runtime_error("Unsupported paint variant");
+        }
+        if (std::get_if<svgpp::tag::value::none>(solidPaint) != nullptr) {
             return svgpp::tag::value::none();
         }
-        if (boost::get<svgpp::tag::value::currentColor>(solidPaint) != nullptr) {
+        if (std::get_if<svgpp::tag::value::currentColor>(solidPaint) != nullptr) {
             return color();
         }
-        return boost::get<color_t>(*solidPaint);
+        return std::get<color_t>(*solidPaint);
     }
 };
 
@@ -384,7 +386,7 @@ template <class AttributeTag> class PaintContext {
     void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
              svgpp::tag::value::none val) {
         paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
-                           boost::optional<SolidPaint>(val));
+                           std::optional<SolidPaint>(val));
     }
 
     template <class IRI>
@@ -396,7 +398,7 @@ template <class AttributeTag> class PaintContext {
     void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
              svgpp::tag::value::currentColor val) {
         paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
-                           boost::optional<SolidPaint>(val));
+                           std::optional<SolidPaint>(val));
     }
 
     template <class IRI>
@@ -409,7 +411,7 @@ template <class AttributeTag> class PaintContext {
     void set(AttributeTag /*tag*/, svgpp::tag::iri_fragment /*unused*/, IRI const& fragment,
              color_t val, svgpp::tag::skip_icc_color /*unused*/ = svgpp::tag::skip_icc_color()) {
         paint() = IRIPaint(std::string(boost::begin(fragment), boost::end(fragment)),
-                           boost::optional<SolidPaint>(val));
+                           std::optional<SolidPaint>(val));
     }
 
   protected:

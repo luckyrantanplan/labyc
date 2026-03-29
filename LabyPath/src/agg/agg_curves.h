@@ -30,6 +30,7 @@
 #include <CGAL/number_utils.h>
 #include <array>
 #include <cstddef>
+#include <numbers>
 #include <vector>
 
 namespace agg {
@@ -42,7 +43,7 @@ constexpr double kHermiteDivisor = 3.0;
 constexpr double kCatmullRomDivisor = 6.0;
 constexpr double kCatmullRomDoubleWeight = 2.0;
 constexpr double kCatmullRomQuadrupleWeight = 4.0;
-constexpr double kCurvePiValue = 3.14159265358979323846;
+constexpr double kCurvePiValue = std::numbers::pi;
 constexpr std::size_t kCurve4CoordinateCount = 8;
 constexpr std::size_t kCurve4StartXIndex = 0;
 constexpr std::size_t kCurve4StartYIndex = 1;

@@ -8,14 +8,13 @@
 #ifndef SVGPARSER_USECONTEXT_H_
 #define SVGPARSER_USECONTEXT_H_
 
-#include <boost/variant.hpp>
+#include "Context.h"
+#include "ShapeContext.h"
+#include <optional>
 #include <rapidxml_ns/rapidxml_ns.hpp>
 #include <rapidxml_ns/rapidxml_ns_utils.hpp>
 #include <svgpp/policy/xml/rapidxml_ns.hpp>
 #include <svgpp/svgpp.hpp>
-
-#include "Context.h"
-#include "ShapeContext.h"
 
 namespace laby::svgp {
 
@@ -25,11 +24,11 @@ class UseContext : public BaseContext {
   public:
     explicit UseContext(const BaseContext& parent) : BaseContext(parent) {}
 
-    [[nodiscard]] auto width() const -> const boost::optional<double>& {
+    [[nodiscard]] auto width() const -> const std::optional<double>& {
         return _width;
     }
 
-    [[nodiscard]] auto height() const -> const boost::optional<double>& {
+    [[nodiscard]] auto height() const -> const std::optional<double>& {
         return _height;
     }
 
@@ -40,7 +39,7 @@ class UseContext : public BaseContext {
              const IRI& fragment) {
         static_cast<void>(attributeTag);
         static_cast<void>(iriTag);
-        _fragmentId.assign(boost::begin(fragment), boost::end(fragment));
+        _fragmentId.assign(std::begin(fragment), std::end(fragment));
     }
 
     template <class IRI>
@@ -73,7 +72,7 @@ class UseContext : public BaseContext {
     void on_exit_element();
 
     // SVG++ discovers this hook by exact name.
-    
+
     static auto FindCurrentDocumentElementById(const std::string& fragmentId) -> xml_element_t {
         static_cast<void>(fragmentId);
         return nullptr;
@@ -83,8 +82,8 @@ class UseContext : public BaseContext {
     std::string _fragmentId;
     double _x = 0;
     double _y = 0;
-    boost::optional<double> _width;
-    boost::optional<double> _height;
+    std::optional<double> _width;
+    std::optional<double> _height;
 };
 
 class ReferencedSymbolOrSvgContext : public BaseContext {
@@ -93,7 +92,7 @@ class ReferencedSymbolOrSvgContext : public BaseContext {
         : BaseContext(static_cast<const BaseContext&>(referencing)), _referencing(&referencing) {}
 
     // SVG++ discovers this hook by exact name.
-    
+
     void get_reference_viewport_size(double& width, double& height) {
         if (_referencing->width()) {
             width = *_referencing->width();
@@ -102,7 +101,6 @@ class ReferencedSymbolOrSvgContext : public BaseContext {
             height = *_referencing->height();
         }
     }
-    
 
   private:
     UseContext* _referencing;
@@ -182,7 +180,6 @@ using document_traversal_t =
                               svgpp::viewport_policy<svgpp::policy::viewport::as_transform>, //
                               svgpp::context_factories<ChildContextFactories>,               //
                               svgpp::markers_policy<svgpp::policy::markers::calculate_always>>;
-
 
 } /* namespace laby::svgp */
 
