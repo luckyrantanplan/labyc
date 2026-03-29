@@ -26,12 +26,16 @@
 
 #include "AlternaRoute/AlternateRoute.h"
 #include "GridIndex.h"
+#include "OrientedRibbon.h"
+#include "PolyConvex.h"
 #include "Polyline.h"
 #include "Rendering/GraphicRendering.h"
 #include "Ribbon.h"
 #include "SVGParser/Loader.h"
 #include "SkeletonGrid.h"
 #include "basic/Color.h"
+#include "basic/LinearGradient.h"
+#include "flatteningOverlap/PathRendering.h"
 #include "protoc/AllConfig.pb.h"
 
 namespace fs = std::filesystem;
@@ -64,11 +68,24 @@ constexpr double kConfigMaxThickness = 15.0;
 constexpr double kConfigMinThickness = 1.0;
 constexpr int kConfigPruning = 3;
 constexpr double kConfigThicknessPercent = 0.4;
+constexpr double kOverlapRibbonThickness = 16.0;
+constexpr double kSegmentedCircleRadius = 24.0;
+constexpr double kSegmentedCircleCenterSpacing = kSegmentedCircleRadius;
+constexpr double kSegmentedCircleEquilateralHeightFactor = 0.8660254037844386;
+constexpr double kSegmentedCircleRibbonThickness = 8.0;
+constexpr double kSegmentedCircleBarY = 72.0;
+constexpr double kSegmentedCircleBarStartX = 40.0;
+constexpr double kSegmentedCircleBarEndX = 80.0;
+constexpr double kSegmentedCircleBarThickness = 8.0;
+constexpr double kMinimalTripleOverlapThickness = 12.0;
+constexpr double kPi = 3.14159265358979323846;
 constexpr int kSquareSeed = 42;
 constexpr int kDrawingSeed = 123;
 constexpr std::uintmax_t kMinimumSubstantialSvgSize = 100U;
 constexpr double kEmptySvgBoxMax = 100.0;
 constexpr std::size_t kExpectedViewBoxMatchCount = 5U;
+constexpr std::size_t kSegmentedCircleSegmentCount = 18U;
+constexpr std::size_t kSimplifiedSegmentedCircleSegmentCount = 12U;
 
 auto inputDir() -> std::string {
     fs::path const base = fs::path(__FILE__).parent_path().parent_path() / "input";
@@ -83,6 +100,151 @@ auto tmpOutput(const std::string& name) -> std::string {
     fs::path const tmp = fs::temp_directory_path() / "labypath_test";
     fs::create_directories(tmp);
     return (tmp / name).string();
+}
+
+auto visualOutput(const std::string& name) -> std::string {
+    fs::path const tmp = fs::temp_directory_path() / "labypath_test" / "visual";
+    fs::create_directories(tmp);
+    return (tmp / name).string();
+}
+
+auto appendRibbonSegments(std::vector<laby::PolyConvex>& polyConvexList,
+                          const std::vector<laby::Point_2>& points, double thickness) -> void {
+    const std::size_t beginIndex = polyConvexList.size();
+    for (std::size_t pointIndex = 1; pointIndex < points.size(); ++pointIndex) {
+        laby::basic::LinearGradient gradient(points.at(pointIndex - 1), thickness,
+                                             points.at(pointIndex), thickness);
+        polyConvexList.emplace_back(
+            laby::PolyConvexEndpoints{points.at(pointIndex - 1), points.at(pointIndex)},
+            polyConvexList.size(), gradient);
+    }
+
+    if (polyConvexList.size() > beginIndex + 1U) {
+        laby::PolyConvex::connect(beginIndex, polyConvexList);
+    }
+}
+
+auto appendClosedRibbonSegments(std::vector<laby::PolyConvex>& polyConvexList,
+                                const std::vector<laby::Point_2>& points,
+                                double thickness) -> void {
+    if (points.size() < 3U) {
+        return;
+    }
+
+    const std::size_t beginIndex = polyConvexList.size();
+    for (std::size_t pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
+        const std::size_t nextPointIndex = (pointIndex + 1U) % points.size();
+        laby::basic::LinearGradient gradient(points.at(pointIndex), thickness,
+                                             points.at(nextPointIndex), thickness);
+        polyConvexList.emplace_back(
+            laby::PolyConvexEndpoints{points.at(pointIndex), points.at(nextPointIndex)},
+            polyConvexList.size(), gradient);
+    }
+
+    if (polyConvexList.size() > beginIndex + 1U) {
+        laby::PolyConvex::connect(beginIndex, polyConvexList);
+        laby::PolyConvex::connect({beginIndex, polyConvexList.size() - 1U}, polyConvexList,
+                                  points.front());
+    }
+}
+
+auto makeSegmentedCirclePoints(const laby::Point_2& center, double radius,
+                               std::size_t segmentCount) -> std::vector<laby::Point_2> {
+    std::vector<laby::Point_2> points;
+    points.reserve(segmentCount);
+
+    const double centerX = CGAL::to_double(center.x());
+    const double centerY = CGAL::to_double(center.y());
+    const double angleStep = (2.0 * kPi) / static_cast<double>(segmentCount);
+    for (std::size_t pointIndex = 0; pointIndex < segmentCount; ++pointIndex) {
+        const double angle = angleStep * static_cast<double>(pointIndex);
+        points.emplace_back(centerX + radius * std::cos(angle), centerY + radius * std::sin(angle));
+    }
+
+    return points;
+}
+
+auto makeMinimalOverlapPolyConvexList() -> std::vector<laby::PolyConvex> {
+    std::vector<laby::PolyConvex> polyConvexList;
+    polyConvexList.reserve(4U);
+
+    appendRibbonSegments(polyConvexList, {laby::Point_2(18.0, 35.0), laby::Point_2(62.0, 35.0)},
+                         kOverlapRibbonThickness);
+    appendRibbonSegments(polyConvexList, {laby::Point_2(40.0, 14.0), laby::Point_2(40.0, 66.0)},
+                         kOverlapRibbonThickness);
+    appendRibbonSegments(polyConvexList, {laby::Point_2(80.0, 82.0), laby::Point_2(126.0, 82.0)},
+                         kOverlapRibbonThickness);
+    appendRibbonSegments(polyConvexList, {laby::Point_2(103.0, 52.0), laby::Point_2(103.0, 108.0)},
+                         kOverlapRibbonThickness);
+
+    return polyConvexList;
+}
+
+auto makeThreeSegmentedCirclesWithHorizontalBarPolyConvexList() -> std::vector<laby::PolyConvex> {
+    std::vector<laby::PolyConvex> polyConvexList;
+    polyConvexList.reserve((3U * kSegmentedCircleSegmentCount) + 4U);
+
+    const double thirdCircleCenterX = 48.0 + (kSegmentedCircleCenterSpacing / 2.0);
+    const double thirdCircleCenterY =
+        60.0 + (kSegmentedCircleCenterSpacing * kSegmentedCircleEquilateralHeightFactor);
+
+    appendClosedRibbonSegments(polyConvexList,
+                               makeSegmentedCirclePoints(laby::Point_2(48.0, 60.0),
+                                                         kSegmentedCircleRadius,
+                                                         kSegmentedCircleSegmentCount),
+                               kSegmentedCircleRibbonThickness);
+    appendClosedRibbonSegments(
+        polyConvexList,
+        makeSegmentedCirclePoints(laby::Point_2(48.0 + kSegmentedCircleCenterSpacing, 60.0),
+                                  kSegmentedCircleRadius, kSegmentedCircleSegmentCount),
+        kSegmentedCircleRibbonThickness);
+    appendClosedRibbonSegments(
+        polyConvexList,
+        makeSegmentedCirclePoints(laby::Point_2(thirdCircleCenterX, thirdCircleCenterY),
+                                  kSegmentedCircleRadius, kSegmentedCircleSegmentCount),
+        kSegmentedCircleRibbonThickness);
+    appendRibbonSegments(polyConvexList,
+                         {laby::Point_2(kSegmentedCircleBarStartX, kSegmentedCircleBarY),
+                          laby::Point_2(kSegmentedCircleBarEndX, kSegmentedCircleBarY)},
+                         kSegmentedCircleBarThickness);
+
+    return polyConvexList;
+}
+
+auto makeTwoSegmentedCirclesWithHorizontalBarPolyConvexList() -> std::vector<laby::PolyConvex> {
+    std::vector<laby::PolyConvex> polyConvexList;
+    polyConvexList.reserve((2U * kSimplifiedSegmentedCircleSegmentCount) + 3U);
+
+    appendClosedRibbonSegments(polyConvexList,
+                               makeSegmentedCirclePoints(laby::Point_2(48.0, 60.0),
+                                                         kSegmentedCircleRadius,
+                                                         kSimplifiedSegmentedCircleSegmentCount),
+                               kSegmentedCircleRibbonThickness);
+    appendClosedRibbonSegments(
+        polyConvexList,
+        makeSegmentedCirclePoints(laby::Point_2(48.0 + kSegmentedCircleCenterSpacing, 60.0),
+                                  kSegmentedCircleRadius, kSimplifiedSegmentedCircleSegmentCount),
+        kSegmentedCircleRibbonThickness);
+    appendRibbonSegments(polyConvexList,
+                         {laby::Point_2(kSegmentedCircleBarStartX, kSegmentedCircleBarY),
+                          laby::Point_2(kSegmentedCircleBarEndX, kSegmentedCircleBarY)},
+                         kSegmentedCircleBarThickness);
+
+    return polyConvexList;
+}
+
+auto makeMinimalTripleOverlapPolyConvexList() -> std::vector<laby::PolyConvex> {
+    std::vector<laby::PolyConvex> polyConvexList;
+    polyConvexList.reserve(3U);
+
+    appendRibbonSegments(polyConvexList, {laby::Point_2(16.0, 60.0), laby::Point_2(94.0, 60.0)},
+                         kMinimalTripleOverlapThickness);
+    appendRibbonSegments(polyConvexList, {laby::Point_2(30.0, 88.0), laby::Point_2(56.0, 34.0)},
+                         kMinimalTripleOverlapThickness);
+    appendRibbonSegments(polyConvexList, {laby::Point_2(82.0, 88.0), laby::Point_2(54.0, 34.0)},
+                         kMinimalTripleOverlapThickness);
+
+    return polyConvexList;
 }
 
 /// Check that all points in a polyline lie within the given bounding box
@@ -504,6 +666,129 @@ TEST_F(SkeletonGridQualTest, OutputBoundsMatchInput) {
 }
 
 // ─── AlternateRoute Qualification Tests ─────────────────────────────────────
+
+class OverlapRenderingQualTest : public ::testing::Test {};
+
+TEST_F(OverlapRenderingQualTest, GeneratesMinimalOverlapVisualRegressionSvg) {
+    const std::string svgOut = visualOutput("placement_overlap_minimal_grid_visual_regression.svg");
+    fs::remove(svgOut);
+
+    const std::vector<laby::PolyConvex> polyConvexList = makeMinimalOverlapPolyConvexList();
+    laby::OrientedRibbon orientedRibbon;
+
+    EXPECT_NO_THROW({ laby::PathRendering::pathRender(polyConvexList, orientedRibbon); });
+    EXPECT_NO_THROW({
+        laby::GraphicRendering::printRibbonSvg(CGAL::Bbox_2(0.0, 0.0, 140.0, 120.0), svgOut, 0.5,
+                                               orientedRibbon.getResult());
+    });
+
+    ASSERT_TRUE(fs::exists(svgOut)) << "Visual regression SVG should be created at: " << svgOut;
+    EXPECT_GT(fs::file_size(svgOut), kMinimumSubstantialSvgSize)
+        << "Visual regression SVG should contain substantial content";
+
+    std::ifstream ifs(svgOut);
+    std::string const content((std::istreambuf_iterator<char>(ifs)),
+                              std::istreambuf_iterator<char>());
+
+    EXPECT_TRUE(content.find("<svg") != std::string::npos)
+        << "Visual regression output should be well-formed SVG";
+    EXPECT_GT(countSvgPathElements(content), 0U)
+        << "Visual regression output should contain rendered path geometry";
+    EXPECT_EQ(content.find("d=\"\""), std::string::npos)
+        << "Visual regression output should not collapse to an empty path";
+}
+
+TEST_F(OverlapRenderingQualTest,
+       GeneratesThreeSegmentedCirclesWithHorizontalBarVisualRegressionSvg) {
+    const std::string svgOut =
+        visualOutput("overlap_three_segmented_circles_with_horizontal_bar_visual_regression.svg");
+    fs::remove(svgOut);
+
+    const std::vector<laby::PolyConvex> polyConvexList =
+        makeThreeSegmentedCirclesWithHorizontalBarPolyConvexList();
+    laby::OrientedRibbon orientedRibbon;
+
+    EXPECT_NO_THROW({ laby::PathRendering::pathRender(polyConvexList, orientedRibbon); });
+    EXPECT_NO_THROW({
+        laby::GraphicRendering::printRibbonSvg(CGAL::Bbox_2(12.0, 28.0, 108.0, 112.0), svgOut, 0.5,
+                                               orientedRibbon.getResult());
+    });
+
+    ASSERT_TRUE(fs::exists(svgOut)) << "Visual regression SVG should be created at: " << svgOut;
+    EXPECT_GT(fs::file_size(svgOut), kMinimumSubstantialSvgSize)
+        << "Visual regression SVG should contain substantial content";
+
+    std::ifstream ifs(svgOut);
+    std::string const content((std::istreambuf_iterator<char>(ifs)),
+                              std::istreambuf_iterator<char>());
+
+    EXPECT_TRUE(content.find("<svg") != std::string::npos)
+        << "Visual regression output should be well-formed SVG";
+    EXPECT_GT(countSvgPathElements(content), 0U)
+        << "Visual regression output should contain rendered path geometry";
+    EXPECT_EQ(content.find("d=\"\""), std::string::npos)
+        << "Visual regression output should not collapse to an empty path";
+}
+
+TEST_F(OverlapRenderingQualTest, GeneratesTwoSegmentedCirclesWithHorizontalBarVisualRegressionSvg) {
+    const std::string svgOut =
+        visualOutput("overlap_two_segmented_circles_with_horizontal_bar_visual_regression.svg");
+    fs::remove(svgOut);
+
+    const std::vector<laby::PolyConvex> polyConvexList =
+        makeTwoSegmentedCirclesWithHorizontalBarPolyConvexList();
+    laby::OrientedRibbon orientedRibbon;
+
+    EXPECT_NO_THROW({ laby::PathRendering::pathRender(polyConvexList, orientedRibbon); });
+    EXPECT_NO_THROW({
+        laby::GraphicRendering::printRibbonSvg(CGAL::Bbox_2(12.0, 28.0, 108.0, 92.0), svgOut, 0.5,
+                                               orientedRibbon.getResult());
+    });
+
+    ASSERT_TRUE(fs::exists(svgOut)) << "Visual regression SVG should be created at: " << svgOut;
+    EXPECT_GT(fs::file_size(svgOut), kMinimumSubstantialSvgSize)
+        << "Visual regression SVG should contain substantial content";
+
+    std::ifstream ifs(svgOut);
+    std::string const content((std::istreambuf_iterator<char>(ifs)),
+                              std::istreambuf_iterator<char>());
+
+    EXPECT_TRUE(content.find("<svg") != std::string::npos)
+        << "Visual regression output should be well-formed SVG";
+    EXPECT_GT(countSvgPathElements(content), 0U)
+        << "Visual regression output should contain rendered path geometry";
+    EXPECT_EQ(content.find("d=\"\""), std::string::npos)
+        << "Visual regression output should not collapse to an empty path";
+}
+
+TEST_F(OverlapRenderingQualTest, GeneratesMinimalTripleOverlapVisualRegressionSvg) {
+    const std::string svgOut = visualOutput("overlap_minimal_triple_overlap_visual_regression.svg");
+    fs::remove(svgOut);
+
+    const std::vector<laby::PolyConvex> polyConvexList = makeMinimalTripleOverlapPolyConvexList();
+    laby::OrientedRibbon orientedRibbon;
+
+    EXPECT_NO_THROW({ laby::PathRendering::pathRender(polyConvexList, orientedRibbon); });
+    EXPECT_NO_THROW({
+        laby::GraphicRendering::printRibbonSvg(CGAL::Bbox_2(10.0, 26.0, 100.0, 94.0), svgOut, 0.5,
+                                               orientedRibbon.getResult());
+    });
+
+    ASSERT_TRUE(fs::exists(svgOut)) << "Visual regression SVG should be created at: " << svgOut;
+    EXPECT_GT(fs::file_size(svgOut), kMinimumSubstantialSvgSize)
+        << "Visual regression SVG should contain substantial content";
+
+    std::ifstream ifs(svgOut);
+    std::string const content((std::istreambuf_iterator<char>(ifs)),
+                              std::istreambuf_iterator<char>());
+
+    EXPECT_TRUE(content.find("<svg") != std::string::npos)
+        << "Visual regression output should be well-formed SVG";
+    EXPECT_GT(countSvgPathElements(content), 0U)
+        << "Visual regression output should contain rendered path geometry";
+    EXPECT_EQ(content.find("d=\"\""), std::string::npos)
+        << "Visual regression output should not collapse to an empty path";
+}
 
 class AlternateRouteQualTest : public ::testing::Test {};
 

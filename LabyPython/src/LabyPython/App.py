@@ -11,6 +11,10 @@ import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import Any
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from PyQt6.QtCore import QDir, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
