@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Node } from "reactflow";
 import {
+    type NumberFieldConfig,
     type GridConfig,
     type RenderConfig,
     type RouteConfig,
@@ -9,7 +10,6 @@ import {
 import SvgPreview from "./SvgPreview";
 import {
     buildStagePayload,
-    type NumberFieldConfig,
     type StageConfigByKind,
     stageInspectorDefinitions,
     type StageKind
@@ -40,7 +40,7 @@ function NumberField({ label, value, step = "1", onChange }: { label: string; va
 }
 
 function renderNumberFields<T>(
-    fields: NumberFieldConfig<T>[],
+    fields: readonly NumberFieldConfig<T>[],
     config: T,
     onChange: (update: (config: T) => T) => void
 ) {
@@ -71,18 +71,22 @@ export default function NodeInspector({
     const [jsonDraft, setJsonDraft] = useState("");
     const [jsonError, setJsonError] = useState("");
     const nodeData = selectedNode?.data;
+    const isTransformerNode = nodeData?.kind === "grid" || nodeData?.kind === "route" || nodeData?.kind === "render";
     const selectedArtifact = selectedCanvasNode?.data.displayType === "artifact" ? selectedCanvasNode.data : null;
     const sourceSvgPath = selectedDisplayNode?.data.resolvedSourcePath ?? (nodeData?.kind === "source" ? nodeData.sourcePath : "");
-    const configPath = nodeData?.kind && nodeData.kind !== "source" ? (nodeData.artifacts?.configPath ?? "") : "";
+    const configPath = isTransformerNode ? (nodeData.artifacts?.configPath ?? "") : "";
     const outputSvgPath = selectedDisplayNode?.data.resolvedOutputPath ?? (nodeData?.kind === "source" ? nodeData.sourcePath : "");
-    const showStructuredEditor = nodeData?.kind !== undefined && nodeData.kind !== "source" && (selectedArtifact === null || selectedArtifact.artifactType === "json");
+    const showStructuredEditor = isTransformerNode && selectedArtifact === null;
+    const transformerConfig = nodeData?.kind === "grid" || nodeData?.kind === "route" || nodeData?.kind === "render"
+        ? nodeData.config
+        : null;
     const stagePatchHandlers: StagePatchHandlers = {
         grid: onPatchGrid,
         route: onPatchRoute,
         render: onPatchRender
     };
     const generatedPayload = useMemo(() => {
-        if (!nodeData || nodeData.kind === "source") {
+        if (!nodeData || !isTransformerNode) {
             return "";
         }
 
@@ -90,10 +94,10 @@ export default function NodeInspector({
         const safeOutput = outputSvgPath || "/output.svg";
 
         return buildStagePayload(nodeData.kind, safeInput, safeOutput, nodeData.config);
-    }, [nodeData, outputSvgPath, sourceSvgPath]);
+    }, [isTransformerNode, nodeData, outputSvgPath, sourceSvgPath]);
 
     useEffect(() => {
-        if (!selectedNode || selectedNode.data.kind === "source") {
+        if (!selectedNode || (selectedNode.data.kind !== "grid" && selectedNode.data.kind !== "route" && selectedNode.data.kind !== "render")) {
             setJsonDraft("");
             setJsonError("");
             return;
@@ -114,7 +118,7 @@ export default function NodeInspector({
     const data = nodeData;
 
     function applyJsonDraft() {
-        if (data.kind === "source") {
+        if (!isTransformerNode) {
             return;
         }
 
@@ -136,7 +140,7 @@ export default function NodeInspector({
     }
 
     function renderStructuredConfigEditor() {
-        if (data.kind === "source") {
+        if (!isTransformerNode) {
             return null;
         }
 
@@ -149,10 +153,11 @@ export default function NodeInspector({
             const routeConfig = stageInspectorDefinitions.route.parse(data.config);
             const routeDefinition = stageInspectorDefinitions.route;
             const toggleFieldGroup = stageInspectorDefinitions.route.toggleFieldGroup;
+            const baseRouteFields = routeDefinition.fields.filter((field) => !field.id.startsWith("alternateRouting."));
 
             return (
                 <>
-                    {renderNumberFields(routeDefinition.fields, routeConfig, (update) => { onPatchRoute(update); })}
+                    {renderNumberFields(baseRouteFields, routeConfig, (update) => { onPatchRoute(update); })}
                     <>
                         <label className="checkbox-row">
                             <input
@@ -168,6 +173,10 @@ export default function NodeInspector({
                     </>
                 </>
             );
+        }
+
+        if (data.kind !== "render") {
+            return null;
         }
 
         const renderConfig = stageInspectorDefinitions.render.parse(data.config);
@@ -218,7 +227,7 @@ export default function NodeInspector({
                         <span>Source SVG</span>
                         <strong>{sourceSvgPath || "Not connected"}</strong>
                     </div>
-                    {data.kind !== "source" ? (
+                    {isTransformerNode ? (
                         <div>
                             <span>Config JSON</span>
                             <strong>{configPath || "Generated on run"}</strong>
@@ -244,6 +253,69 @@ export default function NodeInspector({
                         <input value={data.sourcePath} readOnly />
                     </label>
                 ) : null}
+
+                {data.kind === "numericConstant" ? (
+                    <label>
+                        Value
+                        <input
+                            type="number"
+                            value={data.value}
+                            onChange={(event) => { onPatchSelectedNode((current) => current.kind === "numericConstant" ? { ...current, value: Number(event.target.value) } : current); }}
+                        />
+                    </label>
+                ) : null}
+
+                {data.kind === "operation" ? (
+                    <>
+                        <label>
+                            Operation
+                            <select value={data.operation} onChange={(event) => { onPatchSelectedNode((current) => current.kind === "operation" ? { ...current, operation: event.target.value as "add" | "multiply" } : current); }}>
+                                <option value="add">Add</option>
+                                <option value="multiply">Multiply</option>
+                            </select>
+                        </label>
+                        <label>
+                            Left fallback
+                            <input
+                                type="number"
+                                value={data.left}
+                                onChange={(event) => { onPatchSelectedNode((current) => current.kind === "operation" ? { ...current, left: Number(event.target.value) } : current); }}
+                            />
+                        </label>
+                        <label>
+                            Right fallback
+                            <input
+                                type="number"
+                                value={data.right}
+                                onChange={(event) => { onPatchSelectedNode((current) => current.kind === "operation" ? { ...current, right: Number(event.target.value) } : current); }}
+                            />
+                        </label>
+                    </>
+                ) : null}
+
+                {data.kind === "broadcast" ? (
+                    <>
+                        <label>
+                            Input fallback
+                            <input
+                                type="number"
+                                value={data.value}
+                                onChange={(event) => { onPatchSelectedNode((current) => current.kind === "broadcast" ? { ...current, value: Number(event.target.value) } : current); }}
+                            />
+                        </label>
+                        <label>
+                            Outputs
+                            <input
+                                type="number"
+                                min={2}
+                                max={8}
+                                step={1}
+                                value={data.outputs}
+                                onChange={(event) => { onPatchSelectedNode((current) => current.kind === "broadcast" ? { ...current, outputs: Math.max(2, Math.min(8, Math.round(Number(event.target.value)))) } : current); }}
+                            />
+                        </label>
+                    </>
+                ) : null}
             </section>
 
             {showStructuredEditor ? (
@@ -255,7 +327,7 @@ export default function NodeInspector({
                 </section>
             ) : null}
 
-            {data.kind !== "source" ? (
+            {isTransformerNode ? (
                 <section className="inspector-card">
                     <div className="inspector-card__eyebrow">Config Object JSON</div>
                     <p className="inspector-card__copy">Edit the node configuration directly. This drives the generated JSON artifact for the selected stage.</p>
@@ -272,12 +344,12 @@ export default function NodeInspector({
                     {jsonError ? <div className="error-banner inspector-error">{jsonError}</div> : null}
                     <div className="inspector-actions">
                         <button type="button" onClick={applyJsonDraft}>Apply JSON</button>
-                        <button type="button" onClick={() => { setJsonDraft(`${JSON.stringify(data.config, null, 2)}\n`); }}>Reset Draft</button>
+                        <button type="button" onClick={() => { setJsonDraft(`${JSON.stringify(transformerConfig, null, 2)}\n`); }}>Reset Draft</button>
                     </div>
                 </section>
             ) : null}
 
-            {data.kind !== "source" ? (
+            {isTransformerNode ? (
                 <section className="inspector-card">
                     <div className="inspector-card__eyebrow">Generated Stage Payload</div>
                     <p className="inspector-card__copy">This is the concrete payload written to disk when the stage runs.</p>

@@ -1,7 +1,11 @@
 import { z } from "zod";
 
-export type NodeKind = "source" | "grid" | "route" | "render";
+export type TransformerNodeKind = "grid" | "route" | "render";
+export type NumericNodeKind = "numericConstant" | "operation" | "broadcast";
+export type ExecutionNodeKind = "source" | TransformerNodeKind;
+export type NodeKind = ExecutionNodeKind | NumericNodeKind;
 export type ArtifactStatus = "idle" | "queued" | "running" | "completed" | "failed";
+export type OperationKind = "add" | "multiply";
 
 function normalizePath(filePath: string): string {
   if (!filePath.trim()) {
@@ -97,6 +101,284 @@ export type GridConfig = z.infer<typeof gridConfigSchema>;
 export type RouteConfig = z.infer<typeof routeConfigSchema>;
 export type RenderConfig = z.infer<typeof renderConfigSchema>;
 
+export type NumberFieldConfig<TConfig> = {
+  id: string;
+  label: string;
+  step?: string;
+  getValue: (config: TConfig) => number;
+  setValue: (config: TConfig, value: number) => TConfig;
+};
+
+export type ToggleFieldGroup<TConfig> = {
+  label: string;
+  isEnabled: (config: TConfig) => boolean;
+  setEnabled: (config: TConfig, enabled: boolean) => TConfig;
+  fields: readonly NumberFieldConfig<TConfig>[];
+};
+
+const gridParameterFields: readonly NumberFieldConfig<GridConfig>[] = [
+  {
+    id: "simplificationOfOriginalSVG",
+    label: "Simplification",
+    step: "0.1",
+    getValue: (config) => config.simplificationOfOriginalSVG,
+    setValue: (config, value) => ({ ...config, simplificationOfOriginalSVG: value })
+  },
+  {
+    id: "maxSep",
+    label: "Max separation",
+    step: "0.1",
+    getValue: (config) => config.maxSep,
+    setValue: (config, value) => ({ ...config, maxSep: value })
+  },
+  {
+    id: "minSep",
+    label: "Min separation",
+    step: "0.1",
+    getValue: (config) => config.minSep,
+    setValue: (config, value) => ({ ...config, minSep: value })
+  },
+  {
+    id: "seed",
+    label: "Seed",
+    getValue: (config) => config.seed,
+    setValue: (config, value) => ({ ...config, seed: value })
+  }
+];
+
+const routeParameterFields: readonly NumberFieldConfig<RouteConfig>[] = [
+  {
+    id: "initialThickness",
+    label: "Initial thickness",
+    step: "0.1",
+    getValue: (config) => config.initialThickness,
+    setValue: (config, value) => ({ ...config, initialThickness: value })
+  },
+  {
+    id: "decrementFactor",
+    label: "Decrement factor",
+    step: "0.1",
+    getValue: (config) => config.decrementFactor,
+    setValue: (config, value) => ({ ...config, decrementFactor: value })
+  },
+  {
+    id: "minimalThickness",
+    label: "Minimal thickness",
+    step: "0.1",
+    getValue: (config) => config.minimalThickness,
+    setValue: (config, value) => ({ ...config, minimalThickness: value })
+  },
+  {
+    id: "smoothingTension",
+    label: "Smoothing tension",
+    step: "0.1",
+    getValue: (config) => config.smoothingTension,
+    setValue: (config, value) => ({ ...config, smoothingTension: value })
+  },
+  {
+    id: "smoothingIteration",
+    label: "Smoothing iteration",
+    getValue: (config) => config.smoothingIteration,
+    setValue: (config, value) => ({ ...config, smoothingIteration: value })
+  },
+  {
+    id: "maxRoutingAttempt",
+    label: "Max routing attempt",
+    getValue: (config) => config.maxRoutingAttempt,
+    setValue: (config, value) => ({ ...config, maxRoutingAttempt: value })
+  },
+  {
+    id: "routing.seed",
+    label: "Routing seed",
+    getValue: (config) => config.routing.seed,
+    setValue: (config, value) => ({ ...config, routing: { ...config.routing, seed: value } })
+  },
+  {
+    id: "routing.maxRandom",
+    label: "Routing max random",
+    getValue: (config) => config.routing.maxRandom,
+    setValue: (config, value) => ({ ...config, routing: { ...config.routing, maxRandom: value } })
+  },
+  {
+    id: "routing.distanceUnitCost",
+    label: "Distance unit cost",
+    getValue: (config) => config.routing.distanceUnitCost,
+    setValue: (config, value) => ({ ...config, routing: { ...config.routing, distanceUnitCost: value } })
+  },
+  {
+    id: "routing.viaUnitCost",
+    label: "Via unit cost",
+    getValue: (config) => config.routing.viaUnitCost,
+    setValue: (config, value) => ({ ...config, routing: { ...config.routing, viaUnitCost: value } })
+  },
+  {
+    id: "cell.seed",
+    label: "Cell seed",
+    getValue: (config) => config.cell.seed,
+    setValue: (config, value) => ({ ...config, cell: { ...config.cell, seed: value } })
+  },
+  {
+    id: "cell.maxPin",
+    label: "Cell max pin",
+    getValue: (config) => config.cell.maxPin,
+    setValue: (config, value) => ({ ...config, cell: { ...config.cell, maxPin: value } })
+  },
+  {
+    id: "cell.startNet",
+    label: "Cell start net",
+    getValue: (config) => config.cell.startNet,
+    setValue: (config, value) => ({ ...config, cell: { ...config.cell, startNet: value } })
+  },
+  {
+    id: "cell.resolution",
+    label: "Cell resolution",
+    step: "0.1",
+    getValue: (config) => config.cell.resolution,
+    setValue: (config, value) => ({ ...config, cell: { ...config.cell, resolution: value } })
+  }
+];
+
+const alternateRouteParameterFields: readonly NumberFieldConfig<RouteConfig>[] = [
+  {
+    id: "alternateRouting.maxThickness",
+    label: "Max thickness",
+    step: "0.1",
+    getValue: (config) => config.alternateRouting.maxThickness,
+    setValue: (config, value) => ({ ...config, alternateRouting: { ...config.alternateRouting, maxThickness: value } })
+  },
+  {
+    id: "alternateRouting.minThickness",
+    label: "Min thickness",
+    step: "0.1",
+    getValue: (config) => config.alternateRouting.minThickness,
+    setValue: (config, value) => ({ ...config, alternateRouting: { ...config.alternateRouting, minThickness: value } })
+  },
+  {
+    id: "alternateRouting.pruning",
+    label: "Pruning",
+    getValue: (config) => config.alternateRouting.pruning,
+    setValue: (config, value) => ({ ...config, alternateRouting: { ...config.alternateRouting, pruning: value } })
+  },
+  {
+    id: "alternateRouting.thicknessPercent",
+    label: "Thickness percent",
+    step: "0.1",
+    getValue: (config) => config.alternateRouting.thicknessPercent,
+    setValue: (config, value) => ({ ...config, alternateRouting: { ...config.alternateRouting, thicknessPercent: value } })
+  },
+  {
+    id: "alternateRouting.simplifyDist",
+    label: "Simplify distance",
+    step: "0.1",
+    getValue: (config) => config.alternateRouting.simplifyDist,
+    setValue: (config, value) => ({ ...config, alternateRouting: { ...config.alternateRouting, simplifyDist: value } })
+  }
+];
+
+const renderParameterFields: readonly NumberFieldConfig<RenderConfig>[] = [
+  {
+    id: "smoothingTension",
+    label: "Smoothing tension",
+    step: "0.1",
+    getValue: (config) => config.smoothingTension,
+    setValue: (config, value) => ({ ...config, smoothingTension: value })
+  },
+  {
+    id: "smoothingIterations",
+    label: "Smoothing iterations",
+    step: "0.1",
+    getValue: (config) => config.smoothingIterations,
+    setValue: (config, value) => ({ ...config, smoothingIterations: value })
+  },
+  {
+    id: "penConfig.thickness",
+    label: "Pen thickness",
+    step: "0.05",
+    getValue: (config) => config.penConfig.thickness,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, thickness: value } })
+  },
+  {
+    id: "penConfig.antisymmetricAmplitude",
+    label: "Antisymmetric amplitude",
+    step: "0.1",
+    getValue: (config) => config.penConfig.antisymmetricAmplitude,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, antisymmetricAmplitude: value } })
+  },
+  {
+    id: "penConfig.antisymmetricFreq",
+    label: "Antisymmetric frequency",
+    step: "0.1",
+    getValue: (config) => config.penConfig.antisymmetricFreq,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, antisymmetricFreq: value } })
+  },
+  {
+    id: "penConfig.antisymmetricSeed",
+    label: "Antisymmetric seed",
+    step: "0.1",
+    getValue: (config) => config.penConfig.antisymmetricSeed,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, antisymmetricSeed: value } })
+  },
+  {
+    id: "penConfig.symmetricAmplitude",
+    label: "Symmetric amplitude",
+    step: "0.1",
+    getValue: (config) => config.penConfig.symmetricAmplitude,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, symmetricAmplitude: value } })
+  },
+  {
+    id: "penConfig.symmetricFreq",
+    label: "Symmetric frequency",
+    step: "0.1",
+    getValue: (config) => config.penConfig.symmetricFreq,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, symmetricFreq: value } })
+  },
+  {
+    id: "penConfig.symmetricSeed",
+    label: "Symmetric seed",
+    step: "0.1",
+    getValue: (config) => config.penConfig.symmetricSeed,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, symmetricSeed: value } })
+  },
+  {
+    id: "penConfig.resolution",
+    label: "Resolution",
+    step: "0.1",
+    getValue: (config) => config.penConfig.resolution,
+    setValue: (config, value) => ({ ...config, penConfig: { ...config.penConfig, resolution: value } })
+  }
+];
+
+export const routeToggleFieldGroup: ToggleFieldGroup<RouteConfig> = {
+  label: "Enable alternate routing",
+  isEnabled: (config) => config.enableAlternateRouting,
+  setEnabled: (config, enabled) => ({ ...config, enableAlternateRouting: enabled }),
+  fields: alternateRouteParameterFields
+};
+
+export const transformerParameterDefinitions = {
+  grid: gridParameterFields,
+  route: [...routeParameterFields, ...alternateRouteParameterFields],
+  render: renderParameterFields
+} satisfies {
+  grid: readonly NumberFieldConfig<GridConfig>[];
+  route: readonly NumberFieldConfig<RouteConfig>[];
+  render: readonly NumberFieldConfig<RenderConfig>[];
+};
+
+export type TransformerConfigByKind = {
+  grid: GridConfig;
+  route: RouteConfig;
+  render: RenderConfig;
+};
+
+export function getTransformerParameterDefinitions<K extends TransformerNodeKind>(kind: K): readonly NumberFieldConfig<TransformerConfigByKind[K]>[] {
+  return transformerParameterDefinitions[kind] as unknown as readonly NumberFieldConfig<TransformerConfigByKind[K]>[];
+}
+
+export function getTransformerParameterField<K extends TransformerNodeKind>(kind: K, fieldId: string): NumberFieldConfig<TransformerConfigByKind[K]> | undefined {
+  return getTransformerParameterDefinitions(kind).find((field) => field.id === fieldId);
+}
+
 export const artifactStateSchema = z.object({
   inputPath: z.string().optional(),
   outputPath: z.string().optional(),
@@ -137,14 +419,36 @@ export const renderNodeDataSchema = baseNodeDataSchema.extend({
   config: renderConfigSchema
 });
 
+export const numericConstantNodeDataSchema = baseNodeDataSchema.extend({
+  kind: z.literal("numericConstant"),
+  value: z.number()
+});
+
+export const operationNodeDataSchema = baseNodeDataSchema.extend({
+  kind: z.literal("operation"),
+  operation: z.enum(["add", "multiply"]),
+  left: z.number(),
+  right: z.number()
+});
+
+export const broadcastNodeDataSchema = baseNodeDataSchema.extend({
+  kind: z.literal("broadcast"),
+  value: z.number(),
+  outputs: z.number().int().min(2).max(8)
+});
+
 export const workflowNodeDataSchema = z.discriminatedUnion("kind", [
   sourceNodeDataSchema,
   gridNodeDataSchema,
   routeNodeDataSchema,
-  renderNodeDataSchema
+  renderNodeDataSchema,
+  numericConstantNodeDataSchema,
+  operationNodeDataSchema,
+  broadcastNodeDataSchema
 ]);
 
 export type WorkflowNodeData = z.infer<typeof workflowNodeDataSchema>;
+export type WorkflowNode = z.infer<typeof graphNodeSchema>;
 
 export const graphNodeSchema = z.object({
   id: z.string(),
@@ -159,8 +463,13 @@ export const graphNodeSchema = z.object({
 export const graphEdgeSchema = z.object({
   id: z.string(),
   source: z.string(),
-  target: z.string()
+  target: z.string(),
+  kind: z.enum(["artifact", "parameter"]).default("artifact"),
+  sourceHandle: z.string().optional(),
+  targetHandle: z.string().optional()
 });
+
+export type GraphEdge = z.infer<typeof graphEdgeSchema>;
 
 export const graphDocumentSchema = z.object({
   version: z.literal(1),
@@ -231,11 +540,36 @@ const NEXT_KIND: Record<NodeKind, NodeKind[]> = {
   source: ["grid"],
   grid: ["route"],
   route: ["render"],
-  render: []
+  render: [],
+  numericConstant: [],
+  operation: [],
+  broadcast: []
 };
 
 export function canConnectNodeKinds(sourceKind: NodeKind, targetKind: NodeKind): boolean {
-  return NEXT_KIND[sourceKind].includes(targetKind);
+  return isExecutionNodeKind(sourceKind) && isTransformerNodeKind(targetKind)
+    ? NEXT_KIND[sourceKind].includes(targetKind)
+    : false;
+}
+
+export function isTransformerNodeKind(kind: NodeKind): kind is TransformerNodeKind {
+  return kind === "grid" || kind === "route" || kind === "render";
+}
+
+export function isExecutionNodeKind(kind: NodeKind): kind is ExecutionNodeKind {
+  return kind === "source" || isTransformerNodeKind(kind);
+}
+
+export function isNumericNodeKind(kind: NodeKind): kind is NumericNodeKind {
+  return kind === "numericConstant" || kind === "operation" || kind === "broadcast";
+}
+
+export function isTransformerNodeData(data: WorkflowNodeData): data is z.infer<typeof gridNodeDataSchema> | z.infer<typeof routeNodeDataSchema> | z.infer<typeof renderNodeDataSchema> {
+  return isTransformerNodeKind(data.kind);
+}
+
+export function isNumericNodeData(data: WorkflowNodeData): data is z.infer<typeof numericConstantNodeDataSchema> | z.infer<typeof operationNodeDataSchema> | z.infer<typeof broadcastNodeDataSchema> {
+  return isNumericNodeKind(data.kind);
 }
 
 export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
@@ -298,6 +632,33 @@ export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
     };
   }
 
+  if (kind === "numericConstant") {
+    return {
+      kind,
+      label: "Constant",
+      value: 1
+    };
+  }
+
+  if (kind === "operation") {
+    return {
+      kind,
+      label: "Add",
+      operation: "add",
+      left: 1,
+      right: 1
+    };
+  }
+
+  if (kind === "broadcast") {
+    return {
+      kind,
+      label: "Broadcast",
+      value: 1,
+      outputs: 3
+    };
+  }
+
   return {
     kind,
     label: "Render",
@@ -344,7 +705,7 @@ export function importedSourceName(sourcePath: string): string {
   return `${stem}orig.svg`;
 }
 
-export function stageStem(inputPath: string, kind: Exclude<NodeKind, "source">, index: number): string {
+export function stageStem(inputPath: string, kind: TransformerNodeKind, index: number): string {
   const stem = stemName(inputPath);
   if (!stem) {
     throw new Error(`Cannot derive a stage name for ${kind} from an empty input path.`);
@@ -430,6 +791,286 @@ export function buildRenderConfigPayload(inputPath: string, outputPath: string, 
   };
 }
 
+export const SVG_INPUT_HANDLE = "svg-in";
+export const SVG_OUTPUT_HANDLE = "svg-out";
+export const NUMERIC_CONSTANT_OUTPUT_HANDLE = "value";
+export const OPERATION_LEFT_HANDLE = "left";
+export const OPERATION_RIGHT_HANDLE = "right";
+export const OPERATION_RESULT_HANDLE = "result";
+export const BROADCAST_INPUT_HANDLE = "input";
+
+export function broadcastOutputHandle(index: number): string {
+  return `output:${index + 1}`;
+}
+
+export function toParameterInputHandle(fieldId: string): string {
+  return `param-in:${fieldId}`;
+}
+
+export function toParameterOutputHandle(fieldId: string): string {
+  return `param-out:${fieldId}`;
+}
+
+function removeHandlePrefix(handleId: string, prefix: string): string | undefined {
+  if (!handleId.startsWith(prefix)) {
+    return undefined;
+  }
+
+  const value = handleId.slice(prefix.length);
+  return value.length > 0 ? value : undefined;
+}
+
+export function numericTargetHandleToSlotId(nodeData: WorkflowNodeData, handleId?: string): string | undefined {
+  if (!handleId) {
+    return undefined;
+  }
+
+  if (isTransformerNodeData(nodeData)) {
+    const fieldId = removeHandlePrefix(handleId, "param-in:");
+    return fieldId && getTransformerParameterField(nodeData.kind, fieldId) ? fieldId : undefined;
+  }
+
+  if (nodeData.kind === "operation") {
+    return handleId === OPERATION_LEFT_HANDLE || handleId === OPERATION_RIGHT_HANDLE ? handleId : undefined;
+  }
+
+  if (nodeData.kind === "broadcast") {
+    return handleId === BROADCAST_INPUT_HANDLE ? handleId : undefined;
+  }
+
+  return undefined;
+}
+
+export function numericSourceHandleToSlotId(nodeData: WorkflowNodeData, handleId?: string): string | undefined {
+  if (!handleId) {
+    return undefined;
+  }
+
+  if (isTransformerNodeData(nodeData)) {
+    const fieldId = removeHandlePrefix(handleId, "param-out:");
+    return fieldId && getTransformerParameterField(nodeData.kind, fieldId) ? fieldId : undefined;
+  }
+
+  if (nodeData.kind === "numericConstant") {
+    return handleId === NUMERIC_CONSTANT_OUTPUT_HANDLE ? NUMERIC_CONSTANT_OUTPUT_HANDLE : undefined;
+  }
+
+  if (nodeData.kind === "operation") {
+    return handleId === OPERATION_RESULT_HANDLE ? OPERATION_RESULT_HANDLE : undefined;
+  }
+
+  if (nodeData.kind === "broadcast") {
+    return listNumericOutputHandles(nodeData).includes(handleId) ? handleId : undefined;
+  }
+
+  return undefined;
+}
+
+export function listNumericInputHandles(nodeData: WorkflowNodeData): string[] {
+  if (isTransformerNodeData(nodeData)) {
+    return getTransformerParameterDefinitions(nodeData.kind).map((field) => toParameterInputHandle(field.id));
+  }
+
+  if (nodeData.kind === "operation") {
+    return [OPERATION_LEFT_HANDLE, OPERATION_RIGHT_HANDLE];
+  }
+
+  if (nodeData.kind === "broadcast") {
+    return [BROADCAST_INPUT_HANDLE];
+  }
+
+  return [];
+}
+
+export function listNumericOutputHandles(nodeData: WorkflowNodeData): string[] {
+  if (isTransformerNodeData(nodeData)) {
+    return getTransformerParameterDefinitions(nodeData.kind).map((field) => toParameterOutputHandle(field.id));
+  }
+
+  if (nodeData.kind === "numericConstant") {
+    return [NUMERIC_CONSTANT_OUTPUT_HANDLE];
+  }
+
+  if (nodeData.kind === "operation") {
+    return [OPERATION_RESULT_HANDLE];
+  }
+
+  if (nodeData.kind === "broadcast") {
+    return Array.from({ length: nodeData.outputs }, (_, index) => broadcastOutputHandle(index));
+  }
+
+  return [];
+}
+
+export function isArtifactEdge(edge: GraphEdge): boolean {
+  return edge.kind === "artifact";
+}
+
+export function isParameterEdge(edge: GraphEdge): boolean {
+  return edge.kind === "parameter";
+}
+
+export function numericSlotKey(nodeId: string, slotId: string): string {
+  return `${nodeId}::${slotId}`;
+}
+
+export type ResolvedNumericGraph = {
+  values: Record<string, number>;
+  incomingEdges: Record<string, GraphEdge>;
+};
+
+export function resolveNumericGraph(graph: GraphDocument): ResolvedNumericGraph {
+  const nodeMap = new Map(graph.nodes.map((node) => [node.id, node]));
+  const incomingEdges = new Map<string, GraphEdge>();
+  const resolvedValues = new Map<string, number>();
+  const visiting = new Set<string>();
+
+  for (const edge of graph.edges.filter(isParameterEdge)) {
+    if (!edge.sourceHandle || !edge.targetHandle) {
+      throw new Error(`Parameter edge ${edge.id} must include sourceHandle and targetHandle.`);
+    }
+
+    const sourceNode = nodeMap.get(edge.source);
+    const targetNode = nodeMap.get(edge.target);
+    if (!sourceNode || !targetNode) {
+      throw new Error(`Parameter edge ${edge.id} references an unknown node.`);
+    }
+
+    const sourceSlotId = numericSourceHandleToSlotId(sourceNode.data, edge.sourceHandle);
+    const targetSlotId = numericTargetHandleToSlotId(targetNode.data, edge.targetHandle);
+    if (!sourceSlotId || !targetSlotId) {
+      throw new Error(`Parameter edge ${edge.id} uses an incompatible handle.`);
+    }
+
+    const targetKey = numericSlotKey(edge.target, targetSlotId);
+    if (incomingEdges.has(targetKey)) {
+      throw new Error(`Numeric input ${edge.target}.${targetSlotId} already has an incoming connection.`);
+    }
+
+    incomingEdges.set(targetKey, edge);
+  }
+
+  function resolveSlot(nodeId: string, slotId: string): number {
+    const slotKey = numericSlotKey(nodeId, slotId);
+    const cached = resolvedValues.get(slotKey);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    if (visiting.has(slotKey)) {
+      throw new Error(`Numeric parameter graph contains a cycle involving ${slotKey}.`);
+    }
+
+    const node = nodeMap.get(nodeId);
+    if (!node) {
+      throw new Error(`Unknown numeric node ${nodeId}.`);
+    }
+
+    visiting.add(slotKey);
+    let value: number;
+
+    const incomingEdge = incomingEdges.get(slotKey);
+    if (incomingEdge) {
+      const sourceNode = nodeMap.get(incomingEdge.source);
+      if (!sourceNode) {
+        throw new Error(`Unknown numeric source node ${incomingEdge.source}.`);
+      }
+
+      const sourceSlotId = numericSourceHandleToSlotId(sourceNode.data, incomingEdge.sourceHandle);
+      if (!sourceSlotId) {
+        throw new Error(`Parameter edge ${incomingEdge.id} uses an invalid source handle.`);
+      }
+
+      value = resolveSlot(incomingEdge.source, sourceSlotId);
+    } else if (isTransformerNodeData(node.data)) {
+      const field = getTransformerParameterField(node.data.kind, slotId);
+      if (!field) {
+        throw new Error(`Unknown parameter ${slotId} on ${node.data.kind}.`);
+      }
+
+      value = field.getValue(node.data.config as GridConfig & RouteConfig & RenderConfig);
+    } else if (node.data.kind === "numericConstant") {
+      if (slotId !== NUMERIC_CONSTANT_OUTPUT_HANDLE) {
+        throw new Error(`Unknown constant slot ${slotId}.`);
+      }
+
+      value = node.data.value;
+    } else if (node.data.kind === "operation") {
+      if (slotId === OPERATION_LEFT_HANDLE) {
+        value = node.data.left;
+      } else if (slotId === OPERATION_RIGHT_HANDLE) {
+        value = node.data.right;
+      } else if (slotId === OPERATION_RESULT_HANDLE) {
+        const left = resolveSlot(nodeId, OPERATION_LEFT_HANDLE);
+        const right = resolveSlot(nodeId, OPERATION_RIGHT_HANDLE);
+        value = node.data.operation === "multiply" ? left * right : left + right;
+      } else {
+        throw new Error(`Unknown operation slot ${slotId}.`);
+      }
+    } else if (node.data.kind === "broadcast") {
+      if (slotId === BROADCAST_INPUT_HANDLE) {
+        value = node.data.value;
+      } else if (listNumericOutputHandles(node.data).includes(slotId)) {
+        value = resolveSlot(nodeId, BROADCAST_INPUT_HANDLE);
+      } else {
+        throw new Error(`Unknown broadcast slot ${slotId}.`);
+      }
+    } else {
+      throw new Error(`Node ${node.data.label} cannot participate in the numeric parameter graph.`);
+    }
+
+    visiting.delete(slotKey);
+    resolvedValues.set(slotKey, value);
+    return value;
+  }
+
+  for (const node of graph.nodes) {
+    if (isTransformerNodeData(node.data)) {
+      for (const field of getTransformerParameterDefinitions(node.data.kind)) {
+        resolveSlot(node.id, field.id);
+      }
+      continue;
+    }
+
+    if (node.data.kind === "operation") {
+      resolveSlot(node.id, OPERATION_RESULT_HANDLE);
+      continue;
+    }
+
+    if (node.data.kind === "broadcast") {
+      for (const outputHandle of listNumericOutputHandles(node.data)) {
+        resolveSlot(node.id, outputHandle);
+      }
+    }
+  }
+
+  return {
+    values: Object.fromEntries(resolvedValues),
+    incomingEdges: Object.fromEntries(incomingEdges)
+  };
+}
+
+export function applyResolvedTransformerConfig(
+  node: GraphDocument["nodes"][number],
+  resolvedNumericGraph: ResolvedNumericGraph
+): GridConfig | RouteConfig | RenderConfig {
+  if (!isTransformerNodeData(node.data)) {
+    throw new Error(`Node ${node.id} is not a transformer.`);
+  }
+
+  let nextConfig = node.data.config;
+  for (const field of getTransformerParameterDefinitions(node.data.kind)) {
+    const resolvedValue = resolvedNumericGraph.values[numericSlotKey(node.id, field.id)];
+    if (resolvedValue === undefined) {
+      continue;
+    }
+
+    nextConfig = field.setValue(nextConfig, resolvedValue);
+  }
+
+  return nextConfig;
+}
+
 export function buildGraphExecutionPlan(
   graph: GraphDocument,
   targetNodeId: string
@@ -439,8 +1080,17 @@ export function buildGraphExecutionPlan(
   }
 
   const nodeMap = new Map(graph.nodes.map((node) => [node.id, node]));
+  const targetNode = nodeMap.get(targetNodeId);
+  if (!targetNode) {
+    throw new Error(`Unknown node ${targetNodeId}`);
+  }
+
+  if (!isExecutionNodeKind(targetNode.data.kind)) {
+    throw new Error(`Cannot execute numeric helper node ${targetNode.data.label}.`);
+  }
+
   const incoming = new Map<string, string[]>();
-  for (const edge of graph.edges) {
+  for (const edge of graph.edges.filter(isArtifactEdge)) {
     const current = incoming.get(edge.target) ?? [];
     current.push(edge.source);
     incoming.set(edge.target, current);
@@ -462,6 +1112,10 @@ export function buildGraphExecutionPlan(
     const node = nodeMap.get(nodeId);
     if (!node) {
       throw new Error(`Unknown node ${nodeId}`);
+    }
+
+    if (!isExecutionNodeKind(node.data.kind)) {
+      throw new Error(`Numeric helper node ${node.data.label} cannot be part of the execution plan.`);
     }
 
     visiting.add(nodeId);

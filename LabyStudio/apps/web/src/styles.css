@@ -29,7 +29,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
     font: inherit;
 }
 
@@ -371,24 +373,30 @@ label {
 }
 
 .workflow-node {
-    min-width: 220px;
-    max-width: 220px;
+    min-width: 292px;
+    max-width: 292px;
     padding: 0.9rem;
     border-radius: 20px;
-    background: rgba(255, 250, 242, 0.96);
+    background: rgba(255, 250, 242, 0.97);
     border: 1px solid rgba(31, 35, 40, 0.12);
     box-shadow: 0 14px 30px rgba(31, 35, 40, 0.12);
+    display: grid;
+    gap: 0.7rem;
 }
 
 .workflow-node.is-selected {
     border-color: rgba(196, 91, 51, 0.48);
 }
 
+.workflow-node__header,
+.workflow-node__header--stacked {
+    display: grid;
+    gap: 0.45rem;
+}
+
 .workflow-node__header {
-    display: flex;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.6rem;
 }
 
 .workflow-node__badge {
@@ -413,50 +421,31 @@ label {
     color: var(--accent-deep);
 }
 
-.workflow-node__body {
-    color: var(--muted);
-    font-size: 0.82rem;
+.workflow-node__badge--numeric {
+    background: rgba(40, 86, 97, 0.15);
+    color: var(--teal);
 }
 
-.workflow-node__transformer-body {
+.workflow-node__transport-row,
+.workflow-node__parameter-row,
+.workflow-node__result-row {
+    position: relative;
+}
+
+.workflow-node__transport-row {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 0.7rem;
-    align-items: stretch;
-}
-
-.workflow-node__lane {
-    display: grid;
-    align-content: space-between;
-    gap: 1.1rem;
-    padding: 0.2rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.64rem;
-    color: rgba(89, 101, 111, 0.82);
-}
-
-.workflow-node__lane--right {
-    text-align: right;
-}
-
-.workflow-node__core {
-    min-width: 96px;
-    display: grid;
+    grid-template-columns: 1fr auto;
     gap: 0.6rem;
-    align-content: center;
-    justify-items: center;
-    padding: 0.9rem 0.8rem;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(40, 86, 97, 0.12), rgba(196, 91, 51, 0.16));
-    border: 1px solid rgba(31, 35, 40, 0.08);
+    background: linear-gradient(135deg, rgba(40, 86, 97, 0.12), rgba(196, 91, 51, 0.14));
 }
 
-.workflow-node__core-title {
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 0.68rem;
-    color: var(--ink);
+.workflow-node__transport-copy {
+    margin-top: 0.3rem;
+    color: var(--muted);
+    font-size: 0.78rem;
 }
 
 .workflow-node__status {
@@ -482,6 +471,81 @@ label {
     color: #9a5b1a;
 }
 
+.workflow-node__field {
+    display: grid;
+    gap: 0.28rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.workflow-node__field span {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.workflow-node__field--label input,
+.workflow-node__inline-input,
+.workflow-node select {
+    width: 100%;
+    border: 1px solid rgba(31, 35, 40, 0.12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.55rem 0.65rem;
+}
+
+.workflow-node__artifact-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.workflow-node__artifact-summary div,
+.workflow-node__result-row {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(31, 35, 40, 0.08);
+}
+
+.workflow-node__artifact-summary span,
+.workflow-node__result-row span {
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.workflow-node__checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.workflow-node__checkbox-row input {
+    width: auto;
+}
+
+.workflow-node__parameter-list,
+.workflow-node__broadcast-controls {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.workflow-node__parameter-row,
+.workflow-node__result-row--handle {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+.workflow-node__inline-input {
+    font-weight: 600;
+}
+
 .workflow-node__handle {
     width: 0.86rem;
     height: 0.86rem;
@@ -489,13 +553,12 @@ label {
     box-shadow: 0 4px 10px rgba(31, 35, 40, 0.18);
 }
 
-.workflow-node__handle--config,
-.workflow-node__handle--status {
-    background: #c45b33;
-}
-
 .workflow-node__handle--svg {
     background: #285661;
+}
+
+.workflow-node__handle--number {
+    background: #c45b33;
 }
 
 .artifact-node {

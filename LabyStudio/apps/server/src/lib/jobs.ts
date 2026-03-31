@@ -2,14 +2,18 @@ import { execa } from "execa";
 import { existsSync, promises as fs } from "node:fs";
 import path from "node:path";
 import {
+  applyResolvedTransformerConfig,
   buildGraphExecutionPlan,
   buildGridConfigPayload,
   buildRenderConfigPayload,
   buildRouteConfigPayload,
+  resolveNumericGraph,
   stageStem,
   type ArtifactState,
   type GraphDocument,
-  type GraphRunNodeResult,
+  type GridConfig,
+  type RenderConfig,
+  type RouteConfig,
   type WorkflowJob
 } from "@labystudio/shared";
 import { requireSvgPath, resolveContext } from "./context.js";
@@ -91,6 +95,15 @@ async function executeStage(
   }
 }
 
+function syncJobResult(job: WorkflowJob, artifactByNode: Map<string, ArtifactState>): void {
+  job.result = {
+    nodes: Array.from(artifactByNode.entries()).map(([nodeId, artifacts]) => ({
+      nodeId,
+      artifacts
+    }))
+  };
+}
+
 export async function executeGraphJob(
   jobStore: JobStore,
   jobId: string,
@@ -100,6 +113,7 @@ export async function executeGraphJob(
 ): Promise<void> {
   const context = resolveContext();
   const plan = buildGraphExecutionPlan(graph, targetNodeId);
+  const resolvedNumericGraph = resolveNumericGraph(graph);
   const job = jobStore.get(jobId);
   if (!job) {
     return;
@@ -133,6 +147,7 @@ export async function executeGraphJob(
           status: "completed",
           lastRunAt: new Date().toISOString()
         });
+        syncJobResult(job, artifactByNode);
         continue;
       }
 
@@ -145,19 +160,37 @@ export async function executeGraphJob(
         throw new Error(`Upstream artifact for ${step.data.label} is missing.`);
       }
 
+      if (step.data.kind !== "grid" && step.data.kind !== "route" && step.data.kind !== "render") {
+        throw new Error(`Numeric helper node ${step.data.label} cannot execute as a stage.`);
+      }
+
       const stagePaths = makeStagePaths(projectDir, upstreamArtifact.outputPath, step.data.kind);
       const stageLogPath = path.join(projectDir, "logs", `${path.basename(stagePaths.configPath, ".json")}.log`);
 
       let payload: Record<string, unknown>;
       if (step.data.kind === "grid") {
-        payload = buildGridConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, step.data.config);
+        const resolvedConfig = applyResolvedTransformerConfig(step, resolvedNumericGraph) as GridConfig;
+        payload = buildGridConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, resolvedConfig);
       } else if (step.data.kind === "route") {
-        payload = buildRouteConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, step.data.config);
+        const resolvedConfig = applyResolvedTransformerConfig(step, resolvedNumericGraph) as RouteConfig;
+        payload = buildRouteConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, resolvedConfig);
       } else {
-        payload = buildRenderConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, step.data.config);
+        const resolvedConfig = applyResolvedTransformerConfig(step, resolvedNumericGraph) as RenderConfig;
+        payload = buildRenderConfigPayload(upstreamArtifact.outputPath, stagePaths.outputPath, resolvedConfig);
       }
 
       await fs.writeFile(stagePaths.configPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+
+      artifactByNode.set(step.id, {
+        inputPath: upstreamArtifact.outputPath,
+        outputPath: stagePaths.outputPath,
+        configPath: stagePaths.configPath,
+        logPath: stageLogPath,
+        status: "running",
+        lastRunAt: new Date().toISOString()
+      });
+      syncJobResult(job, artifactByNode);
+
       await executeStage(context.binaryPath, context.workspaceRoot, stagePaths.configPath, stageLogPath, jobLogPath);
 
       artifactByNode.set(step.id, {
@@ -168,17 +201,23 @@ export async function executeGraphJob(
         status: "completed",
         lastRunAt: new Date().toISOString()
       });
+      syncJobResult(job, artifactByNode);
     }
-
-    const resultNodes: GraphRunNodeResult[] = Array.from(artifactByNode.entries()).map(([nodeId, artifacts]) => ({
-      nodeId,
-      artifacts
-    }));
     job.status = "completed";
     job.updatedAt = new Date().toISOString();
-    job.result = { nodes: resultNodes };
+    syncJobResult(job, artifactByNode);
     await appendLog(jobLogPath, `\ncompleted at ${job.updatedAt}\n`);
   } catch (error) {
+    if (job.currentNodeId && artifactByNode.has(job.currentNodeId)) {
+      const currentArtifacts = artifactByNode.get(job.currentNodeId);
+      artifactByNode.set(job.currentNodeId, {
+        ...currentArtifacts,
+        status: "failed",
+        lastRunAt: new Date().toISOString()
+      });
+      syncJobResult(job, artifactByNode);
+    }
+
     job.status = "failed";
     job.updatedAt = new Date().toISOString();
     job.error = error instanceof Error ? error.message : String(error);

@@ -1,10 +1,24 @@
 import type { Edge, Node } from "reactflow";
 import {
+    BROADCAST_INPUT_HANDLE,
+    NUMERIC_CONSTANT_OUTPUT_HANDLE,
+    OPERATION_LEFT_HANDLE,
+    OPERATION_RESULT_HANDLE,
+    OPERATION_RIGHT_HANDLE,
+    SVG_INPUT_HANDLE,
+    SVG_OUTPUT_HANDLE,
     createDefaultNodeData,
+    getTransformerParameterDefinitions,
     graphDocumentSchema,
+    numericSlotKey,
+    resolveNumericGraph,
+    routeToggleFieldGroup,
     type ArtifactStatus,
     type GraphDocument,
+    type GraphEdge,
     type NodeKind,
+    type OperationKind,
+    type TransformerNodeKind,
     type WorkflowNodeData
 } from "@labystudio/shared";
 
@@ -13,46 +27,89 @@ export type WorkflowNodeDisplayData = WorkflowNodeData & {
     resolvedOutputPath?: string;
 };
 
+export type ParameterDisplayField = {
+    id: string;
+    label: string;
+    step?: string;
+    value: number;
+    resolvedValue: number;
+    isConnected: boolean;
+};
+
 export type TransformerDisplayData = {
     displayType: "transformer";
     logicalNodeId: string;
-    kind: Exclude<NodeKind, "source">;
+    kind: TransformerNodeKind;
     label: string;
     status: ArtifactStatus;
+    sourceSvgPath: string;
+    outputSvgPath: string;
+    configPath?: string;
+    alternateRoutingEnabled?: boolean;
+    parameterFields: ParameterDisplayField[];
+    onUpdateLabel?: (value: string) => void;
+    onUpdateParameter?: (fieldId: string, value: number) => void;
+    onToggleAlternateRouting?: (enabled: boolean) => void;
+};
+
+export type NumericConstantDisplayData = {
+    displayType: "numericConstant";
+    logicalNodeId: string;
+    kind: "numericConstant";
+    label: string;
+    value: number;
+    outputValue: number;
+    onUpdateLabel?: (value: string) => void;
+    onUpdateValue?: (value: number) => void;
+};
+
+export type OperationDisplayData = {
+    displayType: "operation";
+    logicalNodeId: string;
+    kind: "operation";
+    label: string;
+    operation: OperationKind;
+    left: { value: number; resolvedValue: number; isConnected: boolean };
+    right: { value: number; resolvedValue: number; isConnected: boolean };
+    result: number;
+    onUpdateLabel?: (value: string) => void;
+    onUpdateOperation?: (value: OperationKind) => void;
+    onUpdateInput?: (side: "left" | "right", value: number) => void;
+};
+
+export type BroadcastDisplayData = {
+    displayType: "broadcast";
+    logicalNodeId: string;
+    kind: "broadcast";
+    label: string;
+    value: number;
+    inputValue: number;
+    inputConnected: boolean;
+    outputs: { handleId: string; value: number }[];
+    onUpdateLabel?: (value: string) => void;
+    onUpdateValue?: (value: number) => void;
+    onUpdateOutputs?: (value: number) => void;
 };
 
 export type ArtifactDisplayData = {
     displayType: "artifact";
     logicalNodeId: string;
-    artifactType: "svg" | "json" | "status";
+    artifactType: "svg";
     title: string;
     value: string;
     path?: string;
     cacheKey?: string;
-    status?: ArtifactStatus;
-    acceptsInput: boolean;
-    emitsOutput: boolean;
     connectable: boolean;
 };
 
-export type DisplayNodeData = TransformerDisplayData | ArtifactDisplayData;
+export type DisplayNodeData =
+    | TransformerDisplayData
+    | NumericConstantDisplayData
+    | OperationDisplayData
+    | BroadcastDisplayData
+    | ArtifactDisplayData;
 
 export type DisplayPositionOverrides = Record<string, { x: number; y: number }>;
-
-type CanvasPosition = { x: number; y: number };
-
-// Keep display layout values together so stage and artifact positioning stays consistent.
-const DISPLAY_LAYOUT = {
-    stageSpacingX: 440,
-    stageBaseY: 220,
-    offsets: {
-        config: { x: 0, y: -176 },
-        status: { x: 258, y: -176 },
-        linkArtifact: { x: 230, y: 22 },
-        finalOutput: { x: 260, y: 28 }
-    },
-    linkArtifactStackY: 164
-} as const;
 
 export function basename(filePath?: string): string {
     if (!filePath) {
@@ -63,17 +120,30 @@ export function basename(filePath?: string): string {
     return segments[segments.length - 1] ?? filePath;
 }
 
+export function getFlowEdgeKind(edge: { data?: unknown; kind?: GraphEdge["kind"]; sourceHandle?: string | null; targetHandle?: string | null }): GraphEdge["kind"] {
+    if (typeof edge.kind === "string") {
+        return edge.kind;
+    }
+
+    const data = edge.data as { kind?: GraphEdge["kind"] } | undefined;
+    return data?.kind ?? "artifact";
+}
+
 export function outputSvgPathForNode(data: WorkflowNodeData): string {
     return data.artifacts?.outputPath ?? (data.kind === "source" ? data.sourcePath : "");
 }
 
 export function resolveUpstreamNodeId(nodeId: string, edges: Edge[]): string | undefined {
-    return edges.find((edge) => edge.target === nodeId)?.source;
+    return edges.find((edge) => getFlowEdgeKind(edge) === "artifact" && edge.target === nodeId)?.source;
 }
 
 export function resolveSourceSvgPath(node: Node<WorkflowNodeData>, nodes: Node<WorkflowNodeData>[], edges: Edge[]): string {
     if (node.data.kind === "source") {
         return node.data.sourcePath;
+    }
+
+    if (node.data.kind === "numericConstant" || node.data.kind === "operation" || node.data.kind === "broadcast") {
+        return "";
     }
 
     const upstreamNodeId = resolveUpstreamNodeId(node.id, edges);
@@ -101,53 +171,24 @@ export function toDisplayNode(node: Node<WorkflowNodeData>, nodes: Node<Workflow
     };
 }
 
-function createArtifactNode(
-    id: string,
-    logicalNodeId: string,
-    position: CanvasPosition,
-    data: Omit<ArtifactDisplayData, "displayType" | "logicalNodeId">
-): Node<ArtifactDisplayData> {
-    return {
-        id,
-        type: "artifact",
-        position,
-        draggable: true,
-        selectable: true,
-        data: {
-            ...data,
-            displayType: "artifact",
-            logicalNodeId
-        }
-    };
-}
-
-function buildStageBasePositions(logicalNodes: Node<WorkflowNodeDisplayData>[]) {
-    const orderedNodes = [...logicalNodes].sort((left, right) => left.position.x - right.position.x || left.position.y - right.position.y);
-    const positions = new Map<string, CanvasPosition>();
-    let nextX = 60;
-
-    orderedNodes.forEach((node, index) => {
-        nextX = index === 0 ? node.position.x : Math.max(node.position.x, nextX + DISPLAY_LAYOUT.stageSpacingX);
-        positions.set(node.id, { x: nextX, y: Math.max(node.position.y, DISPLAY_LAYOUT.stageBaseY) });
+function toGraphDocumentFromFlow(nodes: Node<WorkflowNodeDisplayData>[], edges: Edge[]): GraphDocument {
+    return graphDocumentSchema.parse({
+        version: 1,
+        nodes: nodes.map((node) => ({
+            id: node.id,
+            type: node.type ?? "workflow",
+            position: node.position,
+            data: node.data
+        })),
+        edges: edges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            kind: getFlowEdgeKind(edge),
+            sourceHandle: edge.sourceHandle ?? undefined,
+            targetHandle: edge.targetHandle ?? undefined
+        }))
     });
-
-    return positions;
-}
-
-function offsetPosition(basePosition: CanvasPosition, offset: CanvasPosition): CanvasPosition {
-    return {
-        x: basePosition.x + offset.x,
-        y: basePosition.y + offset.y
-    };
-}
-
-function resolveDisplayPosition(
-    overrides: DisplayPositionOverrides,
-    id: string,
-    basePosition: CanvasPosition,
-    offset: CanvasPosition = { x: 0, y: 0 }
-): CanvasPosition {
-    return overrides[id] ?? offsetPosition(basePosition, offset);
 }
 
 export function buildDisplayGraph(
@@ -155,25 +196,15 @@ export function buildDisplayGraph(
     logicalEdges: Edge[],
     positionOverrides: DisplayPositionOverrides = {}
 ): { nodes: Node<DisplayNodeData>[]; edges: Edge[] } {
-    const nodes: Node<DisplayNodeData>[] = [];
-    const edges: Edge[] = [];
-    const nodeMap = new Map(logicalNodes.map((node) => [node.id, node]));
-    const downstreamCount = new Map<string, number>();
-    const outgoingOrdinals = new Map<string, number>();
-    const stageBasePositions = buildStageBasePositions(logicalNodes);
-
-    for (const edge of logicalEdges) {
-        downstreamCount.set(edge.source, (downstreamCount.get(edge.source) ?? 0) + 1);
-    }
-
-    for (const node of logicalNodes) {
-        const basePosition = stageBasePositions.get(node.id) ?? node.position;
+    const numericGraph = resolveNumericGraph(toGraphDocumentFromFlow(logicalNodes, logicalEdges));
+    const displayNodes = logicalNodes.map<Node<DisplayNodeData>>((node) => {
+        const position = positionOverrides[node.id] ?? node.position;
 
         if (node.data.kind === "source") {
-            nodes.push({
+            return {
                 id: node.id,
                 type: "artifact",
-                position: resolveDisplayPosition(positionOverrides, node.id, basePosition),
+                position,
                 draggable: true,
                 selectable: true,
                 data: {
@@ -184,186 +215,140 @@ export function buildDisplayGraph(
                     value: basename(node.data.resolvedOutputPath ?? node.data.sourcePath) || "Choose SVG",
                     path: node.data.resolvedOutputPath ?? node.data.sourcePath,
                     cacheKey: node.data.artifacts?.lastRunAt ?? node.data.sourcePath,
-                    acceptsInput: false,
-                    emitsOutput: true,
                     connectable: true
                 }
-            });
-            continue;
+            };
         }
 
-        nodes.push({
+        if (node.data.kind === "grid" || node.data.kind === "route" || node.data.kind === "render") {
+            const transformerData = node.data;
+            const parameterFields = getTransformerParameterDefinitions(transformerData.kind).map((field) => {
+                const value = field.getValue(transformerData.config);
+                const slotKey = numericSlotKey(node.id, field.id);
+                return {
+                    id: field.id,
+                    label: field.label,
+                    step: field.step,
+                    value,
+                    resolvedValue: numericGraph.values[slotKey] ?? value,
+                    isConnected: numericGraph.incomingEdges[slotKey] !== undefined
+                };
+            });
+
+            return {
+                id: node.id,
+                type: "workflow",
+                position,
+                draggable: true,
+                selectable: true,
+                data: {
+                    displayType: "transformer",
+                    logicalNodeId: node.id,
+                    kind: transformerData.kind,
+                    label: transformerData.label,
+                    status: transformerData.artifacts?.status ?? "idle",
+                    sourceSvgPath: transformerData.resolvedSourcePath ?? "",
+                    outputSvgPath: transformerData.resolvedOutputPath ?? "",
+                    configPath: transformerData.artifacts?.configPath,
+                    alternateRoutingEnabled: transformerData.kind === "route"
+                        ? routeToggleFieldGroup.isEnabled(transformerData.config)
+                        : undefined,
+                    parameterFields
+                }
+            };
+        }
+
+        if (node.data.kind === "numericConstant") {
+            return {
+                id: node.id,
+                type: "workflow",
+                position,
+                draggable: true,
+                selectable: true,
+                data: {
+                    displayType: "numericConstant",
+                    logicalNodeId: node.id,
+                    kind: "numericConstant",
+                    label: node.data.label,
+                    value: node.data.value,
+                    outputValue: numericGraph.values[numericSlotKey(node.id, NUMERIC_CONSTANT_OUTPUT_HANDLE)] ?? node.data.value
+                }
+            };
+        }
+
+        if (node.data.kind === "operation") {
+            const leftKey = numericSlotKey(node.id, OPERATION_LEFT_HANDLE);
+            const rightKey = numericSlotKey(node.id, OPERATION_RIGHT_HANDLE);
+            const resultKey = numericSlotKey(node.id, OPERATION_RESULT_HANDLE);
+
+            return {
+                id: node.id,
+                type: "workflow",
+                position,
+                draggable: true,
+                selectable: true,
+                data: {
+                    displayType: "operation",
+                    logicalNodeId: node.id,
+                    kind: "operation",
+                    label: node.data.label,
+                    operation: node.data.operation,
+                    left: {
+                        value: node.data.left,
+                        resolvedValue: numericGraph.values[leftKey] ?? node.data.left,
+                        isConnected: numericGraph.incomingEdges[leftKey] !== undefined
+                    },
+                    right: {
+                        value: node.data.right,
+                        resolvedValue: numericGraph.values[rightKey] ?? node.data.right,
+                        isConnected: numericGraph.incomingEdges[rightKey] !== undefined
+                    },
+                    result: numericGraph.values[resultKey] ?? node.data.left + node.data.right
+                }
+            };
+        }
+
+        const broadcastData = node.data;
+        const inputKey = numericSlotKey(node.id, BROADCAST_INPUT_HANDLE);
+        return {
             id: node.id,
             type: "workflow",
-            position: resolveDisplayPosition(positionOverrides, node.id, basePosition),
+            position,
             draggable: true,
             selectable: true,
             data: {
-                displayType: "transformer",
+                displayType: "broadcast",
                 logicalNodeId: node.id,
-                kind: node.data.kind,
-                label: node.data.label,
-                status: node.data.artifacts?.status ?? "idle"
+                kind: "broadcast",
+                label: broadcastData.label,
+                value: broadcastData.value,
+                inputValue: numericGraph.values[inputKey] ?? broadcastData.value,
+                inputConnected: numericGraph.incomingEdges[inputKey] !== undefined,
+                outputs: Array.from({ length: broadcastData.outputs }, (_, index) => {
+                    const handleId = `output:${index + 1}`;
+                    return {
+                        handleId,
+                        value: numericGraph.values[numericSlotKey(node.id, handleId)] ?? broadcastData.value
+                    };
+                })
             }
-        });
-
-        nodes.push(createArtifactNode(
-            `${node.id}::config`,
-            node.id,
-            resolveDisplayPosition(positionOverrides, `${node.id}::config`, basePosition, DISPLAY_LAYOUT.offsets.config),
-            {
-                artifactType: "json",
-                title: "Config JSON",
-                value: basename(node.data.artifacts?.configPath) || "Generated on run",
-                path: node.data.artifacts?.configPath,
-                cacheKey: node.data.artifacts?.lastRunAt,
-                acceptsInput: false,
-                emitsOutput: true,
-                connectable: false
-            }
-        ));
-
-        nodes.push(createArtifactNode(
-            `${node.id}::status`,
-            node.id,
-            resolveDisplayPosition(positionOverrides, `${node.id}::status`, basePosition, DISPLAY_LAYOUT.offsets.status),
-            {
-                artifactType: "status",
-                title: "Status",
-                value: node.data.artifacts?.status ?? "idle",
-                status: node.data.artifacts?.status ?? "idle",
-                acceptsInput: true,
-                emitsOutput: false,
-                connectable: false
-            }
-        ));
-
-        edges.push({
-            id: `${node.id}::config-edge`,
-            source: `${node.id}::config`,
-            target: node.id,
-            sourceHandle: "artifact-out",
-            targetHandle: "config-in",
-            type: "smoothstep",
-            data: { logical: false }
-        });
-
-        edges.push({
-            id: `${node.id}::status-edge`,
-            source: node.id,
-            target: `${node.id}::status`,
-            sourceHandle: "status-out",
-            targetHandle: "artifact-in",
-            type: "smoothstep",
-            data: { logical: false }
-        });
-    }
-
-    for (const edge of logicalEdges) {
-        const sourceNode = nodeMap.get(edge.source);
-        const targetNode = nodeMap.get(edge.target);
-        if (!sourceNode || !targetNode) {
-            continue;
-        }
-
-        if (sourceNode.data.kind === "source") {
-            edges.push({
-                id: `${edge.id}::source-svg`,
-                source: sourceNode.id,
-                target: targetNode.id,
-                sourceHandle: "artifact-out",
-                targetHandle: "svg-in",
-                type: "smoothstep",
-                data: { logicalEdgeId: edge.id }
-            });
-            continue;
-        }
-
-        const artifactNodeId = `${edge.id}::svg`;
-        const sourceBasePosition = stageBasePositions.get(sourceNode.id) ?? sourceNode.position;
-        const outputOrdinal = outgoingOrdinals.get(sourceNode.id) ?? 0;
-        outgoingOrdinals.set(sourceNode.id, outputOrdinal + 1);
-        const defaultArtifactOffset = {
-            x: DISPLAY_LAYOUT.offsets.linkArtifact.x,
-            y: DISPLAY_LAYOUT.offsets.linkArtifact.y + outputOrdinal * DISPLAY_LAYOUT.linkArtifactStackY
         };
+    });
 
-        nodes.push(createArtifactNode(
-            artifactNodeId,
-            sourceNode.id,
-            resolveDisplayPosition(positionOverrides, artifactNodeId, sourceBasePosition, defaultArtifactOffset),
-            {
-                artifactType: "svg",
-                title: "SVG Artifact",
-                value: basename(sourceNode.data.resolvedOutputPath ?? sourceNode.data.artifacts?.outputPath) || "Pending SVG",
-                path: sourceNode.data.resolvedOutputPath ?? sourceNode.data.artifacts?.outputPath,
-                cacheKey: sourceNode.data.artifacts?.lastRunAt ?? sourceNode.data.resolvedOutputPath,
-                acceptsInput: true,
-                emitsOutput: true,
-                connectable: true
-            }
-        ));
-
-        edges.push({
-            id: `${artifactNodeId}::from-transformer`,
-            source: sourceNode.id,
-            target: artifactNodeId,
-            sourceHandle: "svg-out",
-            targetHandle: "artifact-in",
-            type: "smoothstep",
-            data: { logicalEdgeId: edge.id }
-        });
-
-        edges.push({
-            id: `${artifactNodeId}::to-transformer`,
-            source: artifactNodeId,
-            target: targetNode.id,
-            sourceHandle: "artifact-out",
-            targetHandle: "svg-in",
-            type: "smoothstep",
-            data: { logicalEdgeId: edge.id }
-        });
-    }
-
-    for (const node of logicalNodes) {
-        if (node.data.kind === "source") {
-            continue;
+    const displayEdges = logicalEdges.map<Edge>((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle ?? (getFlowEdgeKind(edge) === "artifact" ? SVG_OUTPUT_HANDLE : undefined),
+        targetHandle: edge.targetHandle ?? (getFlowEdgeKind(edge) === "artifact" ? SVG_INPUT_HANDLE : undefined),
+        type: "smoothstep",
+        data: {
+            logicalEdgeId: edge.id,
+            kind: getFlowEdgeKind(edge)
         }
+    }));
 
-        if ((downstreamCount.get(node.id) ?? 0) > 0) {
-            continue;
-        }
-
-        const artifactNodeId = `${node.id}::final-svg`;
-        const basePosition = stageBasePositions.get(node.id) ?? node.position;
-        nodes.push(createArtifactNode(
-            artifactNodeId,
-            node.id,
-            resolveDisplayPosition(positionOverrides, artifactNodeId, basePosition, DISPLAY_LAYOUT.offsets.finalOutput),
-            {
-                artifactType: "svg",
-                title: "Output SVG",
-                value: basename(node.data.resolvedOutputPath ?? node.data.artifacts?.outputPath) || "Pending SVG",
-                path: node.data.resolvedOutputPath ?? node.data.artifacts?.outputPath,
-                cacheKey: node.data.artifacts?.lastRunAt ?? node.data.resolvedOutputPath,
-                acceptsInput: true,
-                emitsOutput: false,
-                connectable: false
-            }
-        ));
-
-        edges.push({
-            id: `${artifactNodeId}::edge`,
-            source: node.id,
-            target: artifactNodeId,
-            sourceHandle: "svg-out",
-            targetHandle: "artifact-in",
-            type: "smoothstep",
-            data: { logical: false }
-        });
-    }
-
-    return { nodes, edges };
+    return { nodes: displayNodes, edges: displayEdges };
 }
 
 export function createFlowNode(kind: NodeKind, id: string, x: number, y: number): Node<WorkflowNodeData> {
@@ -384,9 +369,9 @@ export function createStarterGraph(): { nodes: Node<WorkflowNodeData>[]; edges: 
             createFlowNode("render", "render", 940, 200)
         ],
         edges: [
-            { id: "edge-source-grid", source: "source", target: "grid", type: "smoothstep" },
-            { id: "edge-grid-route", source: "grid", target: "route", type: "smoothstep" },
-            { id: "edge-route-render", source: "route", target: "render", type: "smoothstep" }
+            { id: "edge-source-grid", source: "source", target: "grid", type: "smoothstep", data: { kind: "artifact" } },
+            { id: "edge-grid-route", source: "grid", target: "route", type: "smoothstep", data: { kind: "artifact" } },
+            { id: "edge-route-render", source: "route", target: "render", type: "smoothstep", data: { kind: "artifact" } }
         ]
     };
 }
@@ -403,7 +388,10 @@ export function toGraphDocument(nodes: Node<WorkflowNodeData>[], edges: Edge[]):
         edges: edges.map((edge) => ({
             id: edge.id,
             source: edge.source,
-            target: edge.target
+            target: edge.target,
+            kind: getFlowEdgeKind(edge),
+            sourceHandle: edge.sourceHandle ?? undefined,
+            targetHandle: edge.targetHandle ?? undefined
         }))
     });
 }

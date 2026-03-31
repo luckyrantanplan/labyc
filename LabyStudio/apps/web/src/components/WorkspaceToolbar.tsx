@@ -8,7 +8,9 @@ type WorkspaceToolbarProps = {
     onSaveGraph: () => void;
     onLoadGraph: () => void;
     onRunSelected: () => void;
+    onDeleteSelected: () => void;
     canRunSelected: boolean;
+    canDeleteSelected: boolean;
     onAddNode: (kind: NodeKind, position: { x: number; y: number }) => void;
 };
 
@@ -16,7 +18,10 @@ const toolbarNodes: { kind: NodeKind; label: string; position: { x: number; y: n
     { kind: "source", label: "Add source", position: { x: 80, y: 340 } },
     { kind: "grid", label: "Add grid", position: { x: 340, y: 340 } },
     { kind: "route", label: "Add route", position: { x: 640, y: 340 } },
-    { kind: "render", label: "Add render", position: { x: 940, y: 340 } }
+    { kind: "render", label: "Add render", position: { x: 940, y: 340 } },
+    { kind: "numericConstant", label: "Add constant", position: { x: 200, y: 520 } },
+    { kind: "operation", label: "Add operation", position: { x: 520, y: 520 } },
+    { kind: "broadcast", label: "Add broadcast", position: { x: 820, y: 520 } }
 ];
 
 export default function WorkspaceToolbar({
@@ -27,7 +32,9 @@ export default function WorkspaceToolbar({
     onSaveGraph,
     onLoadGraph,
     onRunSelected,
+    onDeleteSelected,
     canRunSelected,
+    canDeleteSelected,
     onAddNode
 }: WorkspaceToolbarProps) {
     return (
@@ -53,6 +60,7 @@ export default function WorkspaceToolbar({
                 </label>
                 <button onClick={onSaveGraph}>Save graph</button>
                 <button onClick={onLoadGraph}>Load graph</button>
+                <button onClick={onDeleteSelected} disabled={!canDeleteSelected}>Delete selected</button>
                 <button onClick={onRunSelected} disabled={!canRunSelected}>Run selected</button>
             </div>
         </section>

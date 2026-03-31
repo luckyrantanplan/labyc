@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import ReactFlow, {
     Background,
     Controls,
@@ -7,20 +8,20 @@ import ReactFlow, {
     type Node,
     type OnNodesChange
 } from "reactflow";
-import ArtifactNode from "./ArtifactNode";
-import WorkflowNode from "./WorkflowNode";
 import type { DisplayNodeData } from "../lib/workflowGraph";
-
-const nodeTypes = {
-    workflow: WorkflowNode,
-    artifact: ArtifactNode
-};
+import {
+    workflowDeleteKeys,
+    workflowEdgeTypes,
+    workflowNodeTypes
+} from "./flowRegistry";
 
 type WorkflowCanvasPanelProps = {
     displayNodes: Node<DisplayNodeData>[];
     displayEdges: Edge[];
     onDisplayNodesChange: OnNodesChange;
     onDisplayNodeDragStop: (node: Node<DisplayNodeData>) => void;
+    onDisplayNodesDelete: (nodes: Node<DisplayNodeData>[]) => void;
+    onDisplayEdgesDelete: (edges: { id: string }[]) => void;
     onConnect: (connection: Connection) => void;
     onSelectNode: (node: Node<DisplayNodeData>) => void;
 };
@@ -30,21 +31,31 @@ export default function WorkflowCanvasPanel({
     displayEdges,
     onDisplayNodesChange,
     onDisplayNodeDragStop,
+    onDisplayNodesDelete,
+    onDisplayEdgesDelete,
     onConnect,
     onSelectNode
 }: WorkflowCanvasPanelProps) {
+    const nodeTypes = useRef(workflowNodeTypes);
+    const edgeTypes = useRef(workflowEdgeTypes);
+    const deleteKeys = useRef(workflowDeleteKeys);
+
     return (
         <section className="panel flow-panel">
             <div className="panel-header">
                 <h2>Workflow graph</h2>
-                <p>Build valid source to grid to route to render chains and branch them as needed.</p>
+                <p>Build SVG stage chains, then wire numeric parameter flows directly into transformer fields.</p>
             </div>
             <div className="flow-canvas">
                 <ReactFlow
                     nodes={displayNodes}
                     edges={displayEdges}
-                    nodeTypes={nodeTypes}
+                    nodeTypes={nodeTypes.current}
+                    edgeTypes={edgeTypes.current}
+                    deleteKeyCode={deleteKeys.current}
                     onNodesChange={onDisplayNodesChange}
+                    onNodesDelete={onDisplayNodesDelete}
+                    onEdgesDelete={onDisplayEdgesDelete}
                     onNodeDragStop={(_, node) => { onDisplayNodeDragStop(node); }}
                     onConnect={onConnect}
                     onNodeClick={(_, node) => { onSelectNode(node); }}

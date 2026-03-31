@@ -5,7 +5,7 @@ import type {
     WorkflowJob,
     WorkflowNodeData
 } from "@labystudio/shared";
-import type { Node } from "reactflow";
+import type { Edge, Node } from "reactflow";
 import type { DisplayNodeData, DisplayPositionOverrides } from "./workflowGraph";
 
 type Point = { x: number; y: number };
@@ -55,6 +55,30 @@ export function patchRenderConfig(
     return patchSelectedNodeData(nodes, selectedNodeId, (data) => data.kind === "render" ? { ...data, config: update(data.config) } : data);
 }
 
+export function patchNumericConstantValue(
+    nodes: Node<WorkflowNodeData>[],
+    selectedNodeId: string | null,
+    value: number
+): Node<WorkflowNodeData>[] {
+    return patchSelectedNodeData(nodes, selectedNodeId, (data) => data.kind === "numericConstant" ? { ...data, value } : data);
+}
+
+export function patchOperationNode(
+    nodes: Node<WorkflowNodeData>[],
+    selectedNodeId: string | null,
+    update: (data: Extract<WorkflowNodeData, { kind: "operation" }>) => Extract<WorkflowNodeData, { kind: "operation" }>
+): Node<WorkflowNodeData>[] {
+    return patchSelectedNodeData(nodes, selectedNodeId, (data) => data.kind === "operation" ? update(data) : data);
+}
+
+export function patchBroadcastNode(
+    nodes: Node<WorkflowNodeData>[],
+    selectedNodeId: string | null,
+    update: (data: Extract<WorkflowNodeData, { kind: "broadcast" }>) => Extract<WorkflowNodeData, { kind: "broadcast" }>
+): Node<WorkflowNodeData>[] {
+    return patchSelectedNodeData(nodes, selectedNodeId, (data) => data.kind === "broadcast" ? update(data) : data);
+}
+
 export function queueNodesForExecution(
     nodes: Node<WorkflowNodeData>[],
     planNodeIds: string[]
@@ -81,12 +105,6 @@ export function updateDisplayPositionOverrides(
     overrides: DisplayPositionOverrides,
     node: Node<DisplayNodeData>
 ): DisplayPositionOverrides {
-    if (node.id === node.data.logicalNodeId) {
-        const { [node.id]: removedOverride, ...remainingOverrides } = overrides;
-        void removedOverride;
-        return remainingOverrides;
-    }
-
     return {
         ...overrides,
         [node.id]: node.position
@@ -106,6 +124,56 @@ export function moveLogicalNode(
             ? { ...candidate, position: node.position as Point }
             : candidate
     ));
+}
+
+export function removeLogicalNodes(
+    nodes: Node<WorkflowNodeData>[],
+    nodeIds: string[]
+): Node<WorkflowNodeData>[] {
+    if (nodeIds.length === 0) {
+        return nodes;
+    }
+
+    const nodeIdSet = new Set(nodeIds);
+    return nodes.filter((node) => !nodeIdSet.has(node.id));
+}
+
+export function removeLogicalEdges(
+    edges: Edge[],
+    edgeIds: string[]
+): Edge[] {
+    if (edgeIds.length === 0) {
+        return edges;
+    }
+
+    const edgeIdSet = new Set(edgeIds);
+    return edges.filter((edge) => !edgeIdSet.has(edge.id));
+}
+
+export function removeEdgesConnectedToNodes(
+    edges: Edge[],
+    nodeIds: string[]
+): Edge[] {
+    if (nodeIds.length === 0) {
+        return edges;
+    }
+
+    const nodeIdSet = new Set(nodeIds);
+    return edges.filter((edge) => !nodeIdSet.has(edge.source) && !nodeIdSet.has(edge.target));
+}
+
+export function removeDisplayPositionOverrides(
+    overrides: DisplayPositionOverrides,
+    nodeIds: string[]
+): DisplayPositionOverrides {
+    if (nodeIds.length === 0) {
+        return overrides;
+    }
+
+    const nodeIdSet = new Set(nodeIds);
+    return Object.fromEntries(
+        Object.entries(overrides).filter(([nodeId]) => !nodeIdSet.has(nodeId))
+    );
 }
 
 export function formatJobStatus(job: WorkflowJob | null): string {

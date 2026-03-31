@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addEdge, type Connection, type Node, useNodesState } from "reactflow";
+import { type Connection, type Node, useNodesState } from "reactflow";
 import {
+    getTransformerParameterField,
+    numericSourceHandleToSlotId,
+    numericTargetHandleToSlotId,
+    resolveNumericGraph,
+    routeToggleFieldGroup,
+    SVG_INPUT_HANDLE,
     canConnectNodeKinds,
     type DirectoryEntry,
     type GridConfig,
@@ -18,6 +24,7 @@ import RunLogPanel from "./components/RunLogPanel";
 import WorkflowCanvasPanel from "./components/WorkflowCanvasPanel";
 import WorkspaceToolbar from "./components/WorkspaceToolbar";
 import { useDirectoryListing } from "./hooks/useDirectoryListing";
+import { useInteractiveDisplayNodes } from "./hooks/useInteractiveDisplayNodes";
 import { useJobPolling } from "./hooks/useJobPolling";
 import { useWorkspaceBootstrap } from "./hooks/useWorkspaceBootstrap";
 import { api } from "./lib/api";
@@ -29,6 +36,10 @@ import {
     patchRenderConfig,
     patchRouteConfig,
     patchSelectedNodeData,
+    removeDisplayPositionOverrides,
+    removeEdgesConnectedToNodes,
+    removeLogicalEdges,
+    removeLogicalNodes,
     updateDisplayPositionOverrides
 } from "./lib/workflowNodeState";
 import {
@@ -38,6 +49,7 @@ import {
     type DisplayPositionOverrides,
     createFlowNode,
     createStarterGraph,
+    getFlowEdgeKind,
     toDisplayNode,
     toGraphDocument
 } from "./lib/workflowGraph";
@@ -121,10 +133,6 @@ function App() {
         onError: handleError
     });
 
-    useEffect(() => {
-        setDisplayNodes(displayGraph.nodes);
-    }, [displayGraph.nodes, setDisplayNodes]);
-
     useJobPolling({
         job,
         activePlanNodeIds,
@@ -150,6 +158,10 @@ function App() {
         setProjectDir(selectedBrowserPath || browserDir);
     }, [browserDir, selectedBrowserPath]);
 
+    const patchNodeById = useCallback((nodeId: string, update: (data: WorkflowNodeData) => WorkflowNodeData) => {
+        setNodes((currentNodes) => patchSelectedNodeData(currentNodes, nodeId, update));
+    }, []);
+
     function patchSelectedNode(update: (data: WorkflowNodeData) => WorkflowNodeData): void {
         setNodes((currentNodes) => patchSelectedNodeData(currentNodes, selectedNodeId, update));
     }
@@ -166,44 +178,119 @@ function App() {
         setNodes((currentNodes) => patchRenderConfig(currentNodes, selectedNodeId, update));
     }
 
+    const patchTransformerParameterById = useCallback((nodeId: string, fieldId: string, value: number) => {
+        setNodes((currentNodes) => currentNodes.map((node) => {
+            if (node.id !== nodeId) {
+                return node;
+            }
+
+            if (node.data.kind === "grid") {
+                const field = getTransformerParameterField("grid", fieldId);
+                return field
+                    ? { ...node, data: { ...node.data, config: field.setValue(node.data.config, value) } }
+                    : node;
+            }
+
+            if (node.data.kind === "route") {
+                const field = getTransformerParameterField("route", fieldId);
+                return field
+                    ? { ...node, data: { ...node.data, config: field.setValue(node.data.config, value) } }
+                    : node;
+            }
+
+            if (node.data.kind === "render") {
+                const field = getTransformerParameterField("render", fieldId);
+                return field
+                    ? { ...node, data: { ...node.data, config: field.setValue(node.data.config, value) } }
+                    : node;
+            }
+
+            return node;
+        }));
+    }, []);
+
+    const toggleRouteAlternateRoutingById = useCallback((nodeId: string, enabled: boolean) => {
+        patchNodeById(nodeId, (data) => data.kind === "route"
+            ? { ...data, config: routeToggleFieldGroup.setEnabled(data.config, enabled) }
+            : data);
+    }, [patchNodeById]);
+
+    const interactiveDisplayNodes = useInteractiveDisplayNodes({
+        displayNodes: displayGraph.nodes,
+        patchNodeById,
+        patchTransformerParameterById,
+        toggleRouteAlternateRoutingById,
+        setNodes
+    });
+
+    useEffect(() => {
+        setDisplayNodes(interactiveDisplayNodes);
+    }, [interactiveDisplayNodes, setDisplayNodes]);
+
     function handleConnect(connection: Connection): void {
         if (!connection.source || !connection.target) {
             return;
         }
 
-        const sourceDisplayNode = displayGraph.nodes.find((node) => node.id === connection.source);
-        const targetDisplayNode = displayGraph.nodes.find((node) => node.id === connection.target);
-        if (!sourceDisplayNode || !targetDisplayNode) {
-            return;
-        }
-
-        if (sourceDisplayNode.data.displayType !== "artifact" || sourceDisplayNode.data.artifactType !== "svg" || !sourceDisplayNode.data.connectable) {
-            setErrorMessage("Only SVG artifact nodes can connect into a transformer.");
-            return;
-        }
-
-        if (targetDisplayNode.data.displayType !== "transformer") {
-            setErrorMessage("SVG artifacts must connect to transformer nodes.");
-            return;
-        }
-
-        const sourceNode = nodes.find((node) => node.id === sourceDisplayNode.data.logicalNodeId);
-        const targetNode = nodes.find((node) => node.id === targetDisplayNode.data.logicalNodeId);
+        const sourceNode = nodes.find((node) => node.id === connection.source);
+        const targetNode = nodes.find((node) => node.id === connection.target);
         if (!sourceNode || !targetNode) {
             return;
         }
 
-        if (!canConnectNodeKinds(sourceNode.data.kind, targetNode.data.kind)) {
-            setErrorMessage(`Invalid edge: ${sourceNode.data.kind} cannot connect to ${targetNode.data.kind}.`);
+        const sourceParameterSlot = numericSourceHandleToSlotId(sourceNode.data, connection.sourceHandle ?? undefined);
+        const targetParameterSlot = numericTargetHandleToSlotId(targetNode.data, connection.targetHandle ?? undefined);
+        const isArtifactConnection = connection.targetHandle === SVG_INPUT_HANDLE && sourceParameterSlot === undefined && targetParameterSlot === undefined;
+
+        if (isArtifactConnection) {
+            if (!canConnectNodeKinds(sourceNode.data.kind, targetNode.data.kind)) {
+                setErrorMessage(`Invalid SVG edge: ${sourceNode.data.kind} cannot connect to ${targetNode.data.kind}.`);
+                return;
+            }
+
+            if (edges.some((edge) => getFlowEdgeKind(edge) === "artifact" && edge.target === targetNode.id)) {
+                setErrorMessage("Each transformer accepts exactly one upstream SVG edge.");
+                return;
+            }
+
+            setEdges((currentEdges) => [
+                ...currentEdges,
+                {
+                    id: crypto.randomUUID(),
+                    source: sourceNode.id,
+                    target: targetNode.id,
+                    sourceHandle: connection.sourceHandle,
+                    targetHandle: connection.targetHandle,
+                    type: "smoothstep",
+                    data: { kind: "artifact" }
+                }
+            ]);
+            setErrorMessage("");
             return;
         }
 
-        if (edges.some((edge) => edge.target === targetNode.id)) {
-            setErrorMessage("Each processing node accepts a single upstream edge in this first implementation.");
+        if (!sourceParameterSlot || !targetParameterSlot) {
+            setErrorMessage("Numeric edges must connect from a numeric output handle into a numeric input handle.");
             return;
         }
 
-        setEdges((currentEdges) => addEdge({ id: crypto.randomUUID(), source: sourceNode.id, target: targetNode.id, type: "smoothstep" }, currentEdges));
+        const nextEdge = {
+            id: crypto.randomUUID(),
+            source: sourceNode.id,
+            target: targetNode.id,
+            sourceHandle: connection.sourceHandle,
+            targetHandle: connection.targetHandle,
+            type: "smoothstep",
+            data: { kind: "parameter" as const }
+        };
+
+        try {
+            resolveNumericGraph(toGraphDocument(nodes, [...edges, nextEdge]));
+            setEdges((currentEdges) => [...currentEdges, nextEdge]);
+            setErrorMessage("");
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     async function handleImportSvg(): Promise<void> {
@@ -244,7 +331,13 @@ function App() {
         try {
             const graph = await api.loadGraph(graphPath);
             setNodes(graph.nodes.map((node) => ({ ...node, type: "workflow" })));
-            setEdges(graph.edges.map((edge) => ({ ...edge, type: "smoothstep" })));
+            setEdges(graph.edges.map((edge) => ({
+                ...edge,
+                type: "smoothstep",
+                sourceHandle: edge.sourceHandle,
+                targetHandle: edge.targetHandle,
+                data: { kind: edge.kind }
+            })));
             setDisplayPositionOverrides({});
             selectNode(graph.nodes[0]?.id ?? null);
         } catch (error) {
@@ -254,6 +347,11 @@ function App() {
 
     async function handleRunSelected(): Promise<void> {
         if (!selectedNode) {
+            return;
+        }
+
+        if (selectedNode.data.kind === "numericConstant" || selectedNode.data.kind === "operation" || selectedNode.data.kind === "broadcast") {
+            setErrorMessage("Numeric helper nodes do not execute directly. Run a source or transformer node instead.");
             return;
         }
 
@@ -282,6 +380,37 @@ function App() {
         selectNode(node.data.logicalNodeId, node.id);
     }, [selectNode]);
 
+    const deleteLogicalNodes = useCallback((nodeIds: string[]) => {
+        if (nodeIds.length === 0) {
+            return;
+        }
+
+        setNodes((currentNodes) => removeLogicalNodes(currentNodes, nodeIds));
+        setEdges((currentEdges) => removeEdgesConnectedToNodes(currentEdges, nodeIds));
+        setDisplayPositionOverrides((currentOverrides) => removeDisplayPositionOverrides(currentOverrides, nodeIds));
+
+        if (selectedNodeId !== null && nodeIds.includes(selectedNodeId)) {
+            selectNode(null);
+        }
+    }, [selectNode, selectedNodeId]);
+
+    const handleDeleteSelected = useCallback(() => {
+        if (!selectedNodeId) {
+            return;
+        }
+
+        deleteLogicalNodes([selectedNodeId]);
+    }, [deleteLogicalNodes, selectedNodeId]);
+
+    const handleDisplayNodesDelete = useCallback((deletedNodes: Node<DisplayNodeData>[]) => {
+        deleteLogicalNodes(deletedNodes.map((node) => node.data.logicalNodeId));
+    }, [deleteLogicalNodes]);
+
+    const handleDisplayEdgesDelete = useCallback((deletedEdges: { id: string }[]) => {
+        const edgeIds = deletedEdges.map((edge) => edge.id);
+        setEdges((currentEdges) => removeLogicalEdges(currentEdges, edgeIds));
+    }, []);
+
     const jobStatus = formatJobStatus(job);
 
     return (
@@ -299,8 +428,10 @@ function App() {
                 onGraphPathChange={setGraphPath}
                 onSaveGraph={() => { void handleSaveGraph(); }}
                 onLoadGraph={() => { void handleLoadGraph(); }}
+                onDeleteSelected={handleDeleteSelected}
                 onRunSelected={() => { void handleRunSelected(); }}
-                canRunSelected={Boolean(selectedNode)}
+                canRunSelected={Boolean(selectedNode && selectedNode.data.kind !== "numericConstant" && selectedNode.data.kind !== "operation" && selectedNode.data.kind !== "broadcast")}
+                canDeleteSelected={selectedNodeId !== null}
                 onAddNode={addWorkflowNode}
             />
 
@@ -324,6 +455,8 @@ function App() {
                     displayEdges={displayGraph.edges}
                     onDisplayNodesChange={onDisplayNodesChange}
                     onDisplayNodeDragStop={handleDisplayNodeDragStop}
+                    onDisplayNodesDelete={handleDisplayNodesDelete}
+                    onDisplayEdgesDelete={handleDisplayEdgesDelete}
                     onConnect={handleConnect}
                     onSelectNode={handleSelectDisplayNode}
                 />
