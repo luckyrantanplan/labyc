@@ -6,7 +6,7 @@ LabyPath generates labyrinth-style artwork from SVG shapes using Voronoi diagram
 
 ## Architecture overview
 
-The system has three main components: a **Python GUI** (PyQt6) for project management, a **Protobuf** schema for configuration, and a **C++ engine** for geometry processing.
+The system now has four main components: a **Python GUI** (PyQt6) for project management, a **web workbench** (LabyStudio) for browser-based workflow editing, a **Protobuf** schema for configuration, and a **C++ engine** for geometry processing.
 
 ```mermaid
 flowchart LR

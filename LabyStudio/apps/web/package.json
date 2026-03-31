@@ -1,0 +1,30 @@
+{
+  "name": "@labystudio/web",
+  "version": "0.1.0",
+  "description": "React Flow frontend for LabyStudio.",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@labystudio/shared": "0.1.0",
+    "@tanstack/react-query": "^5.95.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "reactflow": "^11.11.4",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0"
+  }
+}

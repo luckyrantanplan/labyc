@@ -1,0 +1,38 @@
+{
+  "name": "labystudio",
+  "version": "0.1.0",
+  "description": "Local workflow editor for LabyPath using a Node backend and React Flow frontend.",
+  "scripts": {
+    "dev:web": "npm run dev --workspace @labystudio/web",
+    "dev:server": "npm run dev --workspace @labystudio/server",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "packageManager": "npm@11.6.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.1",
+    "vitest": "^4.0.8"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.95.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "reactflow": "^11.11.4",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@labystudio/server",
+  "version": "0.1.0",
+  "description": "Node backend for LabyStudio.",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@labystudio/shared": "0.1.0",
+    "cors": "^2.8.6",
+    "execa": "^9.6.1",
+    "express": "^5.2.1",
+    "nanoid": "^5.1.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6"
+  }
+}
