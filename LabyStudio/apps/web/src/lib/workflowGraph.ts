@@ -86,7 +86,8 @@ export function resolveSourceSvgPath(node: Node<WorkflowNodeData>, nodes: Node<W
         return node.data.artifacts?.inputPath ?? "";
     }
 
-    return outputSvgPathForNode(upstreamNode.data) || node.data.artifacts?.inputPath || "";
+    const upstreamOutputPath = outputSvgPathForNode(upstreamNode.data);
+    return upstreamOutputPath !== "" ? upstreamOutputPath : node.data.artifacts?.inputPath ?? "";
 }
 
 export function toDisplayNode(node: Node<WorkflowNodeData>, nodes: Node<WorkflowNodeData>[], edges: Edge[]): Node<WorkflowNodeDisplayData> {

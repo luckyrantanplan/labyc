@@ -22,7 +22,7 @@ export function useWorkspaceBootstrap({ onContext, onError }: UseWorkspaceBootst
                 setContext(nextContext);
                 onContext(nextContext);
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 if (!cancelled) {
                     onError(error);
                 }

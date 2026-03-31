@@ -24,7 +24,7 @@ export function useDirectoryListing({ browserDir, onError }: UseDirectoryListing
                     setBrowserEntries(listing.entries);
                 }
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 if (!cancelled) {
                     onError(error);
                 }

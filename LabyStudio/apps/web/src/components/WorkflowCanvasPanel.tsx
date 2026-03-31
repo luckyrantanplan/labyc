@@ -17,7 +17,7 @@ const nodeTypes = {
 };
 
 type WorkflowCanvasPanelProps = {
-    displayNodes: Array<Node<DisplayNodeData>>;
+    displayNodes: Node<DisplayNodeData>[];
     displayEdges: Edge[];
     onDisplayNodesChange: OnNodesChange;
     onDisplayNodeDragStop: (node: Node<DisplayNodeData>) => void;
@@ -45,9 +45,9 @@ export default function WorkflowCanvasPanel({
                     edges={displayEdges}
                     nodeTypes={nodeTypes}
                     onNodesChange={onDisplayNodesChange}
-                    onNodeDragStop={(_, node) => onDisplayNodeDragStop(node)}
+                    onNodeDragStop={(_, node) => { onDisplayNodeDragStop(node); }}
                     onConnect={onConnect}
-                    onNodeClick={(_, node) => onSelectNode(node)}
+                    onNodeClick={(_, node) => { onSelectNode(node); }}
                     fitView
                 >
                     <Background gap={18} color="rgba(48, 77, 85, 0.15)" />

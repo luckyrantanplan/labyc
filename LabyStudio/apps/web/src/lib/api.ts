@@ -10,23 +10,22 @@ const REQUEST_TIMEOUT_MS = 10000;
 
 async function requestJson<T>(pathname: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = window.setTimeout(() => { controller.abort(); }, REQUEST_TIMEOUT_MS);
+  const headers = new Headers(init?.headers);
+  headers.set("Content-Type", "application/json");
 
   try {
     const response = await fetch(`${API_ROOT}${pathname}`, {
       ...init,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {})
-      }
+      headers
     });
 
     if (!response.ok) {
       throw new Error(await response.text());
     }
 
-    return response.json() as Promise<T>;
+    return await response.json() as T;
   } finally {
     window.clearTimeout(timeoutId);
   }

@@ -29,7 +29,7 @@ export default function FileBrowserPanel({
                 <h2>Files</h2>
                 <label>
                     Directory
-                    <input value={browserDir} onChange={(event) => onBrowserDirChange(event.target.value)} />
+                    <input value={browserDir} onChange={(event) => { onBrowserDirChange(event.target.value); }} />
                 </label>
             </div>
             <div className="file-actions">
@@ -42,7 +42,7 @@ export default function FileBrowserPanel({
                     <li key={entry.path}>
                         <button
                             className={selectedBrowserPath === entry.path ? "is-active" : ""}
-                            onClick={() => onSelectEntry(entry)}
+                            onClick={() => { onSelectEntry(entry); }}
                         >
                             <span>{entry.kind === "directory" ? "dir" : "file"}</span>
                             <strong>{entry.name}</strong>

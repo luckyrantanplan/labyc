@@ -40,7 +40,7 @@ function ArtifactNode({ data, selected }: NodeProps<ArtifactDisplayData>) {
                     type="source"
                     position={Position.Right}
                     className="artifact-node__handle"
-                    isConnectable={Boolean(data.connectable)}
+                    isConnectable={data.connectable}
                     style={{ top: "50%", right: 0, left: "auto", transform: "translate(50%, -50%)" }}
                 />
             ) : null}

@@ -433,7 +433,7 @@ export function buildRenderConfigPayload(inputPath: string, outputPath: string, 
 export function buildGraphExecutionPlan(
   graph: GraphDocument,
   targetNodeId: string
-): Array<GraphDocument["nodes"][number] & { upstreamId?: string }> {
+): (GraphDocument["nodes"][number] & { upstreamId?: string })[] {
   if (graph.nodes.length === 0) {
     throw new Error("Cannot build an execution plan for an empty graph.");
   }
@@ -448,7 +448,7 @@ export function buildGraphExecutionPlan(
 
   const visiting = new Set<string>();
   const visited = new Set<string>();
-  const ordered: Array<GraphDocument["nodes"][number] & { upstreamId?: string }> = [];
+  const ordered: (GraphDocument["nodes"][number] & { upstreamId?: string })[] = [];
 
   function visit(nodeId: string): void {
     if (visited.has(nodeId)) {

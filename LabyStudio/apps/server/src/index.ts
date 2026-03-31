@@ -3,7 +3,7 @@ import { createApp } from "./app.js";
 const port = Number(process.env.LABYSTUDIO_PORT ?? 4310);
 
 try {
-  const app = await createApp();
+  const app = createApp();
   const server = app.listen(port, "0.0.0.0", () => {
     console.log(`LabyStudio server listening on http://0.0.0.0:${port}`);
   });

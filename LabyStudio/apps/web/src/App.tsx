@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addEdge, type Connection, type Edge, type Node, useNodesState } from "reactflow";
+import { addEdge, type Connection, type Node, useNodesState } from "reactflow";
 import {
-    buildGraphExecutionPlan,
     canConnectNodeKinds,
     type DirectoryEntry,
     type GridConfig,
@@ -22,6 +21,16 @@ import { useDirectoryListing } from "./hooks/useDirectoryListing";
 import { useJobPolling } from "./hooks/useJobPolling";
 import { useWorkspaceBootstrap } from "./hooks/useWorkspaceBootstrap";
 import { api } from "./lib/api";
+import { runSelectedWorkflow } from "./lib/workflowExecution";
+import {
+    formatJobStatus,
+    moveLogicalNode,
+    patchGridConfig,
+    patchRenderConfig,
+    patchRouteConfig,
+    patchSelectedNodeData,
+    updateDisplayPositionOverrides
+} from "./lib/workflowNodeState";
 import {
     basename,
     buildDisplayGraph,
@@ -39,8 +48,8 @@ function App() {
     const [selectedBrowserPath, setSelectedBrowserPath] = useState("");
     const [projectDir, setProjectDir] = useState("");
     const [graphPath, setGraphPath] = useState("");
-    const [nodes, setNodes] = useState<Array<Node<WorkflowNodeData>>>(starterGraph.nodes);
-    const [edges, setEdges] = useState<Edge[]>(starterGraph.edges);
+    const [nodes, setNodes] = useState(starterGraph.nodes);
+    const [edges, setEdges] = useState(starterGraph.edges);
     const [selectedNodeId, setSelectedNodeId] = useState<string | null>("source");
     const [selectedDisplayNodeId, setSelectedDisplayNodeId] = useState<string | null>("source");
     const [displayPositionOverrides, setDisplayPositionOverrides] = useState<DisplayPositionOverrides>({});
@@ -142,32 +151,19 @@ function App() {
     }, [browserDir, selectedBrowserPath]);
 
     function patchSelectedNode(update: (data: WorkflowNodeData) => WorkflowNodeData): void {
-        if (!selectedNodeId) {
-            return;
-        }
-
-        setNodes((currentNodes) => currentNodes.map((node) => {
-            if (node.id !== selectedNodeId) {
-                return node;
-            }
-
-            return {
-                ...node,
-                data: update(node.data)
-            };
-        }));
+        setNodes((currentNodes) => patchSelectedNodeData(currentNodes, selectedNodeId, update));
     }
 
     function patchGrid(update: (config: GridConfig) => GridConfig): void {
-        patchSelectedNode((data) => data.kind === "grid" ? { ...data, config: update(data.config) } : data);
+        setNodes((currentNodes) => patchGridConfig(currentNodes, selectedNodeId, update));
     }
 
     function patchRoute(update: (config: RouteConfig) => RouteConfig): void {
-        patchSelectedNode((data) => data.kind === "route" ? { ...data, config: update(data.config) } : data);
+        setNodes((currentNodes) => patchRouteConfig(currentNodes, selectedNodeId, update));
     }
 
     function patchRender(update: (config: RenderConfig) => RenderConfig): void {
-        patchSelectedNode((data) => data.kind === "render" ? { ...data, config: update(data.config) } : data);
+        setNodes((currentNodes) => patchRenderConfig(currentNodes, selectedNodeId, update));
     }
 
     function handleConnect(connection: Connection): void {
@@ -211,7 +207,7 @@ function App() {
     }
 
     async function handleImportSvg(): Promise<void> {
-        if (!selectedNode || selectedNode.data.kind !== "source" || !selectedBrowserPath.endsWith(".svg")) {
+        if (selectedNode?.data.kind !== "source" || !selectedBrowserPath.endsWith(".svg")) {
             return;
         }
 
@@ -262,28 +258,14 @@ function App() {
         }
 
         try {
-            const graph = toGraphDocument(nodes, edges);
-            const plan = buildGraphExecutionPlan(graph, selectedNode.id);
-            setActivePlanNodeIds(plan.map((node) => node.id));
-            setNodes((currentNodes) => currentNodes.map((node) => {
-                const isInPlan = plan.some((planNode) => planNode.id === node.id);
-                if (!isInPlan) {
-                    return node;
-                }
-
-                return {
-                    ...node,
-                    data: {
-                        ...node.data,
-                        artifacts: {
-                            ...(node.data.artifacts ?? {}),
-                            status: "queued"
-                        }
-                    }
-                };
-            }));
-            const response = await api.runGraph(graph, projectDir, selectedNode.id);
-            const nextJob = await api.getJob(response.jobId);
+            const { nextJob, nextNodes, activePlanNodeIds: nextPlanNodeIds } = await runSelectedWorkflow({
+                nodes,
+                edges,
+                projectDir,
+                targetNodeId: selectedNode.id
+            });
+            setActivePlanNodeIds(nextPlanNodeIds);
+            setNodes(nextNodes);
             setJob(nextJob);
             setJobLog("");
         } catch (error) {
@@ -292,36 +274,15 @@ function App() {
     }
 
     const handleDisplayNodeDragStop = useCallback((node: Node<DisplayNodeData>) => {
-        setDisplayPositionOverrides((current) => {
-            if (node.id === node.data.logicalNodeId) {
-                const { [node.id]: _removed, ...rest } = current;
-                return rest;
-            }
-
-            return {
-                ...current,
-                [node.id]: node.position
-            };
-        });
-
-        if (node.id !== node.data.logicalNodeId) {
-            return;
-        }
-
-        setNodes((currentNodes) => currentNodes.map((candidate) => (
-            candidate.id === node.id
-                ? { ...candidate, position: node.position }
-                : candidate
-        )));
+        setDisplayPositionOverrides((current) => updateDisplayPositionOverrides(current, node));
+        setNodes((currentNodes) => moveLogicalNode(currentNodes, node));
     }, []);
 
     const handleSelectDisplayNode = useCallback((node: Node<DisplayNodeData>) => {
         selectNode(node.data.logicalNodeId, node.id);
     }, [selectNode]);
 
-    const jobStatus = job
-        ? `${job.status}${job.currentNodeId ? ` on ${job.currentNodeId}` : ""}`
-        : "No active job";
+    const jobStatus = formatJobStatus(job);
 
     return (
         <div className="app-shell">
@@ -336,9 +297,9 @@ function App() {
                 graphPath={graphPath}
                 onProjectDirChange={setProjectDir}
                 onGraphPathChange={setGraphPath}
-                onSaveGraph={handleSaveGraph}
-                onLoadGraph={handleLoadGraph}
-                onRunSelected={handleRunSelected}
+                onSaveGraph={() => { void handleSaveGraph(); }}
+                onLoadGraph={() => { void handleLoadGraph(); }}
+                onRunSelected={() => { void handleRunSelected(); }}
                 canRunSelected={Boolean(selectedNode)}
                 onAddNode={addWorkflowNode}
             />
@@ -354,8 +315,8 @@ function App() {
                     onSelectEntry={handleSelectBrowserEntry}
                     onGoUp={handleGoUpDirectory}
                     onUseSelectedPathAsProjectRoot={handleUseSelectedPathAsProjectRoot}
-                    onImportSvg={handleImportSvg}
-                    canImportSvg={Boolean(selectedNode && selectedNode.data.kind === "source" && selectedBrowserPath.endsWith(".svg"))}
+                    onImportSvg={() => { void handleImportSvg(); }}
+                    canImportSvg={selectedNode?.data.kind === "source" && selectedBrowserPath.endsWith(".svg")}
                 />
 
                 <WorkflowCanvasPanel

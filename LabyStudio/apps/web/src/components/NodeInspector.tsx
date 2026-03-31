@@ -34,7 +34,7 @@ function NumberField({ label, value, step = "1", onChange }: { label: string; va
     return (
         <label>
             {label}
-            <input type="number" value={value} step={step} onChange={(event) => onChange(Number(event.target.value))} />
+            <input type="number" value={value} step={step} onChange={(event) => { onChange(Number(event.target.value)); }} />
         </label>
     );
 }
@@ -50,7 +50,7 @@ function renderNumberFields<T>(
             label={field.label}
             value={field.getValue(config)}
             step={field.step}
-            onChange={(value) => onChange((currentConfig) => field.setValue(currentConfig, value))}
+            onChange={(value) => { onChange((currentConfig) => field.setValue(currentConfig, value)); }}
         />
     ));
 }
@@ -70,6 +70,27 @@ export default function NodeInspector({
 }: NodeInspectorProps) {
     const [jsonDraft, setJsonDraft] = useState("");
     const [jsonError, setJsonError] = useState("");
+    const nodeData = selectedNode?.data;
+    const selectedArtifact = selectedCanvasNode?.data.displayType === "artifact" ? selectedCanvasNode.data : null;
+    const sourceSvgPath = selectedDisplayNode?.data.resolvedSourcePath ?? (nodeData?.kind === "source" ? nodeData.sourcePath : "");
+    const configPath = nodeData?.kind && nodeData.kind !== "source" ? (nodeData.artifacts?.configPath ?? "") : "";
+    const outputSvgPath = selectedDisplayNode?.data.resolvedOutputPath ?? (nodeData?.kind === "source" ? nodeData.sourcePath : "");
+    const showStructuredEditor = nodeData?.kind !== undefined && nodeData.kind !== "source" && (selectedArtifact === null || selectedArtifact.artifactType === "json");
+    const stagePatchHandlers: StagePatchHandlers = {
+        grid: onPatchGrid,
+        route: onPatchRoute,
+        render: onPatchRender
+    };
+    const generatedPayload = useMemo(() => {
+        if (!nodeData || nodeData.kind === "source") {
+            return "";
+        }
+
+        const safeInput = sourceSvgPath || "/input.svg";
+        const safeOutput = outputSvgPath || "/output.svg";
+
+        return buildStagePayload(nodeData.kind, safeInput, safeOutput, nodeData.config);
+    }, [nodeData, outputSvgPath, sourceSvgPath]);
 
     useEffect(() => {
         if (!selectedNode || selectedNode.data.kind === "source") {
@@ -86,27 +107,11 @@ export default function NodeInspector({
         return <div className="panel-empty">Select a node to edit its properties.</div>;
     }
 
-    const data = selectedNode.data;
-    const selectedArtifact = selectedCanvasNode?.data.displayType === "artifact" ? selectedCanvasNode.data : null;
-    const sourceSvgPath = selectedDisplayNode?.data.resolvedSourcePath ?? (data.kind === "source" ? data.sourcePath : "");
-    const configPath = data.kind !== "source" ? (data.artifacts?.configPath ?? "") : "";
-    const outputSvgPath = selectedDisplayNode?.data.resolvedOutputPath ?? (data.kind === "source" ? data.sourcePath : "");
-    const showStructuredEditor = data.kind !== "source" && (!selectedArtifact || selectedArtifact.artifactType === "json");
-    const stagePatchHandlers: StagePatchHandlers = {
-        grid: onPatchGrid,
-        route: onPatchRoute,
-        render: onPatchRender
-    };
-    const generatedPayload = useMemo(() => {
-        if (data.kind === "source") {
-            return "";
-        }
+    if (!nodeData) {
+        return <div className="panel-empty">Select a node to edit its properties.</div>;
+    }
 
-        const safeInput = sourceSvgPath || "/input.svg";
-        const safeOutput = outputSvgPath || "/output.svg";
-
-        return buildStagePayload(data.kind, safeInput, safeOutput, data.config);
-    }, [data, outputSvgPath, sourceSvgPath]);
+    const data = nodeData;
 
     function applyJsonDraft() {
         if (data.kind === "source") {
@@ -114,7 +119,7 @@ export default function NodeInspector({
         }
 
         try {
-            const parsed = JSON.parse(jsonDraft);
+            const parsed: unknown = JSON.parse(jsonDraft);
 
             if (data.kind === "grid") {
                 patchStageConfig("grid", stageInspectorDefinitions.grid.parse(parsed), stagePatchHandlers);
@@ -136,35 +141,37 @@ export default function NodeInspector({
         }
 
         if (data.kind === "grid") {
-            return renderNumberFields(stageInspectorDefinitions.grid.fields, data.config, onPatchGrid);
+            const gridConfig = stageInspectorDefinitions.grid.parse(data.config);
+            return renderNumberFields(stageInspectorDefinitions.grid.fields, gridConfig, (update) => { onPatchGrid(update); });
         }
 
         if (data.kind === "route") {
+            const routeConfig = stageInspectorDefinitions.route.parse(data.config);
+            const routeDefinition = stageInspectorDefinitions.route;
             const toggleFieldGroup = stageInspectorDefinitions.route.toggleFieldGroup;
 
             return (
                 <>
-                    {renderNumberFields(stageInspectorDefinitions.route.fields, data.config, onPatchRoute)}
-                    {toggleFieldGroup ? (
-                        <>
-                            <label className="checkbox-row">
-                                <input
-                                    type="checkbox"
-                                    checked={toggleFieldGroup.isEnabled(data.config)}
-                                    onChange={(event) => onPatchRoute((currentConfig) => toggleFieldGroup.setEnabled(currentConfig, event.target.checked))}
-                                />
-                                {toggleFieldGroup.label}
-                            </label>
-                            {toggleFieldGroup.isEnabled(data.config)
-                                ? renderNumberFields(toggleFieldGroup.fields, data.config, onPatchRoute)
-                                : null}
-                        </>
-                    ) : null}
+                    {renderNumberFields(routeDefinition.fields, routeConfig, (update) => { onPatchRoute(update); })}
+                    <>
+                        <label className="checkbox-row">
+                            <input
+                                type="checkbox"
+                                checked={toggleFieldGroup.isEnabled(routeConfig)}
+                                onChange={(event) => { onPatchRoute((currentConfig) => toggleFieldGroup.setEnabled(currentConfig, event.target.checked)); }}
+                            />
+                            {toggleFieldGroup.label}
+                        </label>
+                        {toggleFieldGroup.isEnabled(routeConfig)
+                            ? renderNumberFields(toggleFieldGroup.fields, routeConfig, (update) => { onPatchRoute(update); })
+                            : null}
+                    </>
                 </>
             );
         }
 
-        return renderNumberFields(stageInspectorDefinitions.render.fields, data.config, onPatchRender);
+        const renderConfig = stageInspectorDefinitions.render.parse(data.config);
+        return renderNumberFields(stageInspectorDefinitions.render.fields, renderConfig, (update) => { onPatchRender(update); });
     }
 
     return (
@@ -228,7 +235,7 @@ export default function NodeInspector({
                 <div className="inspector-card__eyebrow">Node</div>
                 <label>
                     Label
-                    <input value={data.label} onChange={(event) => onPatchSelectedNode((current) => ({ ...current, label: event.target.value }))} />
+                    <input value={data.label} onChange={(event) => { onPatchSelectedNode((current) => ({ ...current, label: event.target.value })); }} />
                 </label>
 
                 {data.kind === "source" ? (
@@ -265,7 +272,7 @@ export default function NodeInspector({
                     {jsonError ? <div className="error-banner inspector-error">{jsonError}</div> : null}
                     <div className="inspector-actions">
                         <button type="button" onClick={applyJsonDraft}>Apply JSON</button>
-                        <button type="button" onClick={() => setJsonDraft(`${JSON.stringify(data.config, null, 2)}\n`)}>Reset Draft</button>
+                        <button type="button" onClick={() => { setJsonDraft(`${JSON.stringify(data.config, null, 2)}\n`); }}>Reset Draft</button>
                     </div>
                 </section>
             ) : null}
