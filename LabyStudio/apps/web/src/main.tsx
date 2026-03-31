@@ -5,9 +5,25 @@ import "reactflow/dist/style.css";
 import App from "./App";
 import "./styles.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 3,
+            refetchOnWindowFocus: true
+        },
+        mutations: {
+            retry: 0
+        }
+    }
+});
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+    throw new Error("Missing root element with id \"root\".");
+}
+
+ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
             <App />

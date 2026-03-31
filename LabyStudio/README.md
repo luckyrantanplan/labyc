@@ -4,7 +4,7 @@ LabyStudio is the new web workbench for the LabyPath pipeline. It pairs a local 
 
 ## Runtime
 
-Use the downloaded Node.js 24 toolchain from this workspace:
+LabyStudio development uses Vite 7, so use the Node.js 24 toolchain bundled in this workspace for install, dev, build, and test commands:
 
 ```bash
 export PATH="/workspace/downloads/nodejs-v24/node-v24.14.1-linux-x64/bin:$PATH"
@@ -21,20 +21,20 @@ npm install
 
 ## Develop
 
+Run the workspace scripts from `/workspace/LabyStudio` in separate terminals after exporting the Node 24 toolchain path.
+
 Start the backend:
 
 ```bash
 cd /workspace/LabyStudio
-export PATH="/workspace/downloads/nodejs-v24/node-v24.14.1-linux-x64/bin:$PATH"
 npm run dev:server
 ```
 
 Start the frontend:
 
 ```bash
-cd /workspace/LabyStudio/apps/web
-export PATH="/workspace/downloads/nodejs-v24/node-v24.14.1-linux-x64/bin:$PATH"
-../../node_modules/.bin/vite --host 0.0.0.0 --port 4173
+cd /workspace/LabyStudio
+npm run dev:web -- --host 0.0.0.0 --port 4173
 ```
 
 Open http://127.0.0.1:4173/ in a browser.
@@ -43,8 +43,14 @@ Open http://127.0.0.1:4173/ in a browser.
 
 ```bash
 cd /workspace/LabyStudio
-export PATH="/workspace/downloads/nodejs-v24/node-v24.14.1-linux-x64/bin:$PATH"
 npm run build
+```
+
+## Test
+
+```bash
+cd /workspace/LabyStudio
+npm run test
 ```
 
 ## Current scope

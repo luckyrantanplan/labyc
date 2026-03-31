@@ -1,0 +1,282 @@
+import { useEffect, useMemo, useState } from "react";
+import type { Node } from "reactflow";
+import {
+    type GridConfig,
+    type RenderConfig,
+    type RouteConfig,
+    type WorkflowNodeData
+} from "@labystudio/shared";
+import SvgPreview from "./SvgPreview";
+import {
+    buildStagePayload,
+    type NumberFieldConfig,
+    type StageConfigByKind,
+    stageInspectorDefinitions,
+    type StageKind
+} from "./nodeInspectorConfig";
+import type { DisplayNodeData, WorkflowNodeDisplayData } from "../lib/workflowGraph";
+
+type StagePatchHandlers = {
+    [K in StageKind]: (update: (config: StageConfigByKind[K]) => StageConfigByKind[K]) => void;
+};
+
+type NodeInspectorProps = {
+    selectedNode: Node<WorkflowNodeData> | null;
+    selectedCanvasNode: Node<DisplayNodeData> | null;
+    selectedDisplayNode: Node<WorkflowNodeDisplayData> | null;
+    onPatchSelectedNode: (update: (data: WorkflowNodeData) => WorkflowNodeData) => void;
+    onPatchGrid: (update: (config: GridConfig) => GridConfig) => void;
+    onPatchRoute: (update: (config: RouteConfig) => RouteConfig) => void;
+    onPatchRender: (update: (config: RenderConfig) => RenderConfig) => void;
+};
+
+function NumberField({ label, value, step = "1", onChange }: { label: string; value: number; step?: string; onChange: (value: number) => void; }) {
+    return (
+        <label>
+            {label}
+            <input type="number" value={value} step={step} onChange={(event) => onChange(Number(event.target.value))} />
+        </label>
+    );
+}
+
+function renderNumberFields<T>(
+    fields: NumberFieldConfig<T>[],
+    config: T,
+    onChange: (update: (config: T) => T) => void
+) {
+    return fields.map((field) => (
+        <NumberField
+            key={field.label}
+            label={field.label}
+            value={field.getValue(config)}
+            step={field.step}
+            onChange={(value) => onChange((currentConfig) => field.setValue(currentConfig, value))}
+        />
+    ));
+}
+
+function patchStageConfig<K extends StageKind>(kind: K, nextConfig: StageConfigByKind[K], patchHandlers: StagePatchHandlers) {
+    patchHandlers[kind](() => nextConfig);
+}
+
+export default function NodeInspector({
+    selectedNode,
+    selectedCanvasNode,
+    selectedDisplayNode,
+    onPatchSelectedNode,
+    onPatchGrid,
+    onPatchRoute,
+    onPatchRender
+}: NodeInspectorProps) {
+    const [jsonDraft, setJsonDraft] = useState("");
+    const [jsonError, setJsonError] = useState("");
+
+    useEffect(() => {
+        if (!selectedNode || selectedNode.data.kind === "source") {
+            setJsonDraft("");
+            setJsonError("");
+            return;
+        }
+
+        setJsonDraft(`${JSON.stringify(selectedNode.data.config, null, 2)}\n`);
+        setJsonError("");
+    }, [selectedNode]);
+
+    if (!selectedNode) {
+        return <div className="panel-empty">Select a node to edit its properties.</div>;
+    }
+
+    const data = selectedNode.data;
+    const selectedArtifact = selectedCanvasNode?.data.displayType === "artifact" ? selectedCanvasNode.data : null;
+    const sourceSvgPath = selectedDisplayNode?.data.resolvedSourcePath ?? (data.kind === "source" ? data.sourcePath : "");
+    const configPath = data.kind !== "source" ? (data.artifacts?.configPath ?? "") : "";
+    const outputSvgPath = selectedDisplayNode?.data.resolvedOutputPath ?? (data.kind === "source" ? data.sourcePath : "");
+    const showStructuredEditor = data.kind !== "source" && (!selectedArtifact || selectedArtifact.artifactType === "json");
+    const stagePatchHandlers: StagePatchHandlers = {
+        grid: onPatchGrid,
+        route: onPatchRoute,
+        render: onPatchRender
+    };
+    const generatedPayload = useMemo(() => {
+        if (data.kind === "source") {
+            return "";
+        }
+
+        const safeInput = sourceSvgPath || "/input.svg";
+        const safeOutput = outputSvgPath || "/output.svg";
+
+        return buildStagePayload(data.kind, safeInput, safeOutput, data.config);
+    }, [data, outputSvgPath, sourceSvgPath]);
+
+    function applyJsonDraft() {
+        if (data.kind === "source") {
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(jsonDraft);
+
+            if (data.kind === "grid") {
+                patchStageConfig("grid", stageInspectorDefinitions.grid.parse(parsed), stagePatchHandlers);
+            } else if (data.kind === "route") {
+                patchStageConfig("route", stageInspectorDefinitions.route.parse(parsed), stagePatchHandlers);
+            } else {
+                patchStageConfig("render", stageInspectorDefinitions.render.parse(parsed), stagePatchHandlers);
+            }
+
+            setJsonError("");
+        } catch (error) {
+            setJsonError(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    function renderStructuredConfigEditor() {
+        if (data.kind === "source") {
+            return null;
+        }
+
+        if (data.kind === "grid") {
+            return renderNumberFields(stageInspectorDefinitions.grid.fields, data.config, onPatchGrid);
+        }
+
+        if (data.kind === "route") {
+            const toggleFieldGroup = stageInspectorDefinitions.route.toggleFieldGroup;
+
+            return (
+                <>
+                    {renderNumberFields(stageInspectorDefinitions.route.fields, data.config, onPatchRoute)}
+                    {toggleFieldGroup ? (
+                        <>
+                            <label className="checkbox-row">
+                                <input
+                                    type="checkbox"
+                                    checked={toggleFieldGroup.isEnabled(data.config)}
+                                    onChange={(event) => onPatchRoute((currentConfig) => toggleFieldGroup.setEnabled(currentConfig, event.target.checked))}
+                                />
+                                {toggleFieldGroup.label}
+                            </label>
+                            {toggleFieldGroup.isEnabled(data.config)
+                                ? renderNumberFields(toggleFieldGroup.fields, data.config, onPatchRoute)
+                                : null}
+                        </>
+                    ) : null}
+                </>
+            );
+        }
+
+        return renderNumberFields(stageInspectorDefinitions.render.fields, data.config, onPatchRender);
+    }
+
+    return (
+        <div className="inspector-form inspector-form--rich">
+            <section className="inspector-card">
+                <div className="inspector-card__eyebrow">Selection</div>
+                <div className="inspector-title-row">
+                    <strong>{selectedArtifact ? selectedArtifact.title : data.label}</strong>
+                    <span className="inspector-chip">{selectedArtifact ? selectedArtifact.artifactType : data.kind}</span>
+                </div>
+                <div className="inspector-meta-grid">
+                    <div>
+                        <span>Owner</span>
+                        <strong>{data.label}</strong>
+                    </div>
+                    <div>
+                        <span>Logical node</span>
+                        <strong>{selectedNode.id}</strong>
+                    </div>
+                </div>
+            </section>
+
+            {selectedArtifact?.artifactType === "svg" ? (
+                <section className="inspector-card">
+                    <div className="inspector-card__eyebrow">SVG Artifact</div>
+                    <div className="inspector-meta-grid inspector-meta-grid--stacked">
+                        <div>
+                            <span>File</span>
+                            <strong>{selectedArtifact.value}</strong>
+                        </div>
+                        <div>
+                            <span>Path</span>
+                            <strong>{selectedArtifact.path ?? "Not generated yet"}</strong>
+                        </div>
+                    </div>
+                    <SvgPreview path={selectedArtifact.path} cacheKey={selectedArtifact.cacheKey} title={selectedArtifact.value} />
+                </section>
+            ) : null}
+
+            <section className="inspector-card">
+                <div className="inspector-card__eyebrow">Artifacts</div>
+                <div className="inspector-meta-grid inspector-meta-grid--stacked">
+                    <div>
+                        <span>Source SVG</span>
+                        <strong>{sourceSvgPath || "Not connected"}</strong>
+                    </div>
+                    {data.kind !== "source" ? (
+                        <div>
+                            <span>Config JSON</span>
+                            <strong>{configPath || "Generated on run"}</strong>
+                        </div>
+                    ) : null}
+                    <div>
+                        <span>Output SVG</span>
+                        <strong>{outputSvgPath || "Pending"}</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section className="inspector-card">
+                <div className="inspector-card__eyebrow">Node</div>
+                <label>
+                    Label
+                    <input value={data.label} onChange={(event) => onPatchSelectedNode((current) => ({ ...current, label: event.target.value }))} />
+                </label>
+
+                {data.kind === "source" ? (
+                    <label>
+                        Source SVG Path
+                        <input value={data.sourcePath} readOnly />
+                    </label>
+                ) : null}
+            </section>
+
+            {showStructuredEditor ? (
+                <section className="inspector-card">
+                    <div className="inspector-card__eyebrow">Structured Config</div>
+                    <div className="inspector-field-grid">
+                        {renderStructuredConfigEditor()}
+                    </div>
+                </section>
+            ) : null}
+
+            {data.kind !== "source" ? (
+                <section className="inspector-card">
+                    <div className="inspector-card__eyebrow">Config Object JSON</div>
+                    <p className="inspector-card__copy">Edit the node configuration directly. This drives the generated JSON artifact for the selected stage.</p>
+                    <textarea
+                        className="inspector-json"
+                        value={jsonDraft}
+                        onChange={(event) => {
+                            setJsonDraft(event.target.value);
+                            if (jsonError) {
+                                setJsonError("");
+                            }
+                        }}
+                    />
+                    {jsonError ? <div className="error-banner inspector-error">{jsonError}</div> : null}
+                    <div className="inspector-actions">
+                        <button type="button" onClick={applyJsonDraft}>Apply JSON</button>
+                        <button type="button" onClick={() => setJsonDraft(`${JSON.stringify(data.config, null, 2)}\n`)}>Reset Draft</button>
+                    </div>
+                </section>
+            ) : null}
+
+            {data.kind !== "source" ? (
+                <section className="inspector-card">
+                    <div className="inspector-card__eyebrow">Generated Stage Payload</div>
+                    <p className="inspector-card__copy">This is the concrete payload written to disk when the stage runs.</p>
+                    <textarea className="inspector-json inspector-json--readonly" value={generatedPayload} readOnly />
+                </section>
+            ) : null}
+        </div>
+    );
+}

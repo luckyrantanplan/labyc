@@ -4,14 +4,27 @@ export type NodeKind = "source" | "grid" | "route" | "render";
 export type ArtifactStatus = "idle" | "queued" | "running" | "completed" | "failed";
 
 function normalizePath(filePath: string): string {
+  if (!filePath.trim()) {
+    return "";
+  }
+
   return filePath.replaceAll("\\", "/");
 }
 
 function joinPath(...segments: string[]): string {
-  return normalizePath(segments.filter(Boolean).join("/")).replace(/\/+/g, "/");
+  const joinedPath = segments.filter(Boolean).join("/");
+  if (!joinedPath) {
+    return "";
+  }
+
+  return normalizePath(joinedPath).replace(/\/+/g, "/");
 }
 
 function baseName(filePath: string): string {
+  if (!filePath.trim()) {
+    return "";
+  }
+
   const normalized = normalizePath(filePath);
   const segments = normalized.split("/");
   return segments[segments.length - 1] ?? normalized;
@@ -94,6 +107,10 @@ export const artifactStateSchema = z.object({
 });
 
 export type ArtifactState = z.infer<typeof artifactStateSchema>;
+
+function createIdleArtifacts(): ArtifactState {
+  return { status: "idle" };
+}
 
 const baseNodeDataSchema = z.object({
   label: z.string(),
@@ -227,9 +244,7 @@ export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
       kind,
       label: "SVG source",
       sourcePath: "",
-      artifacts: {
-        status: "idle"
-      }
+      artifacts: createIdleArtifacts()
     };
   }
 
@@ -243,9 +258,7 @@ export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
         minSep: 0.1,
         seed: 3
       },
-      artifacts: {
-        status: "idle"
-      }
+      artifacts: createIdleArtifacts()
     };
   }
 
@@ -281,9 +294,7 @@ export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
           simplifyDist: 0
         }
       },
-      artifacts: {
-        status: "idle"
-      }
+      artifacts: createIdleArtifacts()
     };
   }
 
@@ -304,9 +315,7 @@ export function createDefaultNodeData(kind: NodeKind): WorkflowNodeData {
         resolution: 1
       }
     },
-    artifacts: {
-      status: "idle"
-    }
+    artifacts: createIdleArtifacts()
   };
 }
 
@@ -327,11 +336,21 @@ export function defaultProjectDirCandidates(workspaceRoot: string): string[] {
 }
 
 export function importedSourceName(sourcePath: string): string {
-  return `${stemName(sourcePath)}orig.svg`;
+  const stem = stemName(sourcePath);
+  if (!stem) {
+    throw new Error("Cannot derive an imported SVG name from an empty source path.");
+  }
+
+  return `${stem}orig.svg`;
 }
 
 export function stageStem(inputPath: string, kind: Exclude<NodeKind, "source">, index: number): string {
-  return `${stemName(inputPath)}${index}${kind}`;
+  const stem = stemName(inputPath);
+  if (!stem) {
+    throw new Error(`Cannot derive a stage name for ${kind} from an empty input path.`);
+  }
+
+  return `${stem}${index}${kind}`;
 }
 
 export function buildGridConfigPayload(inputPath: string, outputPath: string, config: GridConfig): Record<string, unknown> {
@@ -415,6 +434,10 @@ export function buildGraphExecutionPlan(
   graph: GraphDocument,
   targetNodeId: string
 ): Array<GraphDocument["nodes"][number] & { upstreamId?: string }> {
+  if (graph.nodes.length === 0) {
+    throw new Error("Cannot build an execution plan for an empty graph.");
+  }
+
   const nodeMap = new Map(graph.nodes.map((node) => [node.id, node]));
   const incoming = new Map<string, string[]>();
   for (const edge of graph.edges) {
@@ -433,7 +456,7 @@ export function buildGraphExecutionPlan(
     }
 
     if (visiting.has(nodeId)) {
-      throw new Error("Graph contains a cycle.");
+      throw new Error(`Graph contains a cycle involving node ${nodeId}.`);
     }
 
     const node = nodeMap.get(nodeId);
@@ -443,6 +466,10 @@ export function buildGraphExecutionPlan(
 
     visiting.add(nodeId);
     const upstreamIds = incoming.get(nodeId) ?? [];
+    if (node.data.kind === "source" && upstreamIds.length > 0) {
+      throw new Error(`Source node ${node.data.label} cannot have upstream inputs.`);
+    }
+
     if (node.data.kind !== "source" && upstreamIds.length !== 1) {
       throw new Error(`Node ${node.data.label} must have exactly one upstream input.`);
     }
@@ -454,7 +481,11 @@ export function buildGraphExecutionPlan(
     const upstreamId = upstreamIds[0];
     if (upstreamId) {
       const upstreamNode = nodeMap.get(upstreamId);
-      if (!upstreamNode || !canConnectNodeKinds(upstreamNode.data.kind, node.data.kind)) {
+      if (!upstreamNode) {
+        throw new Error(`Node ${node.data.label} references unknown upstream node ${upstreamId}.`);
+      }
+
+      if (!canConnectNodeKinds(upstreamNode.data.kind, node.data.kind)) {
         throw new Error(`Invalid edge into ${node.data.label}.`);
       }
     }

@@ -5,22 +5,31 @@ import type {
   WorkflowJob
 } from "@labystudio/shared";
 
-const API_ROOT = "http://127.0.0.1:4310/api";
+const API_ROOT = (import.meta.env.VITE_API_ROOT as string | undefined)?.replace(/\/$/, "") ?? "http://127.0.0.1:4310/api";
+const REQUEST_TIMEOUT_MS = 10000;
 
 async function requestJson<T>(pathname: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_ROOT}${pathname}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_ROOT}${pathname}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(await response.text());
+    return response.json() as Promise<T>;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  return response.json() as Promise<T>;
 }
 
 export const api = {
