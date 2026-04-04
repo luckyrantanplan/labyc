@@ -3,6 +3,9 @@ FROM ubuntu:24.04
 ARG CGAL_VERSION=6.1.1
 ARG CGAL_LIBRARY_SHA256=37e9fffe48a83209b070e1914c6aa0a7bae8076749712ab78b53245e176e0e0e
 ARG CGAL_LIBRARY_URL=https://github.com/CGAL/cgal/releases/download/v${CGAL_VERSION}/CGAL-${CGAL_VERSION}-library.tar.xz
+ARG NODE_VERSION=24.14.1
+ARG NODE_LINUX_X64_SHA256=84d38715d449447117d05c3e71acd78daa49d5b1bfa8aacf610303920c3322be
+ARG NODE_LINUX_X64_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz
 ARG PROTOBUF_VERSION=34.1
 ARG PROTOBUF_SHA256=e4e6ff10760cf747a2decd1867741f561b216bd60cc4038c87564713a6da1848
 ARG PROTOBUF_URL=https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-${PROTOBUF_VERSION}.tar.gz
@@ -79,6 +82,15 @@ RUN set -eux; \
     -Dprotobuf_BUILD_TESTS=OFF; \
     cmake --build /tmp/protobuf-build --target install --parallel "$(nproc)"; \
     rm -rf /tmp/protobuf.tar.gz "${PROTOBUF_SRC_DIR}" /tmp/protobuf-build
+
+# Install a pinned Node.js toolchain for LabyStudio development.
+RUN set -eux; \
+    curl -fsSL "${NODE_LINUX_X64_URL}" -o /tmp/node.tar.xz; \
+    echo "${NODE_LINUX_X64_SHA256}  /tmp/node.tar.xz" | sha256sum -c -; \
+    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1; \
+    rm -f /tmp/node.tar.xz; \
+    node --version; \
+    npm --version
 
 # ─── Non-root user (VS Code convention) ──────────────────────────────────────
 ARG USERNAME=vscode
