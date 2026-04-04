@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Local workflow editor for LabyPath using a Node backend and React Flow frontend.",
   "scripts": {
+    "dev:launch": "bash ./scripts/dev.sh",
     "dev:web": "npm run build --workspace @labystudio/shared && npm run dev --workspace @labystudio/web",
     "dev:server": "npm run build --workspace @labystudio/shared && npm run dev --workspace @labystudio/server",
     "lint": "npm run build --workspace @labystudio/shared && npm run lint --workspace @labystudio/shared && npm run lint --workspace @labystudio/server && npm run lint --workspace @labystudio/web",

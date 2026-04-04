@@ -20,7 +20,16 @@ npm install
 
 ## Develop
 
-Run the workspace scripts from `/workspace/LabyStudio` in separate terminals.
+Run the combined launcher from `/workspace/LabyStudio` to start the backend and frontend together:
+
+```bash
+cd /workspace/LabyStudio
+npm run dev:launch
+```
+
+By default this starts the backend on port `4310` and the frontend on port `4173`. You can override them with `LABYSTUDIO_PORT`, `LABYSTUDIO_WEB_HOST`, and `LABYSTUDIO_WEB_PORT`.
+
+If you prefer separate terminals, the individual workspace scripts remain available.
 
 Start the backend:
 

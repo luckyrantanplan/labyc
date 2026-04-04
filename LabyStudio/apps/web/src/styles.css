@@ -473,15 +473,26 @@ label {
 
 .workflow-node__field {
     display: grid;
-    gap: 0.28rem;
+    gap: 0.08rem;
     color: var(--muted);
-    font-size: 0.8rem;
+    font-size: 0.74rem;
 }
 
 .workflow-node__field span {
-    font-size: 0.72rem;
+    font-size: 0.62rem;
+    line-height: 1.05;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+
+.workflow-node__control {
+    width: 100%;
+    border: 1px solid rgba(31, 35, 40, 0.12);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.28rem 0.58rem;
+    min-height: 1.85rem;
+    line-height: 1.15;
 }
 
 .workflow-node__field--label input,
@@ -491,7 +502,7 @@ label {
     border: 1px solid rgba(31, 35, 40, 0.12);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.9);
-    padding: 0.55rem 0.65rem;
+    padding: 0.42rem 0.62rem;
 }
 
 .workflow-node__artifact-summary {
@@ -533,13 +544,29 @@ label {
 .workflow-node__parameter-list,
 .workflow-node__broadcast-controls {
     display: grid;
-    gap: 0.55rem;
+    gap: 0.18rem;
 }
 
 .workflow-node__parameter-row,
 .workflow-node__result-row--handle {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
+    padding-left: 0.18rem;
+    padding-right: 0.18rem;
+}
+
+.workflow-node__parameter-row .workflow-node__field {
+    grid-template-columns: minmax(0, 1fr) 4.9rem;
+    align-items: center;
+    gap: 0.32rem;
+}
+
+.workflow-node__parameter-row .workflow-node__field span {
+    font-size: 0.58rem;
+    line-height: 1.15;
+}
+
+.workflow-node__parameter-row .workflow-node__control {
+    padding: 0.2rem 0.45rem;
+    min-height: 1.55rem;
 }
 
 .workflow-node__inline-input {
