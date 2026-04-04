@@ -167,7 +167,7 @@ flowchart TD
 
 `NodeRendering::render()` overlays the CGAL polygon arrangements of opposite nodes to find shared boundaries:
 - If no face has multiple polygon IDs → extract **edge** boundaries between different polygons
-- If faces have multiple polygon IDs → extract the **face outer boundary** (CCW) and **hole boundaries** (CW) for the winning polygon (minimum state index)
+- If faces have multiple polygon IDs → extract the **face outer boundary** (CCW) and **hole boundaries** (CW) for the winning polygon after nodes have been ordered by state and assigned polygon IDs for the overlay pass
 
 ### Step 8 – Global Union
 
@@ -218,6 +218,8 @@ Each Family splits into 1 or 2 **patches** (connected components):
 - **2 patches** → clean two-sided overlap: each patch becomes a separate Node
 - **1 patch** → single-piece overlap: handled specially in mergeFamilies
 
+The current implementation supports only the 1-patch and 2-patch cases. `Family::createPatch()` throws if more than 2 patches are found.
+
 ### Node (conflict graph)
 
 ```
@@ -247,9 +249,10 @@ Min-priority queue wrapper: processes nodes with fewest opposites first
 
 1. **Graph coloring correctness**: The greedy coloring in `chooseNodeState()`
    guarantees that opposite nodes always get different states (hard constraint).
-   Adjacent nodes get alternating states when possible (soft constraint).
-   The number of states needed equals the maximum clique size among opposite
-   groups, which is at most the number of patches (typically 2).
+    Adjacent nodes get alternating states when possible (soft constraint).
+    The practical model is often a 0/1 alternation, but merged family groups can
+    require state 2 or higher and the implementation includes explicit handling
+    for those higher-state cases.
 
 2. **Union-Find invariant**: `createPatch()` throws `std::runtime_error` if
    more than 2 patches are found (unexpected topology).

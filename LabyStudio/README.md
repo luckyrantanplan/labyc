@@ -1,6 +1,6 @@
 # LabyStudio
 
-LabyStudio is the new web workbench for the LabyPath pipeline. It pairs a local Node backend with a React Flow frontend so you can browse local files, assemble a valid source to grid to route to render graph, edit stage parameters in the browser, and launch `labypath` against the local filesystem.
+LabyStudio is the web workbench for the LabyPath pipeline. It pairs a local Node backend with a React Flow frontend so you can browse local files, assemble workflow graphs around source, grid, route, and render stages, wire numeric helper nodes into stage parameters, and launch `labypath` against the local filesystem.
 
 ## Runtime
 

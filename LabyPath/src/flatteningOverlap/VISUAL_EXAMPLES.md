@@ -124,6 +124,8 @@ The greedy algorithm assigns states (colors) to avoid conflicts:
     Node 3: state=1  □
 ```
 
+This 0/1 alternation is the simplest example, not a hard upper bound. More complex merged groups can require state 2 or higher.
+
 ## 7. Arrangement Overlay (Boundary Extraction)
 
 CGAL overlays polygon arrangements of opposite nodes to find boundaries:
@@ -161,7 +163,7 @@ When each face has at most one polygon ID:
   └────────────┴─────────────┘
                ↑
   This edge separates A from B → added to OrientedRibbon
-  Left face has min state → segment goes CCW (outer boundary)
+  In the no-overlapping-face branch, shared edges are emitted directly as CCW boundaries
 ```
 
 ### Face boundary case
@@ -265,8 +267,8 @@ When all overlapping polygons form a single connected component:
        └────┤    │
             └────┘
 
-  Special handling: merged into adjacent families via
-  mergeFamilies() using a second box intersection pass.
+  Special handling: grouped during locateFamilies() with a second box-intersection
+  pass, then consumed later by mergeFamilies().
 ```
 
 ### No Overlaps
