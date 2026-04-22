@@ -80,7 +80,7 @@ Today there is no top-level protobuf message or CLI stage that exposes `StreamLi
 1. define a new protobuf message for the field-generator stage
 2. dispatch it from `MessageIO.cpp`
 3. decide whether the output should be a ribbon SVG, a grid-coded SVG, or another intermediate file format
-4. expose the new stage in LabyStudio and, if needed, in LabyPython
+4. expose the new stage in LabyNodeJS and, if needed, in LabyPython
 
 ## `HqNoise`
 
@@ -131,13 +131,13 @@ In the current production code, `HqNoise` is not used to build routing grids. It
 - one noise field modulates stroke width symmetrically around the centerline
 - another noise field adds antisymmetric lateral variation to mimic hand-drawn strokes
 
-Those noise settings are exposed indirectly through `GraphicRendering.penConfig` in the protobuf schema and in LabyStudio's render-stage config.
+Those noise settings are exposed indirectly through `GraphicRendering.penConfig` in the protobuf schema and in LabyNodeJS's render-stage config.
 
 ## Practical Guidance
 
 - If your goal is to generate experimental grid-like line fields, start from `StreamLine`.
 - If your goal is to make rendered strokes look less mechanical, start from `HqNoise` via `PenStroke`.
-- If your goal is to make either of those workflows available from the CLI or LabyStudio, the current codebase needs new schema and dispatch wiring rather than just new docs.
+- If your goal is to make either of those workflows available from the CLI or LabyNodeJS, the current codebase needs new schema and dispatch wiring rather than just new docs.
 
 ## Related Reading
 

@@ -136,7 +136,7 @@ If you want to create grid-like linework today, `StreamLine` is the relevant uti
 
 - [repo-architecture.md](repo-architecture.md)
 - [configuration-and-workflows.md](configuration-and-workflows.md)
-- [protobuf-to-labystudio-mapping.md](protobuf-to-labystudio-mapping.md)
+- [labynodejs-config-and-cache.md](labynodejs-config-and-cache.md)
 - [field-generators-and-noise.md](field-generators-and-noise.md)
 - [../LabyPath/src/flatteningOverlap/README.md](../LabyPath/src/flatteningOverlap/README.md)
 - [../LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md](../LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md)

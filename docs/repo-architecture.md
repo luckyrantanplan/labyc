@@ -2,11 +2,11 @@
 
 ## Top-Level Structure
 
-The repository is a workspace that groups three executables around the same routing engine:
+The repository is a workspace that groups the native engine with two orchestration layers around the same routing engine:
 
 - `LabyPath`: the C++ command-line processor.
 - `LabyPython`: the desktop GUI that manages projects and invokes `labypath`.
-- `LabyStudio`: the browser-based editor whose backend also invokes `labypath`.
+- `LabyNodeJS`: the TypeScript package that builds stage payloads, invokes `labypath`, and memoizes repeated runs.
 
 The root [CMakeLists.txt](../CMakeLists.txt) is intentionally small. It exists to make the workspace convenient in editors and CI, then delegates to `LabyPath` with `add_subdirectory(LabyPath)`.
 
@@ -20,15 +20,17 @@ The root [CMakeLists.txt](../CMakeLists.txt) is intentionally small. It exists t
 
 The Python application in [../LabyPython/src/LabyPython/App.py](../LabyPython/src/LabyPython/App.py) is a desktop orchestrator. It creates project files, prepares arguments, searches for the `labypath` binary in common build locations, launches jobs, and manages result files and logs.
 
-### LabyStudio
+### LabyNodeJS
 
-LabyStudio is split into three layers:
+LabyNodeJS is a library-first package in [../LabyNodeJS](../LabyNodeJS). Its main responsibilities are:
 
-- `apps/web`: the React frontend that edits workflow nodes and parameters.
-- `apps/server`: the backend that serializes job inputs, invokes `labypath`, and streams job state.
-- `packages/shared`: shared schemas and helpers used by both sides.
+- define plain TypeScript stage builders for source, grid, route, and render steps
+- serialize protobuf-shaped JSON payloads for the selected stage
+- hash the binary, the input SVG, and the normalized payload to derive deterministic cache keys
+- persist stage metadata in a single project-local cache manifest
+- launch `labypath` as an external process and reuse matching outputs when the cache is valid
 
-The important architectural point is that the web stack does not embed the C++ engine. It shells out to the CLI just like the desktop tool does.
+The important architectural point is unchanged: the TypeScript layer does not embed the C++ engine. It shells out to the CLI just like the desktop tool does.
 
 ## Build Layouts
 
@@ -56,7 +58,7 @@ The documentation should describe both, because both are present in the checked-
 
 ### Devcontainer
 
-The devcontainer is the full-featured development image. It installs compilers, Python, Qt-related dependencies, and Node.js 24 for LabyStudio development.
+The devcontainer is the full-featured development image. It installs compilers, Python, Qt-related dependencies, and Node.js 24 for LabyNodeJS development.
 
 ### Production Docker Image
 
@@ -65,7 +67,7 @@ The root [../Dockerfile](../Dockerfile) is currently aligned with CLI execution,
 It does not install:
 
 - Node.js
-- the LabyStudio application
+- the LabyNodeJS package
 - the PyQt desktop runtime
 
 That split is deliberate today, even if it may evolve later.
@@ -77,15 +79,11 @@ graph TD
     Root[Workspace root] --> CMake[Root CMake wrapper]
     CMake --> Engine[LabyPath]
 
-    StudioShared["@labystudio/shared"] --> StudioWeb[apps/web]
-    StudioShared --> StudioServer[apps/server]
-    StudioServer --> EngineCLI["labypath executable"]
-
+    NodeJS[LabyNodeJS] --> EngineCLI["labypath executable"]
     PythonGUI[LabyPython] --> EngineCLI
     Devcontainer[.devcontainer] --> Engine
     Devcontainer --> PythonGUI
-    Devcontainer --> StudioWeb
-    Devcontainer --> StudioServer
+    Devcontainer --> NodeJS
     ProdDocker[Dockerfile] --> EngineCLI
 ```
 

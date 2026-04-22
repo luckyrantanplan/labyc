@@ -83,7 +83,7 @@ RUN set -eux; \
     cmake --build /tmp/protobuf-build --target install --parallel "$(nproc)"; \
     rm -rf /tmp/protobuf.tar.gz "${PROTOBUF_SRC_DIR}" /tmp/protobuf-build
 
-# Install a pinned Node.js toolchain for LabyStudio development.
+# Install a pinned Node.js toolchain for LabyNodeJS development.
 RUN set -eux; \
     curl -fsSL "${NODE_LINUX_X64_URL}" -o /tmp/node.tar.xz; \
     echo "${NODE_LINUX_X64_SHA256}  /tmp/node.tar.xz" | sha256sum -c -; \

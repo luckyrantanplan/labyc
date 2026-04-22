@@ -1,12 +1,12 @@
 # LabyPath Workspace
 
-This repository combines three related applications around the same labyrinth-routing pipeline:
+This repository combines the native routing engine with two orchestration layers around the same labyrinth-routing pipeline:
 
 - `LabyPath/`: the C++ geometry and routing engine, built as the `labypath` CLI.
 - `LabyPython/`: the PyQt desktop application that prepares projects, launches the CLI, and manages outputs.
-- `LabyStudio/`: the browser-based workflow editor with a React frontend and a Node/Express backend.
+- `LabyNodeJS/`: the TypeScript orchestration package that shells out to the CLI and memoizes repeated jobs.
 
-The root workspace is mainly an integration layer. The top-level CMake project delegates to `LabyPath`, the devcontainer provisions the full C++/Python/Node toolchain, and the production Docker image currently packages the CLI-focused runtime rather than the web workbench.
+The root workspace is mainly an integration layer. The top-level CMake project delegates to `LabyPath`, the devcontainer provisions the full C++/Python/Node toolchain, and the production Docker image currently packages the CLI-focused runtime rather than the orchestration tooling.
 
 ## Repository Map
 
@@ -14,7 +14,7 @@ The root workspace is mainly an integration layer. The top-level CMake project d
 | --- | --- | --- |
 | `LabyPath/` | Core geometry, routing, rendering, protobuf schema, C++ tests | `src/Main.cpp`, `src/MessageIO.cpp`, `API/AllConfig.proto` |
 | `LabyPython/` | Desktop GUI and project orchestration | `src/LabyPython/App.py` |
-| `LabyStudio/` | Web editor and job runner | `apps/web`, `apps/server`, `packages/shared` |
+| `LabyNodeJS/` | TypeScript stage orchestration and cache layer | `src/index.ts`, `src/runner.ts`, `src/cache.ts` |
 | `.devcontainer/` | Development container with compilers, Python, Qt, and Node 24 | `.devcontainer/Dockerfile`, `.devcontainer/devcontainer.json` |
 | `Dockerfile` | CLI-oriented production/runtime image | `/workspace/Dockerfile` |
 
@@ -24,26 +24,21 @@ The root workspace is mainly an integration layer. The top-level CMake project d
 graph TD
     DevContainer[.devcontainer] --> LabyPath
     DevContainer --> LabyPython
-    DevContainer --> LabyStudio
+    DevContainer --> LabyNodeJS
 
     RootCMake[Root CMakeLists.txt] --> LabyPath
     DockerImage[Production Dockerfile] --> LabyPath
     DockerImage --> PythonRuntime["Lightweight Python runtime"]
 
-    Shared["@labystudio/shared"] --> Web[apps/web]
-    Shared --> Server[apps/server]
-    Server --> LabypathCLI["labypath CLI"]
-
+    LabyNodeJS --> LabypathCLI["labypath CLI"]
     LabyPython --> LabypathCLI
-    LabyStudio --> Server
-    Web --> Server
 ```
 
 Important boundary conditions:
 
-- The root CMake project only builds `LabyPath`; it does not compile `LabyPython` or `LabyStudio`.
-- `LabyStudio` does not link to the C++ engine directly. Its backend writes config files and launches the `labypath` executable as an external process.
-- The current production Docker image does not include the LabyStudio frontend/backend and does not install PyQt6. It packages the CLI plus a small Python environment used for automation and tests.
+- The root CMake project only builds `LabyPath`; it does not compile `LabyPython` or `LabyNodeJS`.
+- `LabyNodeJS` does not link to the C++ engine directly. It writes stage-specific config files and launches the `labypath` executable as an external process.
+- The current production Docker image does not include the LabyNodeJS package and does not install PyQt6. It packages the CLI plus a small Python environment used for automation and tests.
 
 ## Processing Pipeline
 
@@ -101,7 +96,7 @@ The root [Dockerfile](Dockerfile) currently builds and packages:
 
 It does not currently package:
 
-- the LabyStudio frontend/backend
+- the LabyNodeJS package
 - a Node.js runtime
 - the PyQt desktop GUI stack
 
@@ -117,27 +112,28 @@ Use the workspace CMake tasks or configure/build manually through the root wrapp
 
 The desktop application lives in [LabyPython/src/LabyPython/App.py](LabyPython/src/LabyPython/App.py). It prepares project state, locates the `labypath` executable, launches processing jobs, and manages logs and generated files.
 
-### LabyStudio
+### LabyNodeJS
 
-LabyStudio is a separate npm workspace. The quickest local start is:
+LabyNodeJS is a standalone TypeScript package. The quickest local start is:
 
 ```bash
-cd /workspace/LabyStudio
+cd /workspace/LabyNodeJS
 npm install
-npm run dev:launch
+npm run build
+npm test
 ```
 
-That launcher builds `@labystudio/shared`, starts the backend, and starts the Vite frontend together. Additional details are in [LabyStudio/README.md](LabyStudio/README.md).
+For a direct experiment runner, use `npm run example`. Additional details are in [LabyNodeJS/README.md](LabyNodeJS/README.md).
 
 ## Documentation Map
 
 - [docs/README.md](docs/README.md): entry point for the technical docs set.
 - [docs/repo-architecture.md](docs/repo-architecture.md): component boundaries, runtime responsibilities, and build/container layout.
 - [docs/pipeline-and-algorithms.md](docs/pipeline-and-algorithms.md): stage-by-stage processing and algorithm notes.
-- [docs/configuration-and-workflows.md](docs/configuration-and-workflows.md): config schema crosswalk and how LabyPython/LabyStudio drive the CLI.
-- [docs/protobuf-to-labystudio-mapping.md](docs/protobuf-to-labystudio-mapping.md): exact field mapping between the LabyStudio editor model and protobuf JSON.
+- [docs/configuration-and-workflows.md](docs/configuration-and-workflows.md): config schema crosswalk and how LabyPython/LabyNodeJS drive the CLI.
+- [docs/labynodejs-config-and-cache.md](docs/labynodejs-config-and-cache.md): stage payload mapping, cache keys, and manifest layout for LabyNodeJS.
 - [docs/field-generators-and-noise.md](docs/field-generators-and-noise.md): `StreamLine`, `HqNoise`, and the experimental field-generator path.
-- [LabyStudio/README.md](LabyStudio/README.md): web workbench usage and developer workflow.
+- [LabyNodeJS/README.md](LabyNodeJS/README.md): TypeScript orchestration usage and developer workflow.
 - [LabyPath/src/flatteningOverlap/README.md](LabyPath/src/flatteningOverlap/README.md): focused notes for the flattening-overlap area.
 - [LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md](LabyPath/src/flatteningOverlap/VISUAL_EXAMPLES.md): visual examples for that subsystem.
 
@@ -159,4 +155,4 @@ The documented hard C++ requirements should match [LabyPath/CMakeLists.txt](Laby
 - CGAL `6.1.1` or newer
 - Protobuf `34.1.0` or newer
 
-The build also fetches or vendors additional libraries such as SVG++ and Microsoft GSL. JavaScript and Python dependencies are managed separately inside `LabyStudio/` and `LabyPython/`.
+The build also fetches or vendors additional libraries such as SVG++ and Microsoft GSL. JavaScript and Python dependencies are managed separately inside `LabyNodeJS/` and `LabyPython/`.

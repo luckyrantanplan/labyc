@@ -15,35 +15,35 @@ Inside `routing`, the notable nested sections are:
 
 The root executable reads a protobuf-shaped JSON file and then dispatches whichever sections are present.
 
-## LabyStudio Crosswalk
+## LabyNodeJS Crosswalk
 
-LabyStudio does not generate TypeScript from the protobuf schema. Instead, it maintains a parallel application model in [../LabyStudio/packages/shared/src/index.ts](../LabyStudio/packages/shared/src/index.ts) and the backend job runner in [../LabyStudio/apps/server/src/lib/jobs.ts](../LabyStudio/apps/server/src/lib/jobs.ts).
+LabyNodeJS does not generate TypeScript from the protobuf schema. Instead, it keeps hand-written stage types and payload builders in [../LabyNodeJS/src/types.ts](../LabyNodeJS/src/types.ts), [../LabyNodeJS/src/stages.ts](../LabyNodeJS/src/stages.ts), and [../LabyNodeJS/src/payload.ts](../LabyNodeJS/src/payload.ts), then executes them through [../LabyNodeJS/src/runner.ts](../LabyNodeJS/src/runner.ts).
 
-That arrangement is workable, but it creates a few mapping details that the docs should make explicit.
+That arrangement stays close to the protobuf contract while still allowing small TypeScript files to compose experiments directly.
 
 ### Important Mapping Details
 
 - `buildGridConfigPayload`, `buildRouteConfigPayload`, and `buildRenderConfigPayload` each produce only the stage-specific subset needed for the current job.
-- LabyStudio emits protobuf JSON names, which means camelCase keys in JSON even when the `.proto` field is written in snake_case.
+- LabyNodeJS emits protobuf JSON names, which means camelCase keys in JSON even when the `.proto` field is written in snake_case.
 - `maxRoutingAttempt` is serialized as a string in the generated payload, matching protobuf JSON expectations for the `uint64` field.
-- `enableAlternateRouting` exists in the editor-side model and controls whether the `alternateRouting` message is emitted at all.
+- `enableAlternateRouting` exists in the TypeScript-side model and controls whether the `alternateRouting` message is emitted at all.
 - `gGraphicRendering.penConfig` later becomes the internal `HqNoise` configuration used by `PenStroke`.
 
-These details are easy to miss if someone reads only the protobuf or only the web editor code.
+These details are easy to miss if someone reads only the protobuf or only the TypeScript orchestration layer.
 
-A field-by-field mapping table is available in [protobuf-to-labystudio-mapping.md](protobuf-to-labystudio-mapping.md).
+A field-by-field mapping table and cache description are available in [labynodejs-config-and-cache.md](labynodejs-config-and-cache.md).
 
-## LabyStudio Job Flow
+## LabyNodeJS Execution Flow
 
-The backend flow in [../LabyStudio/apps/server/src/lib/jobs.ts](../LabyStudio/apps/server/src/lib/jobs.ts) is roughly:
+The execution flow in [../LabyNodeJS/src/runner.ts](../LabyNodeJS/src/runner.ts) is roughly:
 
-1. read the workflow state from the web application
-2. materialize stage-specific config payloads
-3. write config and log files in the job workspace
-4. invoke `labypath`
-5. collect status and outputs for the frontend
+1. resolve the workspace root, project directory, and candidate `labypath` binary
+2. materialize stage-specific config payloads from the TypeScript stage descriptors
+3. hash the effective payload, input SVG, and binary to derive a deterministic cache key
+4. check `cache/cache.json` inside the selected project data folder for a matching completed output whose hash still matches the file on disk
+5. on a miss, write stage config and log files, invoke `labypath`, and persist the new output metadata
 
-This keeps the browser application thin. The server owns filesystem access and process execution.
+This keeps the library surface small while still giving scripts precise control over parameters and intermediate outputs.
 
 ## LabyPython Workflow
 
@@ -54,21 +54,21 @@ The desktop workflow in [../LabyPython/src/LabyPython/App.py](../LabyPython/src/
 3. launch the CLI with the prepared config
 4. surface logs and generated outputs back to the user
 
-The Python and web tools therefore share the same engine but provide different user experiences and integration surfaces.
+The Python and TypeScript tools therefore share the same engine but provide different user experiences and integration surfaces.
 
 ## Documentation Guidance
 
 When updating config-related docs, prefer these rules:
 
 - treat `AllConfig.proto` as the source of truth for the engine contract
-- document LabyStudio and LabyPython as orchestration layers around that contract
-- call out editor-side convenience fields when they do not map one-to-one to protobuf
+- document LabyNodeJS and LabyPython as orchestration layers around that contract
+- call out TypeScript-side convenience fields when they do not map one-to-one to protobuf
 - keep stage ordering aligned with the actual dispatch in `MessageIO.cpp`
 
 ## Related Reading
 
 - [repo-architecture.md](repo-architecture.md)
 - [pipeline-and-algorithms.md](pipeline-and-algorithms.md)
-- [protobuf-to-labystudio-mapping.md](protobuf-to-labystudio-mapping.md)
+- [labynodejs-config-and-cache.md](labynodejs-config-and-cache.md)
 - [field-generators-and-noise.md](field-generators-and-noise.md)
-- [../LabyStudio/README.md](../LabyStudio/README.md)
+- [../LabyNodeJS/README.md](../LabyNodeJS/README.md)
