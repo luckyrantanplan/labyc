@@ -27,12 +27,10 @@ downloads/
 *.egg-info/
 
 # Node / web
-LabyStudio/node_modules/
-LabyStudio/apps/*/node_modules/
-LabyStudio/packages/*/node_modules/
-LabyStudio/dist/
-LabyStudio/apps/*/dist/
-LabyStudio/packages/*/dist/
+LabyNodeJS/node_modules/
+LabyNodeJS/dist/
+LabyNodeJS/coverage/
+LabyNodeJS/.tmp-real-*/
 
 # CodeQL analysis artifacts
 _codeql_*/
