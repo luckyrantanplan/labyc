@@ -101,9 +101,25 @@ void test("buildStreamLineConfigPayload uses the field input and svg output path
     "/tmp/stream.svg",
     streamLineConfigFixture,
   ) as {
-    streamLine: { filepaths: { inputfile: string; outputfile: string } };
+    streamLine: {
+      filepaths: { inputfile: string; outputfile: string };
+      simplifyDistance: number;
+      dRat: number;
+      divisor: number;
+      strokeThickness: number;
+      resolution?: unknown;
+      epsilon?: unknown;
+      size?: unknown;
+    };
   };
 
   assert.equal(payload.streamLine.filepaths.inputfile, "/tmp/noise.field");
   assert.equal(payload.streamLine.filepaths.outputfile, "/tmp/stream.svg");
+  assert.equal(payload.streamLine.simplifyDistance, 0.05);
+  assert.equal(payload.streamLine.dRat, 1);
+  assert.equal(payload.streamLine.divisor, 0.45);
+  assert.equal(payload.streamLine.strokeThickness, 0.1);
+  assert.equal("resolution" in payload.streamLine, false);
+  assert.equal("epsilon" in payload.streamLine, false);
+  assert.equal("size" in payload.streamLine, false);
 });

@@ -2,9 +2,9 @@
 
 #include <string>
 
+#include "../protoc/AllConfig.pb.h"
 #include "ComplexField2D.h"
 #include "HqNoise.h"
-#include "../protoc/AllConfig.pb.h"
 
 namespace laby::generator {
 

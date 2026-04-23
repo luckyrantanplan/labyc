@@ -50,8 +50,9 @@ auto mixColor(const svg::Color::Rgb& startColor, const svg::Color::Rgb& endColor
               double position) -> svg::Color::Rgb {
     const double clampedPosition = std::clamp(position, 0.0, 1.0);
     const auto lerp = [clampedPosition](int32_t startValue, int32_t endValue) {
-        return static_cast<int32_t>(std::lround(static_cast<double>(startValue) +
-                                                clampedPosition * static_cast<double>(endValue - startValue)));
+        return static_cast<int32_t>(
+            std::lround(static_cast<double>(startValue) +
+                        clampedPosition * static_cast<double>(endValue - startValue)));
     };
     return {lerp(startColor.red, endColor.red), lerp(startColor.green, endColor.green),
             lerp(startColor.blue, endColor.blue)};
@@ -64,15 +65,14 @@ auto rainbowColor(double normalizedMagnitude) -> svg::Color {
                                    {0, static_cast<int32_t>(kMaximumColorValue), 0}, t * 3.0));
     }
     if (t < (2.0 / 3.0)) {
-        return svg::Color(mixColor({0, static_cast<int32_t>(kMaximumColorValue), 0},
-                                   {static_cast<int32_t>(kMaximumColorValue),
-                                    static_cast<int32_t>(kMaximumColorValue), 0},
-                                   (t - (1.0 / 3.0)) * 3.0));
+        return svg::Color(mixColor(
+            {0, static_cast<int32_t>(kMaximumColorValue), 0},
+            {static_cast<int32_t>(kMaximumColorValue), static_cast<int32_t>(kMaximumColorValue), 0},
+            (t - (1.0 / 3.0)) * 3.0));
     }
-    return svg::Color(mixColor({static_cast<int32_t>(kMaximumColorValue),
-                                static_cast<int32_t>(kMaximumColorValue), 0},
-                               {static_cast<int32_t>(kMaximumColorValue), 0, 0},
-                               (t - (2.0 / 3.0)) * 3.0));
+    return svg::Color(mixColor(
+        {static_cast<int32_t>(kMaximumColorValue), static_cast<int32_t>(kMaximumColorValue), 0},
+        {static_cast<int32_t>(kMaximumColorValue), 0, 0}, (t - (2.0 / 3.0)) * 3.0));
 }
 
 auto resolveStride(const proto::HqNoise& config, const ComplexField2D& field) -> uint32_t {
@@ -107,12 +107,14 @@ auto HqNoise2DSampler::sample(const proto::HqNoise& config) -> ComplexField2D {
 
     using FieldIndex = boost::multi_array<std::complex<double>, 2>::index;
     field.values.resize(boost::extents[static_cast<FieldIndex>(field.meta.width)]
-                                     [static_cast<FieldIndex>(field.meta.height)]);
+                                      [static_cast<FieldIndex>(field.meta.height)]);
 
     for (uint32_t xIndex = 0; xIndex < field.meta.width; ++xIndex) {
         for (uint32_t yIndex = 0; yIndex < field.meta.height; ++yIndex) {
-            const double xCoordinate = field.meta.originX + static_cast<double>(xIndex) * field.meta.scale;
-            const double yCoordinate = field.meta.originY + static_cast<double>(yIndex) * field.meta.scale;
+            const double xCoordinate =
+                field.meta.originX + static_cast<double>(xIndex) * field.meta.scale;
+            const double yCoordinate =
+                field.meta.originY + static_cast<double>(yIndex) * field.meta.scale;
             field.values[xIndex][yIndex] = noise.getComplex(xCoordinate, yCoordinate);
         }
     }
@@ -134,12 +136,13 @@ auto HqNoise2DSampler::writePreviewSvg(const std::string& path, const ComplexFie
     const svg::Dimensions dimensions(
         svg::Dimensions::Size{static_cast<double>(field.meta.width) * field.meta.scale,
                               static_cast<double>(field.meta.height) * field.meta.scale});
-    svg::DocumentSVG document(path, svg::Layout(dimensions, svg::Layout::Origin::TopLeft,
-                                                kDefaultPreviewScale));
+    svg::DocumentSVG document(
+        path, svg::Layout(dimensions, svg::Layout::Origin::TopLeft, kDefaultPreviewScale));
 
     const uint32_t stride = resolveStride(config, field);
     const double strideScale = static_cast<double>(stride) * field.meta.scale;
-    const double magnitudeUpperBound = std::max(maxMagnitude(field), std::numeric_limits<double>::epsilon());
+    const double magnitudeUpperBound =
+        std::max(maxMagnitude(field), std::numeric_limits<double>::epsilon());
 
     for (uint32_t xIndex = 0; xIndex < field.meta.width; xIndex += stride) {
         for (uint32_t yIndex = 0; yIndex < field.meta.height; yIndex += stride) {
@@ -147,17 +150,20 @@ auto HqNoise2DSampler::writePreviewSvg(const std::string& path, const ComplexFie
             const double magnitude = std::abs(value);
             const double normalizedMagnitude = magnitude / magnitudeUpperBound;
             const svg::Color color = rainbowColor(normalizedMagnitude);
-            const double centerX = field.meta.originX + (static_cast<double>(xIndex) + 0.5) * field.meta.scale;
-            const double centerY = field.meta.originY + (static_cast<double>(yIndex) + 0.5) * field.meta.scale;
+            const double centerX =
+                field.meta.originX + (static_cast<double>(xIndex) + 0.5) * field.meta.scale;
+            const double centerY =
+                field.meta.originY + (static_cast<double>(yIndex) + 0.5) * field.meta.scale;
 
             if (config.previewmode() == proto::HqNoise_PreviewMode_MAGNITUDE) {
-                const double cellWidth = std::min(strideScale,
-                                                  static_cast<double>(field.meta.width - xIndex) * field.meta.scale);
-                const double cellHeight = std::min(strideScale,
-                                                   static_cast<double>(field.meta.height - yIndex) * field.meta.scale);
-                document << svg::Rectangle(laby::Point_2(centerX - cellWidth * 0.5,
-                                                         centerY - cellHeight * 0.5),
-                                           cellWidth, cellHeight, svg::Fill(color));
+                const double cellWidth = std::min(
+                    strideScale, static_cast<double>(field.meta.width - xIndex) * field.meta.scale);
+                const double cellHeight =
+                    std::min(strideScale,
+                             static_cast<double>(field.meta.height - yIndex) * field.meta.scale);
+                document << svg::Rectangle(
+                    laby::Point_2(centerX - cellWidth * 0.5, centerY - cellHeight * 0.5), cellWidth,
+                    cellHeight, svg::Fill(color));
                 continue;
             }
 
@@ -167,8 +173,9 @@ auto HqNoise2DSampler::writePreviewSvg(const std::string& path, const ComplexFie
             const std::complex<double> offset = direction * (vectorLength * 0.5);
             const laby::Point_2 startPoint(centerX - offset.real(), centerY - offset.imag());
             const laby::Point_2 endPoint(centerX + offset.real(), centerY + offset.imag());
-            document << svg::Line(startPoint, endPoint,
-                                  svg::Stroke(std::max(field.meta.scale * 0.15, kMinimumStrokeWidth), color));
+            document << svg::Line(
+                startPoint, endPoint,
+                svg::Stroke(std::max(field.meta.scale * 0.15, kMinimumStrokeWidth), color));
         }
     }
 

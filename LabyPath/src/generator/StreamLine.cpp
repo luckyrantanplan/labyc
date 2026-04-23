@@ -93,8 +93,26 @@ StreamLine::StreamLine(const Config& config) : _config(config), _radialList(0), 
 }
 
 StreamLine::StreamLine(const Config& config, boost::multi_array<std::complex<double>, 2> field)
-    : StreamLine(config) {
-    setField(std::move(field));
+    : _config(config), _radialList(0), _circularList(1) {
+    if (field.num_dimensions() != 2 || field.num_elements() == 0) {
+        throw std::runtime_error("streamline field must be a non-empty 2D array");
+    }
+
+    _config.old_RegularGrid = true;
+    _xSampleCount = field.shape()[0];
+    _ySampleCount = field.shape()[1];
+    if (_config.sample_scale <= 0.0 && _config.resolution > 0) {
+        _config.sample_scale = 1.0 / static_cast<double>(_config.resolution);
+    }
+    if (_config.size <= 0.0) {
+        _config.size =
+            static_cast<double>(std::max(_xSampleCount, _ySampleCount)) / gridSamplesPerUnit();
+    }
+
+    using FieldIndex = boost::multi_array<std::complex<double>, 2>::index;
+    _field.resize(boost::extents[static_cast<FieldIndex>(_xSampleCount)]
+                                [static_cast<FieldIndex>(_ySampleCount)]);
+    _field = std::move(field);
 }
 
 void StreamLine::setField(boost::multi_array<std::complex<double>, 2> field) {
@@ -109,9 +127,13 @@ void StreamLine::setField(boost::multi_array<std::complex<double>, 2> field) {
         _config.sample_scale = 1.0 / static_cast<double>(_config.resolution);
     }
     if (_config.size <= 0.0) {
-        _config.size = static_cast<double>(std::max(_xSampleCount, _ySampleCount)) /
-                       gridSamplesPerUnit();
+        _config.size =
+            static_cast<double>(std::max(_xSampleCount, _ySampleCount)) / gridSamplesPerUnit();
     }
+
+    using FieldIndex = boost::multi_array<std::complex<double>, 2>::index;
+    _field.resize(boost::extents[static_cast<FieldIndex>(_xSampleCount)]
+                                [static_cast<FieldIndex>(_ySampleCount)]);
     _field = std::move(field);
 }
 

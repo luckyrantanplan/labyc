@@ -60,19 +60,19 @@ class StreamLine {
         static constexpr double kDefaultDRat = 1.0;
         static constexpr double kDefaultEpsilon = 0.01;
 
-                constexpr Config()
-                        : resolution(4), simplify_distance(kDefaultSimplifyDistance), dRat(kDefaultDRat),
-                            epsilon(kDefaultEpsilon), size(0.0), divisor(0.0), sample_scale(0.0),
-                            old_RegularGrid(false) {}
+        constexpr Config()
+            : resolution(4), simplify_distance(kDefaultSimplifyDistance), dRat(kDefaultDRat),
+              epsilon(kDefaultEpsilon), size(0.0), divisor(0.0), sample_scale(0.0),
+              old_RegularGrid(false) {}
 
-                int resolution;
-                double simplify_distance; // 1.6
-                double dRat;
-                double epsilon;           // remaining field outside the feature
-                double size;              // width of the square canvas
-                double divisor;           // distance between lines
-                double sample_scale;      // world units per sample for regular-grid fields
-                bool old_RegularGrid;
+        int resolution;
+        double simplify_distance; // 1.6
+        double dRat;
+        double epsilon;      // remaining field outside the feature
+        double size;         // width of the square canvas
+        double divisor;      // distance between lines
+        double sample_scale; // world units per sample for regular-grid fields
+        bool old_RegularGrid;
     };
 
     struct SpiralParameters {

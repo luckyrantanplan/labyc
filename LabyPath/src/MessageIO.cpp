@@ -38,7 +38,8 @@ auto runHqNoiseStage(const proto::HqNoise& config) -> void {
 }
 
 auto buildStreamLineConfig(const proto::StreamLineCfg& config,
-                           const generator::ComplexField2DMeta& meta) -> generator::StreamLine::Config {
+                           const generator::ComplexField2DMeta& meta)
+    -> generator::StreamLine::Config {
     generator::StreamLine::Config streamConfig{};
     streamConfig.resolution = config.resolution() > 0
                                   ? config.resolution()
@@ -56,16 +57,17 @@ auto buildStreamLineConfig(const proto::StreamLineCfg& config,
 }
 
 auto runStreamLineStage(const proto::StreamLineCfg& config) -> void {
-    generator::ComplexField2D field =
-        generator::readComplexField(config.filepaths().inputfile());
-    generator::StreamLine streamLine(buildStreamLineConfig(config, field.meta), std::move(field.values));
+    generator::ComplexField2D field = generator::readComplexField(config.filepaths().inputfile());
+    generator::StreamLine streamLine(buildStreamLineConfig(config, field.meta),
+                                     std::move(field.values));
     streamLine.render();
 
-    const CGAL::Bbox_2 bbox(field.meta.originX, field.meta.originY,
-                            field.meta.originX + static_cast<double>(field.meta.width) * field.meta.scale,
-                            field.meta.originY + static_cast<double>(field.meta.height) * field.meta.scale);
-    GraphicRendering::printRibbonSvg(bbox, config.filepaths().outputfile(), config.strokethickness(),
-                                     streamLine.ribbons());
+    const CGAL::Bbox_2 bbox(
+        field.meta.originX, field.meta.originY,
+        field.meta.originX + static_cast<double>(field.meta.width) * field.meta.scale,
+        field.meta.originY + static_cast<double>(field.meta.height) * field.meta.scale);
+    GraphicRendering::printRibbonSvg(bbox, config.filepaths().outputfile(),
+                                     config.strokethickness(), streamLine.ribbons());
 }
 
 } // namespace

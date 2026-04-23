@@ -99,12 +99,19 @@ message HqNoise {
 
 message StreamLineCfg {
 	Filepaths filepaths = 1;
+	// Legacy regular-grid sample density. For field-driven input this is derived from ComplexField2DData.scale.
 	int32 resolution = 2;
+	// Post-placement polyline decimation distance.
 	double simplifyDistance = 3;
+	// CGAL Stream_lines_2 saturation ratio.
 	double dRat = 4;
+	// Legacy spiral-field shaping parameter. Not used by the field-driven streamline stage.
 	double epsilon = 5;
+	// Legacy regular-grid world-space canvas size. For field-driven input this is derived from width/height/scale.
 	double size = 6;
+	// Desired streamline separating distance in world units.
 	double divisor = 7;
+	// Output SVG stroke width.
 	double strokeThickness = 8;
 }
 

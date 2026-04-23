@@ -27,11 +27,8 @@ async function main(): Promise<void> {
       ),
       streamline(
         {
-          resolution: 0,
           simplifyDistance: 0.05,
           dRat: 1,
-          epsilon: 0.01,
-          size: 8,
           divisor: 0.45,
           strokeThickness: 0.1,
         },

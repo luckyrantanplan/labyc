@@ -77,12 +77,13 @@ export interface RenderConfig {
 }
 
 export interface StreamLineConfig {
-  resolution: number;
+  // Polyline decimation tolerance applied after CGAL generates the streamlines.
   simplifyDistance: number;
+  // CGAL saturation ratio controlling when a cavity is still large enough to seed a new streamline.
   dRat: number;
-  epsilon: number;
-  size: number;
+  // Desired streamline spacing in world units.
   divisor: number;
+  // Final SVG stroke width, applied after streamline generation.
   strokeThickness: number;
 }
 
