@@ -63,8 +63,8 @@ class Intersection {
   private:
     std::size_t _first;
     std::size_t _second;
-    mutable Handle _handle{};
-    mutable Handle _familyHandle{};
+    mutable Handle _handle;
+    mutable Handle _familyHandle;
 };
 } /* namespace laby */
 
@@ -107,9 +107,9 @@ class Family {
                                 CGAL::Union_find<std::size_t>& unionFind);
 
   private:
-    std::vector<Intersection> _intersections{};
-    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches{};
-    mutable CGAL::Union_find<std::size_t>::handle _handle{};
+    std::vector<Intersection> _intersections;
+    std::unordered_map<std::size_t, std::vector<std::size_t>> _patches;
+    mutable CGAL::Union_find<std::size_t>::handle _handle;
 };
 
 } /* namespace laby */

@@ -10,13 +10,11 @@
 
 #include <CGAL/Bbox_2.h>
 #include <cmath>
-#include <complex>
 #include <cstddef>
 #include <vector>
 
 #include "../Anisotrop/Cell.h"
 #include "../Anisotrop/Placement.h"
-#include "../Anisotrop/Routing.h"
 #include "../GeomFeatures.h"
 #include "../PolyConvex.h"
 #include "../Rendering/Fenetre.h"

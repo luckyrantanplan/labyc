@@ -1,12 +1,16 @@
 import {
   type GridConfig,
   type GridStage,
+  type NoiseConfig,
+  type NoiseStage,
   type PipelineStage,
   type RenderConfig,
   type RenderStage,
   type RouteConfig,
   type RouteStage,
   type SourceStage,
+  type StreamLineConfig,
+  type StreamLineStage,
 } from "./types.js";
 
 export interface StageOptions {
@@ -14,7 +18,13 @@ export interface StageOptions {
 }
 
 function withOptionalLabel<
-  TStage extends SourceStage | GridStage | RouteStage | RenderStage,
+  TStage extends
+    | SourceStage
+    | NoiseStage
+    | GridStage
+    | RouteStage
+    | RenderStage
+    | StreamLineStage,
 >(stage: TStage, label: string | undefined): TStage {
   if (label === undefined) {
     return stage;
@@ -34,6 +44,19 @@ export function source(
     {
       kind: "source",
       sourcePath,
+    },
+    options.label,
+  );
+}
+
+export function noise(
+  config: NoiseConfig,
+  options: StageOptions = {},
+): NoiseStage {
+  return withOptionalLabel(
+    {
+      kind: "noise",
+      config,
     },
     options.label,
   );
@@ -72,6 +95,19 @@ export function render(
   return withOptionalLabel(
     {
       kind: "render",
+      config,
+    },
+    options.label,
+  );
+}
+
+export function streamline(
+  config: StreamLineConfig,
+  options: StageOptions = {},
+): StreamLineStage {
+  return withOptionalLabel(
+    {
+      kind: "streamline",
       config,
     },
     options.label,

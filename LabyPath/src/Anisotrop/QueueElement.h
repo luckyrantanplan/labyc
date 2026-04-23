@@ -110,7 +110,7 @@ class QueueElement {
     QueueCost _cost;
     int32_t _direction = -1;
     int32_t _parent = -1;
-    HandleType _handle{}; // Index in MMMPriortyQueue
+    HandleType _handle; // Index in MMMPriortyQueue
 };
 
 using PriorityQueue = QueueElement::PriorityQueue;

@@ -60,13 +60,19 @@ class StreamLine {
         static constexpr double kDefaultDRat = 1.0;
         static constexpr double kDefaultEpsilon = 0.01;
 
-        int resolution = 4;
-        double simplify_distance = kDefaultSimplifyDistance;
-        double dRat = kDefaultDRat;       // 1.6
-        double epsilon = kDefaultEpsilon; // remaining field outside the feature
-        double size;                      // width of the square canvas
-        double divisor;                   // distance between lines
-        bool old_RegularGrid = false;
+                constexpr Config()
+                        : resolution(4), simplify_distance(kDefaultSimplifyDistance), dRat(kDefaultDRat),
+                            epsilon(kDefaultEpsilon), size(0.0), divisor(0.0), sample_scale(0.0),
+                            old_RegularGrid(false) {}
+
+                int resolution;
+                double simplify_distance; // 1.6
+                double dRat;
+                double epsilon;           // remaining field outside the feature
+                double size;              // width of the square canvas
+                double divisor;           // distance between lines
+                double sample_scale;      // world units per sample for regular-grid fields
+                bool old_RegularGrid;
     };
 
     struct SpiralParameters {
@@ -89,7 +95,7 @@ class StreamLine {
         using KernelToK = CGAL::Cartesian_converter<Kernel, K>;
 
         explicit VectorCompute(const double resolution)
-            : _kernelToK(), _scale(CGAL::SCALING, resolution) {}
+            : _kernelToK{}, _scale(CGAL::SCALING, resolution), _epsilon(kDefaultEpsilon) {}
 
         void addSegLong(std::vector<CGAL::Point_2<K>>& pointList,
                         const CGAL::Segment_2<Kernel>& seg,
@@ -101,7 +107,7 @@ class StreamLine {
       private:
         static constexpr double kDefaultEpsilon = 0.001;
 
-        KernelToK _kernelToK;
+        KernelToK _kernelToK{};
         CGAL::Aff_transformation_2<K> _scale;
         double _epsilon = kDefaultEpsilon;
 
@@ -118,12 +124,18 @@ class StreamLine {
         std::list<std::pair<Strl_polyline::iterator, Strl_polyline::iterator>>;
 
     explicit StreamLine(const Config& config);
+    StreamLine(const Config& config, boost::multi_array<std::complex<double>, 2> field);
 
     void addToArrangement(Arrangement_2& arr);
 
     void drawSpiral(const SpiralParameters& parameters);
 
     void render();
+    void setField(boost::multi_array<std::complex<double>, 2> field);
+
+    [[nodiscard]] auto ribbons() const -> std::vector<Ribbon> {
+        return {_circularList, _radialList};
+    }
 
     static auto
     getRadial(const Config& config,
@@ -148,6 +160,7 @@ class StreamLine {
     }
 
     void postStreamCompute(const Strl_iterator_container& stream_lines, Ribbon& ribbon) const;
+    [[nodiscard]] auto gridSamplesPerUnit() const -> double;
 
     static auto generateTriangularField(std::vector<CGAL::Point_2<K>> pointList,
                                         std::vector<CGAL::Vector_2<K>> vectorList,

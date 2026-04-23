@@ -19,8 +19,10 @@ import { createRunLogger, formatDuration } from "./logging.js";
 import { artifactStem, buildStagePayload } from "./payload.js";
 import type {
   CacheEntry,
+  GeneratedStage,
   PipelineRunResult,
   PipelineStage,
+  NoiseStage,
   RunPipelineOptions,
   SourceStage,
   StageArtifact,
@@ -29,17 +31,17 @@ import type {
 
 function ensurePipelineShape(
   stages: readonly PipelineStage[],
-): asserts stages is readonly [SourceStage, ...PipelineStage[]] {
+): asserts stages is readonly [SourceStage | NoiseStage, ...PipelineStage[]] {
   if (stages.length === 0) {
     throw new Error("Pipeline must contain at least one stage.");
   }
 
-  if (stages[0]?.kind !== "source") {
-    throw new Error("Pipeline must start with a source stage.");
+  if (stages[0]?.kind !== "source" && stages[0]?.kind !== "noise") {
+    throw new Error("Pipeline must start with a source or noise stage.");
   }
 }
 
-function resolveStagePaths(
+function resolveTransformerStagePaths(
   svgDir: string,
   inputPath: string,
   stageKind: TransformerStage["kind"],
@@ -52,6 +54,21 @@ function resolveStagePaths(
     configPath: path.join(configDir, `${stem}.json`),
     logPath: path.join(logDir, `${stem}.log`),
     outputPath: path.join(svgDir, `${stem}.svg`),
+  };
+}
+
+function resolveNoiseStagePaths(
+  svgDir: string,
+  cacheKey: string,
+  configDir: string,
+  logDir: string,
+) {
+  const stem = artifactStem("noise", "noise", cacheKey);
+  return {
+    configPath: path.join(configDir, `${stem}.json`),
+    logPath: path.join(logDir, `${stem}.log`),
+    outputPath: path.join(svgDir, `${stem}.field`),
+    previewPath: path.join(svgDir, `${stem}.svg`),
   };
 }
 
@@ -85,6 +102,30 @@ async function hasUsableSvgOutput(outputPath: string): Promise<boolean> {
   }
 
   return hasDrawableSvgContent(await readFile(outputPath, "utf8"));
+}
+
+async function hasUsableFieldOutput(outputPath: string): Promise<boolean> {
+  if (!existsSync(outputPath)) {
+    return false;
+  }
+
+  const content = await readFile(outputPath);
+  return content.byteLength > 0;
+}
+
+async function hasUsableStageOutput(
+  stageKind: GeneratedStage["kind"],
+  outputPath: string,
+  previewPath?: string,
+): Promise<boolean> {
+  if (stageKind === "noise") {
+    if (!(await hasUsableFieldOutput(outputPath))) {
+      return false;
+    }
+    return previewPath === undefined || (await hasUsableSvgOutput(previewPath));
+  }
+
+  return hasUsableSvgOutput(outputPath);
 }
 
 async function executeStage(
@@ -159,6 +200,8 @@ async function resolveCacheDecision(
   entry: CacheEntry | undefined,
   binaryFingerprint: string,
   outputHash: string | undefined,
+  stageKind: GeneratedStage["kind"],
+  previewPath?: string,
 ): Promise<{ cached: boolean; reason: string }> {
   if (force) {
     return {
@@ -195,10 +238,10 @@ async function resolveCacheDecision(
     };
   }
 
-  if (!(await hasUsableSvgOutput(entry.outputPath))) {
+  if (!(await hasUsableStageOutput(stageKind, entry.outputPath, previewPath))) {
     return {
       cached: false,
-      reason: "cached SVG is not drawable",
+      reason: "cached stage output is not usable",
     };
   }
 
@@ -277,40 +320,214 @@ export async function runPipeline(
       await logger.info("Gallery disabled");
     }
 
-    const sourceStage = stages[0];
-    let currentPath = requireSvgPath(
-      workspaceRoot,
-      sourceStage.sourcePath,
-      sourceStage.label ?? "Source SVG",
-    );
+    const firstStage = stages[0];
+    let currentPath: string;
 
-    gallery?.updateStage(0, {
-      status: "completed",
-      svgPath: currentPath,
-      outputPath: currentPath,
-      message: "Source SVG is ready.",
-    });
+    if (firstStage.kind === "source") {
+      currentPath = requireSvgPath(
+        workspaceRoot,
+        firstStage.sourcePath,
+        firstStage.label ?? "Source SVG",
+      );
 
-    const sourceHash = await hashFile(currentPath);
-    results.push(
-      createStageArtifact(
-        {
-          stageKind: "source",
-          inputPath: currentPath,
-          outputPath: currentPath,
-          cached: true,
-          cacheReason: "source stage",
-          durationMs: 0,
-          outputHash: sourceHash,
-        },
-        sourceStage.label,
-      ),
-    );
-    await logger.info("Source stage ready", {
-      label: sourceStage.label ?? "Source SVG",
-      outputPath: currentPath,
-      outputHash: sourceHash,
-    });
+      gallery?.updateStage(0, {
+        status: "completed",
+        svgPath: currentPath,
+        outputPath: currentPath,
+        message: "Source SVG is ready.",
+      });
+
+      const sourceHash = await hashFile(currentPath);
+      results.push(
+        createStageArtifact(
+          {
+            stageKind: "source",
+            inputPath: currentPath,
+            outputPath: currentPath,
+            cached: true,
+            cacheReason: "source stage",
+            durationMs: 0,
+            outputHash: sourceHash,
+          },
+          firstStage.label,
+        ),
+      );
+      await logger.info("Source stage ready", {
+        label: firstStage.label ?? "Source SVG",
+        outputPath: currentPath,
+        outputHash: sourceHash,
+      });
+    } else {
+      const stageStartedAtMs = Date.now();
+      const previewPayload = buildStagePayload(
+        firstStage,
+        "",
+        "__OUTPUT_PATH__",
+        "__PREVIEW_PATH__",
+      );
+      const payloadHash = hashString(stableStringify(previewPayload));
+      const cacheKey = hashString(
+        stableStringify({
+          stageKind: firstStage.kind,
+          binaryFingerprint,
+          payloadHash,
+        }),
+      );
+      const stagePaths = resolveNoiseStagePaths(
+        layout.svgDir,
+        cacheKey,
+        layout.configDir,
+        layout.logDir,
+      );
+      const payload = buildStagePayload(
+        firstStage,
+        "",
+        stagePaths.outputPath,
+        stagePaths.previewPath,
+      );
+      const existingEntry = manifest.entries[cacheKey];
+      const existingOutputHash = await readOutputHashIfPresent(
+        existingEntry?.outputPath ?? stagePaths.outputPath,
+      );
+      const cacheDecision = await resolveCacheDecision(
+        options.force,
+        existingEntry,
+        binaryFingerprint,
+        existingOutputHash,
+        firstStage.kind,
+        stagePaths.previewPath,
+      );
+
+      await logger.info("Stage cache evaluated", {
+        stageIndex: 0,
+        stageKind: firstStage.kind,
+        cacheKey,
+        payloadHash,
+        decision: cacheDecision.cached ? "hit" : "miss",
+        reason: cacheDecision.reason,
+      });
+
+      gallery?.updateStage(0, {
+        outputPath: stagePaths.outputPath,
+        message: "Waiting for the noise field to appear.",
+        status: "waiting",
+      });
+
+      if (cacheDecision.cached && existingEntry !== undefined) {
+        const stageDurationMs = Date.now() - stageStartedAtMs;
+        gallery?.updateStage(0, {
+          status: "cached",
+          svgPath: stagePaths.previewPath,
+          outputPath: existingEntry.outputPath,
+          message: "Reused cached noise field.",
+        });
+        results.push(
+          createStageArtifact(
+            {
+              stageKind: firstStage.kind,
+              inputPath: existingEntry.outputPath,
+              outputPath: existingEntry.outputPath,
+              configPath: existingEntry.configPath,
+              logPath: existingEntry.logPath,
+              cached: true,
+              cacheReason: cacheDecision.reason,
+              cacheKey,
+              durationMs: stageDurationMs,
+              outputHash: existingEntry.outputHash,
+            },
+            firstStage.label,
+          ),
+        );
+        currentPath = existingEntry.outputPath;
+      } else {
+        gallery?.updateStage(0, {
+          status: "running",
+          outputPath: stagePaths.outputPath,
+          message: "Generating the noise field.",
+        });
+
+        await writeFile(
+          stagePaths.configPath,
+          `${JSON.stringify(payload, null, 2)}\n`,
+          "utf8",
+        );
+        const executionResult = await executeStage(
+          binaryPath,
+          workspaceRoot,
+          stagePaths.configPath,
+          stagePaths.logPath,
+        );
+
+        if (
+          !(await hasUsableStageOutput(
+            "noise",
+            stagePaths.outputPath,
+            stagePaths.previewPath,
+          ))
+        ) {
+          gallery?.failStage(
+            0,
+            `Expected noise stage outputs to be created: ${stagePaths.outputPath}`,
+          );
+          throw new Error(
+            `Expected noise stage outputs to be created: ${stagePaths.outputPath}`,
+          );
+        }
+
+        const outputHash = await hashFile(stagePaths.outputPath);
+        const stageDurationMs = Date.now() - stageStartedAtMs;
+        const now = new Date().toISOString();
+        const entry: CacheEntry = {
+          cacheKey,
+          stageKind: firstStage.kind,
+          binaryFingerprint,
+          inputPath: stagePaths.outputPath,
+          inputHash: "",
+          outputPath: stagePaths.outputPath,
+          outputHash,
+          configPath: stagePaths.configPath,
+          logPath: stagePaths.logPath,
+          payloadHash,
+          payload,
+          createdAt: existingEntry?.createdAt ?? now,
+          updatedAt: now,
+          status: "completed",
+        };
+        setCacheEntry(manifest, entry);
+
+        gallery?.updateStage(0, {
+          status: "completed",
+          svgPath: stagePaths.previewPath,
+          outputPath: stagePaths.outputPath,
+          message: "Noise field created.",
+        });
+
+        results.push(
+          createStageArtifact(
+            {
+              stageKind: firstStage.kind,
+              inputPath: stagePaths.outputPath,
+              outputPath: stagePaths.outputPath,
+              configPath: stagePaths.configPath,
+              logPath: stagePaths.logPath,
+              cached: false,
+              cacheReason: cacheDecision.reason,
+              cacheKey,
+              durationMs: stageDurationMs,
+              executionDurationMs: executionResult.durationMs,
+              outputHash,
+            },
+            firstStage.label,
+          ),
+        );
+        currentPath = stagePaths.outputPath;
+      }
+
+      await logger.info("Noise source stage ready", {
+        label: firstStage.label ?? "Noise field",
+        outputPath: currentPath,
+      });
+    }
 
     const pipelineStartedAtMs = Date.now();
 
@@ -320,12 +537,12 @@ export async function runPipeline(
       const inputPath = currentPath;
       const inputHash = await hashFile(inputPath);
 
-      if (stage.kind === "source") {
+      if (stage.kind === "source" || stage.kind === "noise") {
         gallery?.failStage(
           stageIndex,
-          "Only the first stage can be a source stage.",
+          "Only the first stage can be a source or noise stage.",
         );
-        throw new Error("Only the first stage can be a source stage.");
+        throw new Error("Only the first stage can be a source or noise stage.");
       }
 
       await logger.info("Stage started", {
@@ -349,7 +566,7 @@ export async function runPipeline(
           payloadHash,
         }),
       );
-      const stagePaths = resolveStagePaths(
+      const stagePaths = resolveTransformerStagePaths(
         layout.svgDir,
         inputPath,
         stage.kind,
@@ -371,6 +588,7 @@ export async function runPipeline(
         existingEntry,
         binaryFingerprint,
         existingOutputHash,
+        stage.kind,
       );
 
       await logger.info("Stage cache evaluated", {
@@ -473,7 +691,7 @@ export async function runPipeline(
         );
       }
 
-      if (!(await hasUsableSvgOutput(stagePaths.outputPath))) {
+      if (!(await hasUsableStageOutput(stage.kind, stagePaths.outputPath))) {
         gallery?.failStage(
           stageIndex,
           `Expected stage output to contain drawable SVG content: ${stagePaths.outputPath}`,
@@ -481,7 +699,7 @@ export async function runPipeline(
         await logger.error("Stage failed validation", {
           stageIndex,
           stageKind: stage.kind,
-          reason: "output SVG is not drawable",
+          reason: "output stage artifact is not usable",
           outputPath: stagePaths.outputPath,
         });
         throw new Error(

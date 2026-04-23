@@ -47,7 +47,7 @@ class PolyVertex {
 
   private:
     int32_t _number = 0;
-    std::vector<Vertex*> _vertexList{};
+    std::vector<Vertex*> _vertexList;
 };
 
 } /* namespace laby */

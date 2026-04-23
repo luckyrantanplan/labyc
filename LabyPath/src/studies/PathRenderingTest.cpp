@@ -5,17 +5,14 @@
  *      Author: florian
  */
 
-#include "../flatteningOverlap/PathRendering.h"
 #include "PathRenderingTest.h"
 
 #include <CGAL/Bbox_2.h>
 #include <cmath>
-#include <complex>
 #include <cstddef>
 
 #include "../Anisotrop/Cell.h"
 #include "../Anisotrop/Placement.h"
-#include "../GeomFeatures.h"
 #include "../Rendering/Fenetre.h"
 #include "../Rendering/GraphicRendering.h"
 #include "../Rendering/PenStroke.h"

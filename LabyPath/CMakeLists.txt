@@ -168,7 +168,9 @@ set(LABYPATH_SOURCES
     src/flatteningOverlap/PathRendering.cpp
 
     # generator
+    src/generator/ComplexField2D.cpp
     src/generator/HqNoise.cpp
+    src/generator/HqNoise2DSampler.cpp
     src/generator/StreamLine.cpp
 
     # agg
@@ -261,6 +263,7 @@ if(LABYPATH_BUILD_TESTS)
         tests/test_flatteningoverlap.cpp
         tests/test_polyconvex.cpp
         tests/test_graph_coloring.cpp
+        tests/test_basic_streamline.cpp
         tests/test_smoke_svg.cpp
         tests/test_iterators.cpp
         tests/test_net.cpp

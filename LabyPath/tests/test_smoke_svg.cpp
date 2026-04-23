@@ -99,7 +99,14 @@ auto inputDir() -> std::string {
 }
 
 auto inputFile(const std::string& name) -> std::string {
-    return inputDir() + "/" + name;
+    fs::path const primary = fs::path(inputDir()) / name;
+    if (fs::exists(primary)) {
+        return primary.string();
+    }
+
+    fs::path const workspaceRoot = fs::path(__FILE__).parent_path().parent_path().parent_path();
+    fs::path const fallback = workspaceRoot / "LabyData" / "svg" / name;
+    return fallback.string();
 }
 
 auto tmpOutput(const std::string& name) -> std::string {

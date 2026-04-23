@@ -1,11 +1,30 @@
-export type TransformerStageKind = "grid" | "route" | "render";
-export type StageKind = "source" | TransformerStageKind;
+export type TransformerStageKind = "grid" | "route" | "render" | "streamline";
+export type GeneratedStageKind = "noise" | TransformerStageKind;
+export type StageKind = "source" | GeneratedStageKind;
+
+export type NoisePreviewMode = "ARROWS" | "MAGNITUDE" | "NONE";
 
 export interface GridConfig {
   simplificationOfOriginalSVG: number;
   maxSep: number;
   minSep: number;
   seed: number;
+}
+
+export interface NoiseConfig {
+  maxN: number;
+  accuracy: number;
+  amplitude: number;
+  seed: number;
+  gaussianFrequency: number;
+  powerlawFrequency: number;
+  powerlawPower: number;
+  complex: boolean;
+  width: number;
+  height: number;
+  scale: number;
+  previewMode: NoisePreviewMode;
+  previewStride: number;
 }
 
 export interface RoutePlacementConfig {
@@ -57,15 +76,32 @@ export interface RenderConfig {
   };
 }
 
+export interface StreamLineConfig {
+  resolution: number;
+  simplifyDistance: number;
+  dRat: number;
+  epsilon: number;
+  size: number;
+  divisor: number;
+  strokeThickness: number;
+}
+
 export interface TransformerConfigByKind {
   grid: GridConfig;
   route: RouteConfig;
   render: RenderConfig;
+  streamline: StreamLineConfig;
 }
 
 export interface SourceStage {
   kind: "source";
   sourcePath: string;
+  label?: string;
+}
+
+export interface NoiseStage {
+  kind: "noise";
+  config: NoiseConfig;
   label?: string;
 }
 
@@ -87,8 +123,19 @@ export interface RenderStage {
   label?: string;
 }
 
-export type TransformerStage = GridStage | RouteStage | RenderStage;
-export type PipelineStage = SourceStage | TransformerStage;
+export interface StreamLineStage {
+  kind: "streamline";
+  config: StreamLineConfig;
+  label?: string;
+}
+
+export type TransformerStage =
+  | GridStage
+  | RouteStage
+  | RenderStage
+  | StreamLineStage;
+export type GeneratedStage = NoiseStage | TransformerStage;
+export type PipelineStage = SourceStage | GeneratedStage;
 
 export interface RuntimeContext {
   workspaceRoot: string;
@@ -99,7 +146,7 @@ export interface RuntimeContext {
 
 export interface CacheEntry {
   cacheKey: string;
-  stageKind: TransformerStageKind;
+  stageKind: GeneratedStageKind;
   binaryFingerprint: string;
   inputPath: string;
   inputHash: string;

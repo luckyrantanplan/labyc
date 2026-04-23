@@ -113,10 +113,10 @@ class QueueCost {
     int32_t _congestion = 0;
 
     int32_t _randomization = 0;
-    std::unordered_set<int32_t> _memorySource{};
-    std::unordered_set<int32_t> _futureMemorySource{};
-    std::unordered_set<int32_t> _memoryTarget{};
-    std::unordered_set<int32_t> _futureMemoryTarget{};
+    std::unordered_set<int32_t> _memorySource;
+    std::unordered_set<int32_t> _futureMemorySource;
+    std::unordered_set<int32_t> _memoryTarget;
+    std::unordered_set<int32_t> _futureMemoryTarget;
 };
 
 } // namespace laby::aniso

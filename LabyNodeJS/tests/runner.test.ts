@@ -6,13 +6,20 @@ import test from "node:test";
 import { loadCacheManifest } from "../src/cache.js";
 import {
   grid,
+  noise,
   pipeline,
   render,
   runPipeline,
   source,
+  streamline,
   type PipelineGalleryOptions,
 } from "../src/index.js";
-import { gridConfigFixture, renderConfigFixture } from "./fixtures.js";
+import {
+  gridConfigFixture,
+  noiseConfigFixture,
+  renderConfigFixture,
+  streamLineConfigFixture,
+} from "./fixtures.js";
 
 function createGalleryOptions(
   overrides: Partial<PipelineGalleryOptions> = {},
@@ -47,14 +54,23 @@ async function writeFakeBinary(workspaceRoot: string): Promise<string> {
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 const configPath = process.argv[2];
 const config = JSON.parse(readFileSync(configPath, "utf8"));
-const stage = config.skeletonGrid ?? config.routing?.filepaths ?? config.gGraphicRendering;
-const inputPath = stage.inputfile;
+const noiseStage = config.hqNoise;
+const streamLineStage = config.streamLine;
+const stage = noiseStage?.filepaths ?? config.skeletonGrid ?? config.routing?.filepaths ?? streamLineStage?.filepaths ?? config.gGraphicRendering;
+const inputPath = streamLineStage?.filepaths?.inputfile ?? stage.inputfile;
 const outputPath = stage.outputfile;
 const markerPath = outputPath + ".count";
 const current = existsSync(markerPath) ? Number(readFileSync(markerPath, "utf8")) : 0;
 writeFileSync(markerPath, String(current + 1));
-const input = readFileSync(inputPath, "utf8");
-writeFileSync(outputPath, input + "\\n<!-- generated -->\\n");
+if (noiseStage) {
+  writeFileSync(outputPath, Buffer.from([1, 2, 3, 4]));
+  writeFileSync(noiseStage.previewFile, '<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="0" x2="10" y2="10" stroke="red"/></svg>\\n');
+  process.exit(0);
+}
+
+const input = readFileSync(inputPath, streamLineStage ? null : "utf8");
+const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L10 10" /></svg>\\n';
+writeFileSync(outputPath, streamLineStage ? svg : String(input) + "\\n<!-- generated -->\\n");
 `;
   await writeFile(binaryPath, script, "utf8");
   await chmod(binaryPath, 0o755);
@@ -95,7 +111,7 @@ void test("runPipeline requires a source as the first stage", async () => {
       runPipeline([grid(gridConfigFixture)], {
         gallery: createGalleryOptions(),
       }),
-    /must start with a source stage/,
+    /must start with a source or noise stage/,
   );
 });
 
@@ -140,8 +156,50 @@ void test("runPipeline rejects source stages after the first stage", async () =>
         workspaceRoot,
         gallery: createGalleryOptions(),
       }),
-    /Only the first stage can be a source stage/,
+    /Only the first stage can be a source or noise stage/,
   );
+});
+
+void test("runPipeline accepts a noise stage as the first stage and feeds streamline", async () => {
+  const workspaceRoot = await makeTempWorkspace();
+  const projectDir = path.join(workspaceRoot, "LabyData");
+  const binaryPath = await writeFakeBinary(workspaceRoot);
+
+  const firstRun = await runPipeline(
+    pipeline(noise(noiseConfigFixture), streamline(streamLineConfigFixture)),
+    {
+      binaryPath,
+      projectDir,
+      workspaceRoot,
+      gallery: createGalleryOptions({ enabled: true }),
+    },
+  );
+  const secondRun = await runPipeline(
+    pipeline(noise(noiseConfigFixture), streamline(streamLineConfigFixture)),
+    {
+      binaryPath,
+      projectDir,
+      workspaceRoot,
+      gallery: createGalleryOptions(),
+    },
+  );
+
+  const firstNoiseStage = firstRun.stages[0];
+  const firstStreamLineStage = firstRun.stages[1];
+  const secondNoiseStage = secondRun.stages[0];
+  const secondStreamLineStage = secondRun.stages[1];
+  assert.ok(firstNoiseStage);
+  assert.ok(firstStreamLineStage);
+  assert.ok(secondNoiseStage);
+  assert.ok(secondStreamLineStage);
+
+  assert.equal(firstNoiseStage.stageKind, "noise");
+  assert.equal(firstNoiseStage.cached, false);
+  assert.equal(firstStreamLineStage.stageKind, "streamline");
+  assert.equal(firstStreamLineStage.cached, false);
+  assert.equal(secondNoiseStage.cached, true);
+  assert.equal(secondStreamLineStage.cached, true);
+  assert.match(firstRun.galleryUrl ?? "", /^http:\/\/[^/]+:\d+\/$/);
 });
 
 void test("runPipeline fails when the executable does not create an output file", async () => {

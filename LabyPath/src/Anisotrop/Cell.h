@@ -88,10 +88,10 @@ class Cell {
     CGAL::Bbox_2 _bbox;
     Arrangement_2* _arr = nullptr;
 
-    std::vector<Vertex*> _randomVertices{};
-    std::vector<Vertex*> _listVertex{};
+    std::vector<Vertex*> _randomVertices;
+    std::vector<Vertex*> _listVertex;
 
-    std::vector<aniso::Net> _nets{};
+    std::vector<aniso::Net> _nets;
     basic::RandomUniDist _random;
 };
 

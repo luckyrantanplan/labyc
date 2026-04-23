@@ -53,8 +53,8 @@ class Routing {
     void commitNewPath(const int32_t& targetId, Net& net);
     proto::RoutingCost _config;
     Arrangement_2* _arr = nullptr;
-    std::vector<PolyConvex> _convexList{};
-    std::vector<QueueElement> _edgesQList{};
+    std::vector<PolyConvex> _convexList;
+    std::vector<QueueElement> _edgesQList;
     SpatialIndex _spatialIndex;
 
     basic::RandomInteger<int32_t> _random;

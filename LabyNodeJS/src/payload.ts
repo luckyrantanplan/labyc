@@ -1,10 +1,12 @@
 import path from "node:path";
 import type {
+  GeneratedStageKind,
   GridConfig,
+  NoiseConfig,
   RenderConfig,
   RouteConfig,
-  TransformerStage,
-  TransformerStageKind,
+  GeneratedStage,
+  StreamLineConfig,
 } from "./types.js";
 
 export function stemName(filePath: string): string {
@@ -12,11 +14,39 @@ export function stemName(filePath: string): string {
 }
 
 export function artifactStem(
-  inputPath: string,
-  kind: TransformerStageKind,
+  basePath: string,
+  kind: GeneratedStageKind,
   cacheKey: string,
 ): string {
-  return `${stemName(inputPath)}--${kind}--${cacheKey.slice(0, 12)}`;
+  return `${stemName(basePath)}--${kind}--${cacheKey.slice(0, 12)}`;
+}
+
+export function buildNoiseConfigPayload(
+  outputFieldPath: string,
+  previewSvgPath: string,
+  config: NoiseConfig,
+): Record<string, unknown> {
+  return {
+    hqNoise: {
+      filepaths: {
+        outputfile: outputFieldPath,
+      },
+      maxN: config.maxN,
+      accuracy: config.accuracy,
+      amplitude: config.amplitude,
+      seed: config.seed,
+      gaussianFrequency: config.gaussianFrequency,
+      powerlawFrequency: config.powerlawFrequency,
+      powerlawPower: config.powerlawPower,
+      complex: config.complex,
+      width: config.width,
+      height: config.height,
+      scale: config.scale,
+      previewMode: config.previewMode,
+      previewFile: previewSvgPath,
+      previewStride: config.previewStride,
+    },
+  };
 }
 
 export function buildGridConfigPayload(
@@ -116,17 +146,48 @@ export function buildRenderConfigPayload(
   };
 }
 
+export function buildStreamLineConfigPayload(
+  inputFieldPath: string,
+  outputSvgPath: string,
+  config: StreamLineConfig,
+): Record<string, unknown> {
+  return {
+    streamLine: {
+      filepaths: {
+        inputfile: inputFieldPath,
+        outputfile: outputSvgPath,
+      },
+      resolution: config.resolution,
+      simplifyDistance: config.simplifyDistance,
+      dRat: config.dRat,
+      epsilon: config.epsilon,
+      size: config.size,
+      divisor: config.divisor,
+      strokeThickness: config.strokeThickness,
+    },
+  };
+}
+
 export function buildStagePayload(
-  stage: TransformerStage,
+  stage: GeneratedStage,
   inputPath: string,
   outputPath: string,
+  previewPath?: string,
 ): Record<string, unknown> {
   switch (stage.kind) {
+    case "noise":
+      return buildNoiseConfigPayload(
+        outputPath,
+        previewPath ?? `${outputPath}.svg`,
+        stage.config,
+      );
     case "grid":
       return buildGridConfigPayload(inputPath, outputPath, stage.config);
     case "route":
       return buildRouteConfigPayload(inputPath, outputPath, stage.config);
     case "render":
       return buildRenderConfigPayload(inputPath, outputPath, stage.config);
+    case "streamline":
+      return buildStreamLineConfigPayload(inputPath, outputPath, stage.config);
   }
 }

@@ -61,6 +61,11 @@ class ComplexRef {
     [[nodiscard]] auto toComplex() const -> std::complex<double> {
         return {(*_value)[0], (*_value)[1]};
     }
+
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    operator std::complex<double>() const {
+        return toComplex();
+    }
 };
 
 /**
@@ -116,24 +121,12 @@ class Array1D {
         return _data;
     }
 
-    auto operator()(uint32_t sampleIndex) -> ComplexRef {
+    auto operator()(uint32_t sampleIndex) const -> ComplexRef {
         assert(sampleIndex < _nx);
-        return ComplexRef{elements()[sampleIndex]};
+        return ComplexRef{_data[sampleIndex]};
     }
 
-    [[nodiscard]] auto operator()(uint32_t sampleIndex) const -> std::complex<double> {
-        assert(sampleIndex < _nx);
-        const auto elementsView = constElements();
-        const fftw_complex& value = elementsView[sampleIndex];
-        return {value[0], value[1]};
-    }
-
-    auto operator()(int32_t sampleIndex) -> ComplexRef {
-        assert(sampleIndex >= 0);
-        return (*this)(static_cast<uint32_t>(sampleIndex));
-    }
-
-    [[nodiscard]] auto operator()(int32_t sampleIndex) const -> std::complex<double> {
+    auto operator()(int32_t sampleIndex) const -> ComplexRef {
         assert(sampleIndex >= 0);
         return (*this)(static_cast<uint32_t>(sampleIndex));
     }
@@ -209,24 +202,12 @@ class Array2D {
         return _data;
     }
 
-    auto operator()(uint32_t xIndex, uint32_t yIndex) -> ComplexRef {
+    auto operator()(uint32_t xIndex, uint32_t yIndex) const -> ComplexRef {
         assert(xIndex < _nx && yIndex < _ny);
-        return ComplexRef{elements()[flatIndex(xIndex, yIndex)]};
+        return ComplexRef{_data[flatIndex(xIndex, yIndex)]};
     }
 
-    [[nodiscard]] auto operator()(uint32_t xIndex, uint32_t yIndex) const -> std::complex<double> {
-        assert(xIndex < _nx && yIndex < _ny);
-        const auto elementsView = constElements();
-        const fftw_complex& value = elementsView[flatIndex(xIndex, yIndex)];
-        return {value[0], value[1]};
-    }
-
-    auto operator()(int32_t xIndex, int32_t yIndex) -> ComplexRef {
-        assert(xIndex >= 0 && yIndex >= 0);
-        return (*this)(static_cast<uint32_t>(xIndex), static_cast<uint32_t>(yIndex));
-    }
-
-    [[nodiscard]] auto operator()(int32_t xIndex, int32_t yIndex) const -> std::complex<double> {
+    auto operator()(int32_t xIndex, int32_t yIndex) const -> ComplexRef {
         assert(xIndex >= 0 && yIndex >= 0);
         return (*this)(static_cast<uint32_t>(xIndex), static_cast<uint32_t>(yIndex));
     }

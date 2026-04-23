@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { grid, render, route, source } from "../src/stages.js";
+import {
+  grid,
+  noise,
+  render,
+  route,
+  source,
+  streamline,
+} from "../src/stages.js";
 import {
   gridConfigFixture,
+  noiseConfigFixture,
   renderConfigFixture,
   routeConfigFixture,
+  streamLineConfigFixture,
 } from "./fixtures.js";
 
 void test("source omits label when none is provided", () => {
@@ -73,4 +82,22 @@ void test("grid stores explicit config without adding a label", () => {
 
   assert.equal(stage.config.seed, 17);
   assert.equal("label" in stage, false);
+});
+
+void test("noise stores explicit config and label", () => {
+  const stage = noise(noiseConfigFixture, { label: "Noise" });
+
+  assert.equal(stage.kind, "noise");
+  assert.equal(stage.label, "Noise");
+  assert.equal(stage.config.previewMode, "ARROWS");
+});
+
+void test("streamline stores explicit config unchanged", () => {
+  const stage = streamline({
+    ...streamLineConfigFixture,
+    divisor: 0.6,
+  });
+
+  assert.equal(stage.kind, "streamline");
+  assert.equal(stage.config.divisor, 0.6);
 });

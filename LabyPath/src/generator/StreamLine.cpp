@@ -59,7 +59,7 @@ constexpr double kFullTurn = 2.0 * kPi;
 
 void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines,
                                    Ribbon& ribbon) const {
-    double const div = _config.resolution;
+    double const div = gridSamplesPerUnit();
     int32_t lineNumber = 0;
 
     for (const auto& sit : stream_lines) {
@@ -83,12 +83,43 @@ void StreamLine::postStreamCompute(const Strl_iterator_container& stream_lines,
 
 StreamLine::StreamLine(const Config& config) : _config(config), _radialList(0), _circularList(1) {
     if (_config.old_RegularGrid) {
-        _xSampleCount = static_cast<std::size_t>(config.size * _config.resolution);
-        _ySampleCount = static_cast<std::size_t>(config.size * _config.resolution);
+        const double samplesPerUnit = gridSamplesPerUnit();
+        _xSampleCount = static_cast<std::size_t>(std::lround(config.size * samplesPerUnit));
+        _ySampleCount = static_cast<std::size_t>(std::lround(config.size * samplesPerUnit));
         using FieldIndex = boost::multi_array<std::complex<double>, 2>::index;
         _field.resize(boost::extents[static_cast<FieldIndex>(_xSampleCount)]
                                     [static_cast<FieldIndex>(_ySampleCount)]);
     }
+}
+
+StreamLine::StreamLine(const Config& config, boost::multi_array<std::complex<double>, 2> field)
+    : StreamLine(config) {
+    setField(std::move(field));
+}
+
+void StreamLine::setField(boost::multi_array<std::complex<double>, 2> field) {
+    if (field.num_dimensions() != 2 || field.num_elements() == 0) {
+        throw std::runtime_error("streamline field must be a non-empty 2D array");
+    }
+
+    _config.old_RegularGrid = true;
+    _xSampleCount = field.shape()[0];
+    _ySampleCount = field.shape()[1];
+    if (_config.sample_scale <= 0.0 && _config.resolution > 0) {
+        _config.sample_scale = 1.0 / static_cast<double>(_config.resolution);
+    }
+    if (_config.size <= 0.0) {
+        _config.size = static_cast<double>(std::max(_xSampleCount, _ySampleCount)) /
+                       gridSamplesPerUnit();
+    }
+    _field = std::move(field);
+}
+
+auto StreamLine::gridSamplesPerUnit() const -> double {
+    if (_config.sample_scale > 0.0) {
+        return 1.0 / _config.sample_scale;
+    }
+    return static_cast<double>(_config.resolution);
 }
 
 void StreamLine::changeLine(const Point_2& midpoint,
@@ -189,7 +220,7 @@ void StreamLine::render() {
 
     /* the placement of streamlines */
 
-    double const separationDistance = _config.resolution * _config.divisor;
+    double const separationDistance = gridSamplesPerUnit() * _config.divisor;
     auto future = std::async(std::launch::async, [&]() {
         auto lines = streamPlacement(radial, separationDistance, _config.dRat);
         postStreamCompute(lines.iterator_container, _radialList);
@@ -203,9 +234,10 @@ void StreamLine::render() {
 void StreamLine::drawSpiral(const SpiralParameters& parameters) {
     EASY_FUNCTION();
 
-    std::complex<double> const center = parameters.origin * (kUnitMagnitude * _config.resolution);
+    const double samplesPerUnit = gridSamplesPerUnit();
+    std::complex<double> const center = parameters.origin * (kUnitMagnitude * samplesPerUnit);
     double const radiusSquared =
-        parameters.radius * parameters.radius * _config.resolution * _config.resolution;
+        parameters.radius * parameters.radius * samplesPerUnit * samplesPerUnit;
 
     for (std::size_t xIndex = 0; xIndex < _xSampleCount; ++xIndex) {
         for (std::size_t yIndex = 0; yIndex < _ySampleCount; ++yIndex) {

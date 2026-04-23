@@ -44,7 +44,7 @@ class PenStroke {
 
       private:
         Polyline _anti;
-        std::vector<double> _sym{};
+        std::vector<double> _sym;
     };
 
     explicit PenStroke(proto::PenStroke config, NoiseConfigs noiseConfigs)
@@ -83,7 +83,7 @@ class PenStroke {
     generator::HqNoise2D _hqNoise2DSym;
     generator::HqNoise2D _hqNoise2DAnti;
 
-    std::vector<LineConstruct> _medrib{};
+    std::vector<LineConstruct> _medrib;
 };
 
 } /* namespace laby */

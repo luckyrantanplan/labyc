@@ -122,7 +122,7 @@ class EdgeInfo {
     }
 
     auto hasNet(const int32_t serialId) const -> bool {
-        return _path.count(serialId) != 0;
+        return _path.contains(serialId);
     }
 
     void addPath(const int32_t serialId) {
@@ -175,7 +175,7 @@ class EdgeInfo {
 
   private:
     // TODO : replace unordered_map by just an int
-    std::unordered_map<int32_t, int32_t> _path{};
+    std::unordered_map<int32_t, int32_t> _path;
     double _thickness = 1;
     mutable int32_t _visit = -1;
     int32_t _direction = -1;

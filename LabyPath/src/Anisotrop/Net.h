@@ -122,7 +122,7 @@ class Net {
   private:
     Pin _source;
     Pin _target;
-    std::vector<std::size_t> _path{};
+    std::vector<std::size_t> _path;
     int32_t _id = 0;
     bool _isPlaced = false;
 };

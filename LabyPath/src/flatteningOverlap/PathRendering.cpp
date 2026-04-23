@@ -238,7 +238,7 @@ void PathRendering::unify(const UnifyData& unifyData,
                           CGAL::Union_find<size_t>& unionFind, const Intersection& intersection) {
 
     EASY_FUNCTION();
-    for (std::size_t const adjacentIndex : unifyData.adjacentIndices) {
+    for (std::size_t const adjacentIndex : *unifyData.adjacentIndices) {
         const auto iterator = intersections.find({adjacentIndex, unifyData.secondIndex});
         if (iterator != intersections.end()) {
             unionFind.unify_sets(intersection.handle(), iterator->handle());
@@ -324,32 +324,32 @@ auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::si
 
     for (const auto& familyEntry : families) {
         std::size_t const intersectionIndex = familyEntry.first;
-        familyLocationData.intersections.at(intersectionIndex)
+        familyLocationData.intersections->at(intersectionIndex)
             .setFamilyHandle(familyUnionFind.push_back(intersectionIndex));
     }
     CGAL::box_self_intersection_d(
-        familyLocationData.boxIntersectionList.begin(),
-        familyLocationData.boxIntersectionList.end(),
+        familyLocationData.boxIntersectionList->begin(),
+        familyLocationData.boxIntersectionList->end(),
         [&](const BoxIntersection& firstBoxIntersection,
             const BoxIntersection& secondBoxIntersection) {
             Intersection firstIntersection =
-                familyLocationData.intersections.at(firstBoxIntersection.handle());
+                familyLocationData.intersections->at(firstBoxIntersection.handle());
             Intersection secondIntersection =
-                familyLocationData.intersections.at(secondBoxIntersection.handle());
+                familyLocationData.intersections->at(secondBoxIntersection.handle());
 
             const std::size_t firstFamilyHead =
-                *familyLocationData.unionFind.find(firstIntersection.handle());
+                *familyLocationData.unionFind->find(firstIntersection.handle());
             const std::size_t secondFamilyHead =
-                *familyLocationData.unionFind.find(secondIntersection.handle());
+                *familyLocationData.unionFind->find(secondIntersection.handle());
             if (firstFamilyHead != secondFamilyHead) {
                 Intersection const firstHeadIntersection =
-                    familyLocationData.intersections.at(firstFamilyHead);
+                    familyLocationData.intersections->at(firstFamilyHead);
                 Intersection const secondHeadIntersection =
-                    familyLocationData.intersections.at(secondFamilyHead);
+                    familyLocationData.intersections->at(secondFamilyHead);
                 if (!familyUnionFind.same_set(firstHeadIntersection.familyHandle(),
                                               secondHeadIntersection.familyHandle())) {
                     const bool intersects = doIntersect(firstIntersection, secondIntersection,
-                                                        familyLocationData.polyConvexList);
+                                                        *familyLocationData.polyConvexList);
                     if (intersects) {
                         familyUnionFind.unify_sets(firstHeadIntersection.familyHandle(),
                                                    secondHeadIntersection.familyHandle());
@@ -362,10 +362,10 @@ auto PathRendering::locateFamilies(const std::unordered_map<std::size_t, std::si
     for (const auto& familyEntry : families) {
         std::size_t const intersectionIndex = familyEntry.first;
         std::size_t const head = *familyUnionFind.find(
-            familyLocationData.intersections.at(intersectionIndex).familyHandle());
+            familyLocationData.intersections->at(intersectionIndex).familyHandle());
         auto iterator = groupedFamilies.try_emplace(head);
         iterator.first->second.emplace_back(
-            &familyLocationData.familyVector.at(familyEntry.second));
+            &familyLocationData.familyVector->at(familyEntry.second));
     }
 
     return groupedFamilies;
@@ -430,8 +430,8 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
         const std::vector<std::size_t>& secondAdjacents =
             polyConvexList.at(intersection.second())._adjacents;
 
-        unify({intersection.second(), firstAdjacents}, intersectionsSet, unionFind, intersection);
-        unify({intersection.first(), secondAdjacents}, intersectionsSet, unionFind, intersection);
+        unify({intersection.second(), &firstAdjacents}, intersectionsSet, unionFind, intersection);
+        unify({intersection.first(), &secondAdjacents}, intersectionsSet, unionFind, intersection);
     }
 
     std::cout << "unify\n";
@@ -449,8 +449,8 @@ void PathRendering::createIntersect(OrientedRibbon& oribbon,
         familyVector.at(iterator.first->second).intersections().emplace_back(intersection);
     }
 
-    FamilyProcessingData familyProcessingData{polyConvexList, familyVector, intersections,
-                                              boxIntersectionList, unionFind};
+    FamilyProcessingData familyProcessingData{&polyConvexList, &familyVector, &intersections,
+                                              &boxIntersectionList, &unionFind};
     std::cout << "before processFamilies\n";
     std::vector<Node> nodes = processFamilies(families, familyProcessingData);
     std::cout << "after processFamilies nodes=" << nodes.size() << '\n';
@@ -509,17 +509,17 @@ auto PathRendering::createNode(const NodeCreationData& nodeCreationData) -> std:
     std::vector<Node> nodes;
     {
         std::size_t nbNodes = 0;
-        for (const auto& familyEntry : nodeCreationData.familyMap) {
+        for (const auto& familyEntry : *nodeCreationData.familyMap) {
             nbNodes += 2 * familyEntry.second.size();
         }
         nodes.reserve(nbNodes);
     }
-    std::cout << "map number : " << nodeCreationData.familyMap.size() << '\n';
-    for (const auto& familyEntry : nodeCreationData.familyMap) {
-        mergeFamilies(familyEntry.second, nodeCreationData.intersectOnSinglePiece,
-                      nodeCreationData.polyConvexList, nodes);
+    std::cout << "map number : " << nodeCreationData.familyMap->size() << '\n';
+    for (const auto& familyEntry : *nodeCreationData.familyMap) {
+        mergeFamilies(familyEntry.second, *nodeCreationData.intersectOnSinglePiece,
+                      *nodeCreationData.polyConvexList, nodes);
     }
-    nodeAdjacence(nodes, nodeCreationData.polyConvexList);
+    nodeAdjacence(nodes, *nodeCreationData.polyConvexList);
     return nodes;
 }
 
@@ -532,8 +532,8 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
 
     for (const auto& familyEntry : families) {
         std::size_t const familyIndex = familyEntry.second;
-        Family& family = familyProcessingData.familyVector.at(familyIndex);
-        family.createPatch(familyProcessingData.polyConvexList);
+        Family& family = familyProcessingData.familyVector->at(familyIndex);
+        family.createPatch(*familyProcessingData.polyConvexList);
         if (family.patches().size() == 1) {
             intersectOnSinglePiece.insert(family.intersections().begin(),
                                           family.intersections().end());
@@ -547,7 +547,7 @@ auto PathRendering::processFamilies(std::unordered_map<size_t, std::size_t>& fam
     std::unordered_map<std::size_t, std::vector<const Family*>> const map =
         locateFamilies(families, familyLocationData);
 
-    NodeCreationData nodeCreationData{map, intersectOnSinglePiece,
+    NodeCreationData nodeCreationData{&map, &intersectOnSinglePiece,
                                       familyProcessingData.polyConvexList};
     std::vector<Node> nodes = createNode(nodeCreationData);
     return nodes;
@@ -557,9 +557,9 @@ void PathRendering::createPolygonSet(const PolygonSetData& polygonSetData,
                                      basic::Polygon_set_2Node& setPolygons) {
 
     std::vector<basic::Polygon_2Node> polygonVector;
-    polygonVector.reserve(polygonSetData.cover.size());
-    for (const std::size_t coverIndex : polygonSetData.cover) {
-        const PolyConvex& polyConvex = polygonSetData.polyConvexList.at(coverIndex);
+    polygonVector.reserve(polygonSetData.cover->size());
+    for (const std::size_t coverIndex : *polygonSetData.cover) {
+        const PolyConvex& polyConvex = polygonSetData.polyConvexList->at(coverIndex);
         polygonVector.emplace_back(polyConvex._geometry.vertices_begin(),
                                    polyConvex._geometry.vertices_end());
     }
@@ -581,11 +581,11 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
             intersectGeometryList.emplace_back();
             basic::Polygon_set_2Node& setPolygons = intersectGeometryList.back();
             auto patchIterator = family->patches().begin();
-            createPolygonSet({reCutGeometryData.polyConvexList, patchIterator->second},
+            createPolygonSet({reCutGeometryData.polyConvexList, &patchIterator->second},
                              setPolygons);
             basic::Polygon_set_2Node secondaryPolygonSet;
             ++patchIterator;
-            createPolygonSet({reCutGeometryData.polyConvexList, patchIterator->second},
+            createPolygonSet({reCutGeometryData.polyConvexList, &patchIterator->second},
                              secondaryPolygonSet);
             setPolygons.intersection(secondaryPolygonSet);
         }
@@ -594,9 +594,9 @@ void PathRendering::reCutAllGeometry(const std::vector<const Family*>& families,
     for (basic::Polygon_set_2Node const& setPolygons : intersectGeometryList) {
         unionFamilies.join(setPolygons);
     }
-    for (const auto& nodeEntry : reCutGeometryData.map) {
+    for (const auto& nodeEntry : *reCutGeometryData.map) {
         Node& node = *nodeEntry.second;
-        if (reCutGeometryData.map.size() <= 2U) {
+        if (reCutGeometryData.map->size() <= 2U) {
             node.setPolygons().intersection(unionFamilies);
         }
     }
@@ -645,7 +645,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
         for (const auto& nodeEntry : map) {
             Node& node = *nodeEntry.second;
 
-            createPolygonSet({polyConvexList, node.cover()}, node.setPolygons());
+            createPolygonSet({&polyConvexList, &node.cover()}, node.setPolygons());
 
             for (const auto& oppositeEntry : map) {
                 if (nodeEntry.first != oppositeEntry.first) {
@@ -658,7 +658,7 @@ void PathRendering::mergeFamilies(const std::vector<const Family*>& families,
             if (shouldDebugTripleOverlap(polyConvexList)) {
                 std::cout << "[mergeFamilies] invoking reCutAllGeometry\n";
             }
-            reCutAllGeometry(families, {polyConvexList, map});
+            reCutAllGeometry(families, {&polyConvexList, &map});
         }
     }
     _nextNodeId = nodeId;

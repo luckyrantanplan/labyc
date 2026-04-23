@@ -2,13 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildGridConfigPayload,
+  buildNoiseConfigPayload,
   buildRenderConfigPayload,
   buildRouteConfigPayload,
+  buildStreamLineConfigPayload,
 } from "../src/payload.js";
 import {
   gridConfigFixture,
+  noiseConfigFixture,
   renderConfigFixture,
   routeConfigFixture,
+  streamLineConfigFixture,
 } from "./fixtures.js";
 
 void test("buildGridConfigPayload produces protobuf-shaped JSON", () => {
@@ -76,4 +80,30 @@ void test("buildRouteConfigPayload includes alternateRouting independently from 
 
   assert.equal(payload.routing.placement, undefined);
   assert.equal(payload.routing.alternateRouting?.pruning, 0);
+});
+
+void test("buildNoiseConfigPayload produces protobuf-shaped JSON", () => {
+  const payload = buildNoiseConfigPayload(
+    "/tmp/noise.field",
+    "/tmp/noise-preview.svg",
+    noiseConfigFixture,
+  ) as {
+    hqNoise: { filepaths: { outputfile: string }; previewFile: string };
+  };
+
+  assert.equal(payload.hqNoise.filepaths.outputfile, "/tmp/noise.field");
+  assert.equal(payload.hqNoise.previewFile, "/tmp/noise-preview.svg");
+});
+
+void test("buildStreamLineConfigPayload uses the field input and svg output paths", () => {
+  const payload = buildStreamLineConfigPayload(
+    "/tmp/noise.field",
+    "/tmp/stream.svg",
+    streamLineConfigFixture,
+  ) as {
+    streamLine: { filepaths: { inputfile: string; outputfile: string } };
+  };
+
+  assert.equal(payload.streamLine.filepaths.inputfile, "/tmp/noise.field");
+  assert.equal(payload.streamLine.filepaths.outputfile, "/tmp/stream.svg");
 });

@@ -52,8 +52,8 @@ struct CroppedVoronoiFromDelaunay {
         using Line_2 = Kernel_sqrt::Line_2;
         using Iso_rectangle_2 = Kernel_sqrt::Iso_rectangle_2;
 
-        explicit CustomParabola(const CGAL::Parabola_segment_2<Gt>& ps)
-            : CGAL::Parabola_segment_2<Gt>(ps) {}
+        explicit CustomParabola(const CGAL::Parabola_segment_2<Gt>& parabolaSegment)
+            : CGAL::Parabola_segment_2<Gt>(parabolaSegment) {}
 
         auto computeBezier() -> Point_2;
 
@@ -67,9 +67,6 @@ struct CroppedVoronoiFromDelaunay {
 
         auto getTangent(const Point_2& point) -> Kernel_sqrt::Line_2;
     };
-
-    std::vector<Segment_2> m_cropped_vd;
-    Iso_rectangle_2 m_bbox;
 
     explicit CroppedVoronoiFromDelaunay(Iso_rectangle_2 i_bbox)
         : m_bbox{std::move(std::move(i_bbox))} {}
@@ -91,6 +88,10 @@ struct CroppedVoronoiFromDelaunay {
 
     void drawDual(const SDG2& sdg);
 
+    [[nodiscard]] auto getCroppedVd() const -> const std::vector<Segment_2>& {
+        return m_cropped_vd;
+    }
+
     [[nodiscard]] static auto samePoints(const SDG2& sdg, const SDG2::Site_2& firstSite,
                                          const SDG2::Site_2& secondSite) -> bool {
         return sdg.geom_traits().equal_2_object()(firstSite, secondSite);
@@ -102,6 +103,10 @@ struct CroppedVoronoiFromDelaunay {
         return (samePoints(sdg, site, segmentSite.source_site()) ||
                 samePoints(sdg, site, segmentSite.target_site()));
     }
+
+  private:
+    std::vector<Segment_2> m_cropped_vd;
+    Iso_rectangle_2 m_bbox;
 };
 
 class VoronoiMedialSkeleton {

@@ -22,8 +22,8 @@ class OrientedRibbon {
     [[nodiscard]] auto createOrientedRibbon() const -> Ribbon;
 
   private:
-    std::vector<Kernel::Segment_2> _left;
-    std::vector<Kernel::Segment_2> _right;
+    std::vector<Kernel::Segment_2> _left{};
+    std::vector<Kernel::Segment_2> _right{};
 };
 
 } /* namespace laby */
