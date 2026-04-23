@@ -14,7 +14,7 @@ function sortValue(value: unknown): unknown {
     return Object.fromEntries(
       Object.entries(value)
         .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, entry]) => [key, sortValue(entry)])
+        .map(([key, entry]) => [key, sortValue(entry)]),
     );
   }
 

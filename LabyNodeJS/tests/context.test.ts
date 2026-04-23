@@ -3,7 +3,12 @@ import { mkdtemp, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { findWorkspaceRoot, requireSvgPath, requireWorkspacePath, resolveContext } from "../src/context.js";
+import {
+  findWorkspaceRoot,
+  requireSvgPath,
+  requireWorkspacePath,
+  resolveContext,
+} from "../src/context.js";
 
 void test("findWorkspaceRoot locates the repo boundary", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "labynodejs-root-"));
@@ -17,22 +22,29 @@ void test("findWorkspaceRoot locates the repo boundary", async () => {
 
 void test("requireWorkspacePath rejects paths outside the workspace", () => {
   assert.throws(
-    () => requireWorkspacePath("/workspace/root", "/tmp/outside.svg", "Candidate"),
-    /must stay within/
+    () =>
+      requireWorkspacePath("/workspace/root", "/tmp/outside.svg", "Candidate"),
+    /must stay within/,
   );
 });
 
 void test("requireWorkspacePath rejects relative paths", () => {
   assert.throws(
-    () => requireWorkspacePath("/workspace/root", "relative/file.svg", "Candidate"),
-    /must be an absolute path/
+    () =>
+      requireWorkspacePath("/workspace/root", "relative/file.svg", "Candidate"),
+    /must be an absolute path/,
   );
 });
 
 void test("requireSvgPath rejects non-SVG files", () => {
   assert.throws(
-    () => requireSvgPath("/workspace/root", "/workspace/root/file.json", "Candidate"),
-    /must point to an SVG file/
+    () =>
+      requireSvgPath(
+        "/workspace/root",
+        "/workspace/root/file.json",
+        "Candidate",
+      ),
+    /must point to an SVG file/,
   );
 });
 

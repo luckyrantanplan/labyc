@@ -130,6 +130,10 @@ auto AlternateRoute::OffsetPair::simplify(std::vector<AlternateRoute::OffsetPair
 }
 
 auto AlternateRoute::pruneArrangement(laby::Arrangement_2& arrangement) const -> void {
+    if (_config.pruning() == 0) {
+        return;
+    }
+
     // remove inner  antenna
     std::vector<Segment_info_2> filteredCurves;
     uint32_t counter = 0;
@@ -356,6 +360,9 @@ void AlternateRoute::ribToTrapeze(const Ribbon& rib,
             for (std::size_t i = 1; i < tripletList.size(); ++i) {
                 const alter::OffsetTriplet& firstTriplet = tripletList.at(i - 1);
                 const alter::OffsetTriplet& secondTriplet = tripletList.at(i);
+                if (firstTriplet.origin() == secondTriplet.origin()) {
+                    continue;
+                }
                 trapezeVect.emplace_back(
                     Kernel::Segment_2(firstTriplet.origin(), secondTriplet.origin()),
                     alter::TrapezeEdgeInfo(alter::TrapezeEdgeInfo::SourceTriplet{firstTriplet},

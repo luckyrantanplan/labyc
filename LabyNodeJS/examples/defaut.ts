@@ -9,43 +9,44 @@ import {
   source,
   type GridConfig,
   type RenderConfig,
-  type RouteConfig
+  type RouteConfig,
 } from "../src/index.js";
 
 export const defautGridConfig: GridConfig = {
   simplificationOfOriginalSVG: 0.1,
   maxSep: 5,
   minSep: 0.1,
-  seed: 3
+  seed: 3,
 };
 
 export const defautRouteConfig: RouteConfig = {
-  initialThickness: 1.8,
-  decrementFactor: 1.5,
-  minimalThickness: 0.5,
-  smoothingTension: 1,
-  smoothingIteration: 3,
-  maxRoutingAttempt: 300,
-  routing: {
-    seed: 5,
-    maxRandom: 300,
-    distanceUnitCost: 1,
-    viaUnitCost: 10
+  placement: {
+    initialThickness: 1.8,
+    decrementFactor: 1.5,
+    minimalThickness: 0.5,
+    smoothingTension: 1,
+    smoothingIteration: 3,
+    maxRoutingAttempt: 300,
+    routing: {
+      seed: 5,
+      maxRandom: 300,
+      distanceUnitCost: 1,
+      viaUnitCost: 10,
+    },
+    cell: {
+      seed: 1,
+      maxPin: 400,
+      startNet: 30,
+      resolution: 1,
+    },
   },
-  cell: {
-    seed: 1,
-    maxPin: 400,
-    startNet: 30,
-    resolution: 1
-  },
-  enableAlternateRouting: false,
   alternateRouting: {
     maxThickness: 1.8,
     minThickness: 0.5,
     pruning: 0,
     thicknessPercent: 1,
-    simplifyDist: 0
-  }
+    simplifyDist: 0,
+  },
 };
 
 export const defautRenderConfig: RenderConfig = {
@@ -59,8 +60,8 @@ export const defautRenderConfig: RenderConfig = {
     symmetricAmplitude: 0.1,
     symmetricFreq: 3,
     symmetricSeed: 8,
-    resolution: 1
-  }
+    resolution: 1,
+  },
 };
 
 async function main(): Promise<void> {
@@ -73,7 +74,7 @@ async function main(): Promise<void> {
       source(sourcePath, { label: "Reference source" }),
       grid(defautGridConfig, { label: "Reference grid" }),
       route(defautRouteConfig, { label: "Reference route" }),
-      render(defautRenderConfig, { label: "Reference render" })
+      render(defautRenderConfig, { label: "Reference render" }),
     ),
     {
       projectDir,
@@ -82,9 +83,10 @@ async function main(): Promise<void> {
         enabled: true,
         keepAlive: true,
         openBrowser: true,
-        title: "LabyNodeJS Reference Gallery"
-      }
-    }
+        port: 0,
+        title: "LabyNodeJS Reference Gallery",
+      },
+    },
   );
 
   if (result.galleryUrl !== undefined) {
@@ -93,6 +95,9 @@ async function main(): Promise<void> {
   console.log(JSON.stringify(result, null, 2));
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   void main();
 }

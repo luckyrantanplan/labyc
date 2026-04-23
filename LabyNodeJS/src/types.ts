@@ -8,7 +8,7 @@ export interface GridConfig {
   seed: number;
 }
 
-export interface RouteConfig {
+export interface RoutePlacementConfig {
   initialThickness: number;
   decrementFactor: number;
   minimalThickness: number;
@@ -27,14 +27,19 @@ export interface RouteConfig {
     startNet: number;
     resolution: number;
   };
-  enableAlternateRouting: boolean;
-  alternateRouting: {
-    maxThickness: number;
-    minThickness: number;
-    pruning: number;
-    thicknessPercent: number;
-    simplifyDist: number;
-  };
+}
+
+export interface AlternateRouteConfig {
+  maxThickness: number;
+  minThickness: number;
+  pruning: number;
+  thicknessPercent: number;
+  simplifyDist: number;
+}
+
+export interface RouteConfig {
+  placement?: RoutePlacementConfig;
+  alternateRouting?: AlternateRouteConfig;
 }
 
 export interface RenderConfig {
@@ -120,9 +125,12 @@ export interface StageArtifact {
   inputPath: string;
   outputPath: string;
   cached: boolean;
+  cacheReason?: string;
   configPath?: string;
   logPath?: string;
   cacheKey?: string;
+  durationMs?: number;
+  executionDurationMs?: number;
   inputHash?: string;
   outputHash?: string;
 }
@@ -133,8 +141,18 @@ export interface PipelineRunResult {
   binaryPath: string;
   binaryFingerprint: string;
   cachePath: string;
+  durationMs: number;
+  runLogPath: string;
   stages: StageArtifact[];
   galleryUrl?: string;
+}
+
+export interface PipelineGalleryOptions {
+  enabled: boolean;
+  openBrowser: boolean;
+  keepAlive: boolean;
+  port: number;
+  title: string;
 }
 
 export interface RunPipelineOptions {
@@ -142,16 +160,15 @@ export interface RunPipelineOptions {
   workspaceRoot?: string;
   binaryPath?: string;
   force?: boolean;
-  gallery?: {
-    enabled?: boolean;
-    openBrowser?: boolean;
-    keepAlive?: boolean;
-    port?: number;
-    title?: string;
-  };
+  gallery: PipelineGalleryOptions;
 }
 
-export type GalleryStageStatus = "waiting" | "running" | "completed" | "cached" | "failed";
+export type GalleryStageStatus =
+  | "waiting"
+  | "running"
+  | "completed"
+  | "cached"
+  | "failed";
 
 export interface GalleryStageSnapshot {
   index: number;

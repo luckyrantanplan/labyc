@@ -264,7 +264,11 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const Ribbon& ribbon, const CGAL::B
 
     for (const Kernel_sqrt::Segment_2& segment : vor.m_cropped_vd) {
         const Kernel::Segment_2 kernelSeg = fromSqrtKernel(segment);
-        _result.emplace_back(kernelSeg);
+        CGAL::Comparison_result compare =
+            CGAL::compare_squared_distance(kernelSeg.source(), kernelSeg.target(), 0.);
+        if (compare == CGAL::LARGER) {
+            _result.emplace_back(kernelSeg);
+        }
     }
 
     std::cout << "end sdg.drawDual " << std::endl;
@@ -290,7 +294,12 @@ VoronoiMedialSkeleton::VoronoiMedialSkeleton(const CGAL::Polygon_with_holes_2<Ke
     std::cout << " sdg.drawDual " << std::endl;
     From_sqrt_kernel fromSqrtKernel;
     for (const auto& segment : vor.m_cropped_vd) {
-        _result.emplace_back(fromSqrtKernel(segment));
+        const Kernel::Segment_2 kernelSeg = fromSqrtKernel(segment);
+        CGAL::Comparison_result compare =
+            CGAL::compare_squared_distance(kernelSeg.source(), kernelSeg.target(), 0.);
+        if (compare == CGAL::LARGER) {
+            _result.emplace_back(kernelSeg);
+        }
     }
 }
 

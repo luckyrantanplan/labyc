@@ -1,16 +1,41 @@
 import assert from "node:assert/strict";
-import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { loadCacheManifest } from "../src/cache.js";
-import { grid, pipeline, render, runPipeline, source } from "../src/index.js";
+import {
+  grid,
+  pipeline,
+  render,
+  runPipeline,
+  source,
+  type PipelineGalleryOptions,
+} from "../src/index.js";
 import { gridConfigFixture, renderConfigFixture } from "./fixtures.js";
 
+function createGalleryOptions(
+  overrides: Partial<PipelineGalleryOptions> = {},
+): PipelineGalleryOptions {
+  return {
+    enabled: false,
+    openBrowser: false,
+    keepAlive: false,
+    port: 0,
+    title: "Runner test gallery",
+    ...overrides,
+  };
+}
+
 async function makeTempWorkspace(): Promise<string> {
-  const workspaceRoot = path.join(os.tmpdir(), `labynodejs-${String(Date.now())}-${Math.random().toString(16).slice(2)}`);
+  const workspaceRoot = path.join(
+    os.tmpdir(),
+    `labynodejs-${String(Date.now())}-${Math.random().toString(16).slice(2)}`,
+  );
   await mkdir(workspaceRoot, { recursive: true });
-  await mkdir(path.join(workspaceRoot, "LabyPath", "input"), { recursive: true });
+  await mkdir(path.join(workspaceRoot, "LabyPath", "input"), {
+    recursive: true,
+  });
   await mkdir(path.join(workspaceRoot, "LabyData", "svg"), { recursive: true });
   await mkdir(path.join(workspaceRoot, "LabyPython"), { recursive: true });
   return workspaceRoot;
@@ -59,15 +84,18 @@ process.exit(2);
 
 void test("runPipeline rejects an empty pipeline", async () => {
   await assert.rejects(
-    async () => runPipeline([], {}),
-    /must contain at least one stage/
+    async () => runPipeline([], { gallery: createGalleryOptions() }),
+    /must contain at least one stage/,
   );
 });
 
 void test("runPipeline requires a source as the first stage", async () => {
   await assert.rejects(
-    async () => runPipeline([grid(gridConfigFixture)], {}),
-    /must start with a source stage/
+    async () =>
+      runPipeline([grid(gridConfigFixture)], {
+        gallery: createGalleryOptions(),
+      }),
+    /must start with a source stage/,
   );
 });
 
@@ -75,18 +103,21 @@ void test("runPipeline rejects missing binaries before execution", async () => {
   const workspaceRoot = await makeTempWorkspace();
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   await assert.rejects(
-    async () => runPipeline(
-      pipeline(source(sourcePath), grid(gridConfigFixture)),
-      {
+    async () =>
+      runPipeline(pipeline(source(sourcePath), grid(gridConfigFixture)), {
         binaryPath: path.join(workspaceRoot, "missing-binary"),
         projectDir,
-        workspaceRoot
-      }
-    ),
-    /Cannot find labypath binary/
+        workspaceRoot,
+        gallery: createGalleryOptions(),
+      }),
+    /Cannot find labypath binary/,
   );
 });
 
@@ -95,14 +126,21 @@ void test("runPipeline rejects source stages after the first stage", async () =>
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
   const binaryPath = await writeFakeBinary(workspaceRoot);
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   await assert.rejects(
-    async () => runPipeline(
-      pipeline(source(sourcePath), source(sourcePath)),
-      { binaryPath, projectDir, workspaceRoot }
-    ),
-    /Only the first stage can be a source stage/
+    async () =>
+      runPipeline(pipeline(source(sourcePath), source(sourcePath)), {
+        binaryPath,
+        projectDir,
+        workspaceRoot,
+        gallery: createGalleryOptions(),
+      }),
+    /Only the first stage can be a source stage/,
   );
 });
 
@@ -111,14 +149,21 @@ void test("runPipeline fails when the executable does not create an output file"
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
   const binaryPath = await writeBrokenBinary(workspaceRoot);
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   await assert.rejects(
-    async () => runPipeline(
-      pipeline(source(sourcePath), grid(gridConfigFixture)),
-      { binaryPath, projectDir, workspaceRoot }
-    ),
-    /Expected stage output was not created/
+    async () =>
+      runPipeline(pipeline(source(sourcePath), grid(gridConfigFixture)), {
+        binaryPath,
+        projectDir,
+        workspaceRoot,
+        gallery: createGalleryOptions(),
+      }),
+    /Expected stage output was not created/,
   );
 });
 
@@ -127,24 +172,35 @@ void test("runPipeline surfaces stage execution failures and still exercises gal
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
   const binaryPath = await writeFailingBinary(workspaceRoot);
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   await assert.rejects(
-    async () => runPipeline(
-      pipeline(source(sourcePath), grid(gridConfigFixture)),
-      {
+    async () =>
+      runPipeline(pipeline(source(sourcePath), grid(gridConfigFixture)), {
         binaryPath,
         projectDir,
         workspaceRoot,
-        gallery: {
+        gallery: createGalleryOptions({
           enabled: true,
-          openBrowser: false,
-          title: "Failing runner test gallery"
-        }
-      }
-    ),
-    /Command failed|simulated failure/
+          title: "Failing runner test gallery",
+        }),
+      }),
+    /Command failed|simulated failure/,
   );
+
+  const logFiles = await readdir(path.join(projectDir, "logs"));
+  const runLogName = logFiles.find((entry) => entry.startsWith("pipeline-"));
+  assert.ok(runLogName);
+  const runLog = await readFile(
+    path.join(projectDir, "logs", runLogName),
+    "utf8",
+  );
+  assert.match(runLog, /Pipeline failed/);
+  assert.match(runLog, /simulated failure/);
 });
 
 void test("runPipeline writes outputs, updates cache, and reuses cached entries", async () => {
@@ -152,24 +208,37 @@ void test("runPipeline writes outputs, updates cache, and reuses cached entries"
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
   const binaryPath = await writeFakeBinary(workspaceRoot);
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   const firstRun = await runPipeline(
-    pipeline(source(sourcePath), grid(gridConfigFixture), render(renderConfigFixture)),
+    pipeline(
+      source(sourcePath),
+      grid(gridConfigFixture),
+      render(renderConfigFixture),
+    ),
     {
       binaryPath,
       projectDir,
       workspaceRoot,
-      gallery: {
-        enabled: true,
-        openBrowser: false,
-        title: "Runner test gallery"
-      }
-    }
+      gallery: createGalleryOptions({ enabled: true }),
+    },
   );
   const secondRun = await runPipeline(
-    pipeline(source(sourcePath), grid(gridConfigFixture), render(renderConfigFixture)),
-    { binaryPath, projectDir, workspaceRoot }
+    pipeline(
+      source(sourcePath),
+      grid(gridConfigFixture),
+      render(renderConfigFixture),
+    ),
+    {
+      binaryPath,
+      projectDir,
+      workspaceRoot,
+      gallery: createGalleryOptions(),
+    },
   );
 
   assert.equal(firstRun.stages[1]?.cached, false);
@@ -188,6 +257,23 @@ void test("runPipeline writes outputs, updates cache, and reuses cached entries"
 
   const manifest = await loadCacheManifest(firstRun.cachePath);
   assert.equal(Object.keys(manifest.entries).length, 2);
+  assert.ok(firstRun.durationMs >= 0);
+  assert.ok(firstRun.runLogPath.endsWith(".log"));
+  const firstGridStage = firstRun.stages[1];
+  const firstRenderStage = firstRun.stages[2];
+  const secondGridStage = secondRun.stages[1];
+  assert.ok(firstGridStage);
+  assert.ok(firstRenderStage);
+  assert.ok(secondGridStage);
+  assert.ok(firstGridStage.durationMs !== undefined);
+  assert.ok(firstRenderStage.executionDurationMs !== undefined);
+  assert.equal(secondGridStage.cacheReason, "cache entry is valid");
+
+  const firstRunLog = await readFile(firstRun.runLogPath, "utf8");
+  const secondRunLog = await readFile(secondRun.runLogPath, "utf8");
+  assert.match(firstRunLog, /Pipeline started/);
+  assert.match(firstRunLog, /Stage completed/);
+  assert.match(secondRunLog, /Stage reused cached output/);
 });
 
 void test("runPipeline invalidates cache when stage config changes", async () => {
@@ -195,20 +281,72 @@ void test("runPipeline invalidates cache when stage config changes", async () =>
   const projectDir = path.join(workspaceRoot, "LabyData");
   const sourcePath = path.join(projectDir, "svg", "source.svg");
   const binaryPath = await writeFakeBinary(workspaceRoot);
-  await writeFile(sourcePath, "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n", "utf8");
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
 
   const initialRun = await runPipeline(
     pipeline(source(sourcePath), grid(gridConfigFixture)),
-    { binaryPath, projectDir, workspaceRoot }
+    {
+      binaryPath,
+      projectDir,
+      workspaceRoot,
+      gallery: createGalleryOptions(),
+    },
   );
   const changedRun = await runPipeline(
-    pipeline(source(sourcePath), grid({
-      ...gridConfigFixture,
-      seed: 99
-    })),
-    { binaryPath, projectDir, workspaceRoot }
+    pipeline(
+      source(sourcePath),
+      grid({
+        ...gridConfigFixture,
+        seed: 99,
+      }),
+    ),
+    {
+      binaryPath,
+      projectDir,
+      workspaceRoot,
+      gallery: createGalleryOptions(),
+    },
   );
 
-  assert.notEqual(initialRun.stages[1]?.cacheKey, changedRun.stages[1]?.cacheKey);
+  assert.notEqual(
+    initialRun.stages[1]?.cacheKey,
+    changedRun.stages[1]?.cacheKey,
+  );
   assert.equal(changedRun.stages[1]?.cached, false);
+});
+
+void test("runPipeline fails when the executable creates an SVG with no drawable geometry", async () => {
+  const workspaceRoot = await makeTempWorkspace();
+  const projectDir = path.join(workspaceRoot, "LabyData");
+  const sourcePath = path.join(projectDir, "svg", "source.svg");
+  const binaryPath = path.join(workspaceRoot, "empty-route-labypath.mjs");
+  const script = `#!/usr/bin/env node
+import { readFileSync, writeFileSync } from "node:fs";
+const configPath = process.argv[2];
+const config = JSON.parse(readFileSync(configPath, "utf8"));
+const outputPath = config.gGraphicRendering.outputfile;
+  writeFileSync(outputPath, '<svg xmlns="http://www.w3.org/2000/svg"><path d="" /></svg>\\n');
+`;
+  await writeFile(binaryPath, script, "utf8");
+  await chmod(binaryPath, 0o755);
+  await writeFile(
+    sourcePath,
+    '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>\n',
+    "utf8",
+  );
+
+  await assert.rejects(
+    async () =>
+      runPipeline(pipeline(source(sourcePath), render(renderConfigFixture)), {
+        binaryPath,
+        projectDir,
+        workspaceRoot,
+        gallery: createGalleryOptions(),
+      }),
+    /Expected stage output to contain drawable SVG content/,
+  );
 });

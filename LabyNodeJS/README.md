@@ -38,7 +38,9 @@ The example reads `LabyData/svg/square_circleorig.svg`, runs grid, route, and re
 
 For a full explicit reference configuration, see [examples/defaut.ts](./examples/defaut.ts).
 
-When the example launches a pipeline, it also starts a local HTML gallery and opens it in the browser referenced by `$BROWSER`. Each stage card begins in `waiting` until its SVG becomes available, then updates in place as files are created or reused from cache.
+Pipeline logging is always active. Each run writes live orchestration messages to the terminal and also creates a run-scoped log file in `projectDir/logs/` alongside the raw stage logs written for each native executable invocation.
+
+When the example launches a pipeline, it also starts a local HTML gallery and opens it in the browser referenced by `$BROWSER`. Gallery configuration is explicit at the `runPipeline` call site: there are no defaulted gallery options anymore. Each stage card begins in `waiting` until its SVG becomes available, then updates in place as files are created or reused from cache.
 
 ## Programming Model
 
@@ -52,35 +54,36 @@ const result = await runPipeline(
       simplificationOfOriginalSVG: 0.1,
       maxSep: 5,
       minSep: 0.1,
-      seed: 9
+      seed: 9,
     }),
     route({
-      initialThickness: 1.8,
-      decrementFactor: 1.5,
-      minimalThickness: 0.5,
-      smoothingTension: 1,
-      smoothingIteration: 5,
-      maxRoutingAttempt: 300,
-      routing: {
-        seed: 5,
-        maxRandom: 300,
-        distanceUnitCost: 1,
-        viaUnitCost: 10
+      placement: {
+        initialThickness: 1.8,
+        decrementFactor: 1.5,
+        minimalThickness: 0.5,
+        smoothingTension: 1,
+        smoothingIteration: 5,
+        maxRoutingAttempt: 300,
+        routing: {
+          seed: 5,
+          maxRandom: 300,
+          distanceUnitCost: 1,
+          viaUnitCost: 10,
+        },
+        cell: {
+          seed: 1,
+          maxPin: 400,
+          startNet: 30,
+          resolution: 1,
+        },
       },
-      cell: {
-        seed: 1,
-        maxPin: 400,
-        startNet: 30,
-        resolution: 1
-      },
-      enableAlternateRouting: false,
       alternateRouting: {
         maxThickness: 1.8,
         minThickness: 0.5,
         pruning: 0,
         thicknessPercent: 1,
-        simplifyDist: 0
-      }
+        simplifyDist: 0,
+      },
     }),
     render({
       smoothingTension: 0.5,
@@ -93,13 +96,20 @@ const result = await runPipeline(
         symmetricAmplitude: 0.1,
         symmetricFreq: 3,
         symmetricSeed: 8,
-        resolution: 1
-      }
-    })
+        resolution: 1,
+      },
+    }),
   ),
   {
-    projectDir: "/workspace/LabyData"
-  }
+    projectDir: "/workspace/LabyData",
+    gallery: {
+      enabled: true,
+      openBrowser: true,
+      keepAlive: true,
+      port: 0,
+      title: "LabyNodeJS Example Gallery",
+    },
+  },
 );
 ```
 
@@ -107,7 +117,10 @@ const result = await runPipeline(
 
 - cache manifest: `projectDir/cache/cache.json`
 - stage configs: `projectDir/configs/*.json`
+- pipeline run logs: `projectDir/logs/pipeline-*.log`
 - stage logs: `projectDir/logs/*.log`
 - stage SVG files: `projectDir/svg/*.svg`
 
 Cache entries are keyed by stage kind, normalized payload hash, input SVG hash, and binary fingerprint. A cache hit reuses the stored output only if the output file still exists and its current hash matches the manifest.
+
+The run log records stage start and finish messages, cache-hit or cache-miss reasons, durations, and final success or failure summaries. Stage logs remain the raw `labypath` process transcript for the specific config file.

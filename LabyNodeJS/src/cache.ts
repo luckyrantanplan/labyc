@@ -17,11 +17,13 @@ export function getCacheLayout(projectDir: string): CacheLayout {
     cacheDir,
     cachePath: path.join(cacheDir, "cache.json"),
     configDir: path.join(projectDir, "configs"),
-    logDir: path.join(projectDir, "logs")
+    logDir: path.join(projectDir, "logs"),
   };
 }
 
-export async function ensureCacheLayout(projectDir: string): Promise<CacheLayout> {
+export async function ensureCacheLayout(
+  projectDir: string,
+): Promise<CacheLayout> {
   const layout = getCacheLayout(projectDir);
   await mkdir(layout.svgDir, { recursive: true });
   await mkdir(layout.configDir, { recursive: true });
@@ -30,23 +32,28 @@ export async function ensureCacheLayout(projectDir: string): Promise<CacheLayout
   return layout;
 }
 
-export async function loadCacheManifest(cachePath: string): Promise<CacheManifest> {
+export async function loadCacheManifest(
+  cachePath: string,
+): Promise<CacheManifest> {
   try {
     const raw = await readFile(cachePath, "utf8");
     const parsed = JSON.parse(raw) as Partial<CacheManifest>;
     return {
       version: 1,
-      entries: parsed.entries ?? {}
+      entries: parsed.entries ?? {},
     };
   } catch {
     return {
       version: 1,
-      entries: {}
+      entries: {},
     };
   }
 }
 
-export async function saveCacheManifest(cachePath: string, manifest: CacheManifest): Promise<void> {
+export async function saveCacheManifest(
+  cachePath: string,
+  manifest: CacheManifest,
+): Promise<void> {
   const directory = path.dirname(cachePath);
   await mkdir(directory, { recursive: true });
   const tempPath = `${cachePath}.tmp`;
@@ -54,6 +61,9 @@ export async function saveCacheManifest(cachePath: string, manifest: CacheManife
   await rename(tempPath, cachePath);
 }
 
-export function setCacheEntry(manifest: CacheManifest, entry: CacheEntry): void {
+export function setCacheEntry(
+  manifest: CacheManifest,
+  entry: CacheEntry,
+): void {
   manifest.entries[entry.cacheKey] = entry;
 }

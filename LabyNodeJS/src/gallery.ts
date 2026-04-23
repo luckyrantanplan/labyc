@@ -1,10 +1,18 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import os from "node:os";
 import path from "node:path";
-import type { GalleryStageSnapshot, PipelineStage } from "./types.js";
+import type {
+  GalleryStageSnapshot,
+  PipelineGalleryOptions,
+  PipelineStage,
+} from "./types.js";
 
 interface GalleryState {
   title: string;
@@ -46,10 +54,13 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function buildArtifactUrl(svgPath: string, cacheToken: string | number): string {
+function buildArtifactUrl(
+  svgPath: string,
+  cacheToken: string | number,
+): string {
   const search = new URLSearchParams({
     svg: svgPath,
-    v: String(cacheToken)
+    v: String(cacheToken),
   });
   return `/artifact?${search.toString()}`;
 }
@@ -57,14 +68,14 @@ function buildArtifactUrl(svgPath: string, cacheToken: string | number): string 
 function buildPreviewUrl(svgPath: string, cacheToken: string | number): string {
   const search = new URLSearchParams({
     svg: svgPath,
-    v: String(cacheToken)
+    v: String(cacheToken),
   });
   return `/preview?${search.toString()}`;
 }
 
 function buildViewerUrl(svgPath: string): string {
   const search = new URLSearchParams({
-    svg: svgPath
+    svg: svgPath,
   });
   return `/viewer?${search.toString()}`;
 }
@@ -86,17 +97,24 @@ function resolveQueriedSvgPath(requestUrl: URL): string | undefined {
   return existsSync(svgPath) ? svgPath : undefined;
 }
 
-function findStageForSvgPath(stages: readonly GalleryStageSnapshot[], svgPath: string): GalleryStageSnapshot | undefined {
+function findStageForSvgPath(
+  stages: readonly GalleryStageSnapshot[],
+  svgPath: string,
+): GalleryStageSnapshot | undefined {
   return stages.find((stage) => inferSvgPath(stage) === svgPath);
 }
 
 function renderStageCard(stage: GalleryStageSnapshot): string {
   const svgPath = inferSvgPath(stage);
   const outputText = stage.outputPath ?? stage.svgPath ?? "pending output path";
-  const outputName = outputText === "pending output path" ? outputText : path.basename(outputText);
-  const previewMarkup = svgPath === undefined
-    ? `<div class="placeholder ${stage.status}"><strong></strong><span>${escapeHtml(stage.message ?? "SVG will appear here as soon as the file is created.")}</span></div>`
-    : `<iframe class="preview preview-frame" aria-label="${escapeHtml(stage.label)} preview" src="${escapeHtml(buildPreviewUrl(svgPath, Date.now()))}" loading="lazy"></iframe><a class="preview-link" href="${escapeHtml(buildViewerUrl(svgPath))}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(stage.label)} in the zoom viewer"></a>`;
+  const outputName =
+    outputText === "pending output path"
+      ? outputText
+      : path.basename(outputText);
+  const previewMarkup =
+    svgPath === undefined
+      ? `<div class="placeholder ${stage.status}"><strong></strong><span>${escapeHtml(stage.message ?? "SVG will appear here as soon as the file is created.")}</span></div>`
+      : `<iframe class="preview preview-frame" aria-label="${escapeHtml(stage.label)} preview" src="${escapeHtml(buildPreviewUrl(svgPath, Date.now()))}" loading="lazy"></iframe><a class="preview-link" href="${escapeHtml(buildViewerUrl(svgPath))}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(stage.label)} in the zoom viewer"></a>`;
 
   return [
     '<article class="card">',
@@ -105,16 +123,16 @@ function renderStageCard(stage: GalleryStageSnapshot): string {
     '    <div class="label-row">',
     `      <h2>${escapeHtml(stage.label)}</h2>`,
     `      <span class="badge ${stage.status}">${escapeHtml(stage.status)}</span>`,
-    '    </div>',
-    '  </div>',
+    "    </div>",
+    "  </div>",
     '  <div class="surface">',
     `    ${previewMarkup}`,
-    '  </div>',
+    "  </div>",
     '  <div class="card-foot">',
     `    <div class="path-name">${escapeHtml(outputName)}</div>`,
     `    <div class="path-value"><code>${escapeHtml(outputText)}</code></div>`,
-    '  </div>',
-    '</article>'
+    "  </div>",
+    "</article>",
   ].join("\n");
 }
 
@@ -123,11 +141,16 @@ function isTerminalStatus(status: GalleryStageSnapshot["status"]): boolean {
 }
 
 function isStableState(stages: readonly GalleryStageSnapshot[]): boolean {
-  return stages.some((stage) => stage.status === "failed")
-    || stages.every((stage) => isTerminalStatus(stage.status));
+  return (
+    stages.some((stage) => stage.status === "failed") ||
+    stages.every((stage) => isTerminalStatus(stage.status))
+  );
 }
 
-function renderViewerHtml(stage: GalleryStageSnapshot, artifactUrl: string): string {
+function renderViewerHtml(
+  stage: GalleryStageSnapshot,
+  artifactUrl: string,
+): string {
   const title = `${stage.label} Viewer`;
 
   return `<!DOCTYPE html>
@@ -1009,9 +1032,10 @@ function markUpdated(state: GalleryState): void {
 
 function collectCandidateHosts(): string[] {
   const configured = process.env["LABYNODEJS_GALLERY_HOST"];
-  const candidates = configured === undefined || configured.trim() === ""
-    ? []
-    : [configured.trim()];
+  const candidates =
+    configured === undefined || configured.trim() === ""
+      ? []
+      : [configured.trim()];
 
   const interfaces = os.networkInterfaces();
   for (const entries of Object.values(interfaces)) {
@@ -1033,7 +1057,7 @@ function selectBrowserHost(): string {
 function sendHtml(response: ServerResponse, html: string): void {
   response.writeHead(200, {
     "content-type": "text/html; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
   });
   response.end(html);
 }
@@ -1041,7 +1065,7 @@ function sendHtml(response: ServerResponse, html: string): void {
 function sendJson(response: ServerResponse, value: unknown): void {
   response.writeHead(200, {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
   });
   response.end(`${JSON.stringify(value)}\n`);
 }
@@ -1049,15 +1073,18 @@ function sendJson(response: ServerResponse, value: unknown): void {
 function sendNotFound(response: ServerResponse): void {
   response.writeHead(404, {
     "content-type": "text/plain; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
   });
   response.end("Not found\n");
 }
 
-async function sendArtifact(response: ServerResponse, filePath: string): Promise<void> {
+async function sendArtifact(
+  response: ServerResponse,
+  filePath: string,
+): Promise<void> {
   response.writeHead(200, {
     "content-type": "image/svg+xml; charset=utf-8",
-    "cache-control": "no-store"
+    "cache-control": "no-store",
   });
 
   const data = await readFile(filePath, "utf8");
@@ -1072,7 +1099,7 @@ function openBrowser(url: string): void {
 
   const child = spawn(browser, [url], {
     detached: true,
-    stdio: "ignore"
+    stdio: "ignore",
   });
   child.unref();
 }
@@ -1080,15 +1107,10 @@ function openBrowser(url: string): void {
 export async function startPipelineGallery(
   projectDir: string,
   stages: readonly PipelineStage[],
-  options: {
-    title?: string;
-    port?: number;
-    openBrowser?: boolean;
-    keepAlive?: boolean;
-  } = {}
+  options: PipelineGalleryOptions,
 ): Promise<PipelineGalleryHandle> {
   const state: GalleryState = {
-    title: options.title ?? "LabyNodeJS Pipeline Gallery",
+    title: options.title,
     projectDir,
     revision: 0,
     updatedAt: new Date().toLocaleTimeString(),
@@ -1098,19 +1120,22 @@ export async function startPipelineGallery(
         stageKind: stage.kind,
         label: stageLabel(stage, index),
         status: stage.kind === "source" ? "completed" : "waiting",
-        message: stage.kind === "source" ? "Source SVG is available." : "Waiting for stage execution."
+        message:
+          stage.kind === "source"
+            ? "Source SVG is available."
+            : "Waiting for stage execution.",
       };
 
       if (stage.kind === "source") {
         return {
           ...base,
           svgPath: stage.sourcePath,
-          outputPath: stage.sourcePath
+          outputPath: stage.sourcePath,
         };
       }
 
       return base;
-    })
+    }),
   };
 
   let closed = false;
@@ -1133,7 +1158,10 @@ export async function startPipelineGallery(
     });
   };
 
-  const handleRequest = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
+  const handleRequest = async (
+    request: IncomingMessage,
+    response: ServerResponse,
+  ): Promise<void> => {
     try {
       const requestUrl = new URL(request.url ?? "/", "http://gallery.local");
 
@@ -1151,8 +1179,8 @@ export async function startPipelineGallery(
           stable: isStableState(state.stages),
           stages: state.stages.map((stage) => ({
             ...stage,
-            svgPath: inferSvgPath(stage)
-          }))
+            svgPath: inferSvgPath(stage),
+          })),
         });
         return;
       }
@@ -1162,7 +1190,7 @@ export async function startPipelineGallery(
           void closeServer();
         });
         sendJson(response, {
-          stopping: true
+          stopping: true,
         });
         return;
       }
@@ -1187,13 +1215,22 @@ export async function startPipelineGallery(
           return;
         }
 
-        sendHtml(response, renderPreviewHtml(filePath, buildArtifactUrl(filePath, state.revision)));
+        sendHtml(
+          response,
+          renderPreviewHtml(
+            filePath,
+            buildArtifactUrl(filePath, state.revision),
+          ),
+        );
         return;
       }
 
       if (requestUrl.pathname === "/viewer") {
         const filePath = resolveQueriedSvgPath(requestUrl);
-        const stage = filePath === undefined ? undefined : findStageForSvgPath(state.stages, filePath);
+        const stage =
+          filePath === undefined
+            ? undefined
+            : findStageForSvgPath(state.stages, filePath);
 
         if (filePath === undefined) {
           sendNotFound(response);
@@ -1210,10 +1247,10 @@ export async function startPipelineGallery(
               status: "completed",
               message: "SVG is available.",
               svgPath: filePath,
-              outputPath: filePath
+              outputPath: filePath,
             },
-            buildArtifactUrl(filePath, state.revision)
-          )
+            buildArtifactUrl(filePath, state.revision),
+          ),
         );
         return;
       }
@@ -1230,14 +1267,13 @@ export async function startPipelineGallery(
 
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(options.port ?? 0, "0.0.0.0", () => {
+    server.listen(options.port, "0.0.0.0", () => {
       server.off("error", reject);
       resolve(undefined);
     });
   });
 
-  const keepAlive = options.keepAlive ?? options.openBrowser ?? false;
-  if (!keepAlive) {
+  if (!options.keepAlive) {
     server.unref();
   }
 
@@ -1264,7 +1300,7 @@ export async function startPipelineGallery(
 
       state.stages[index] = {
         ...current,
-        ...update
+        ...update,
       };
       markUpdated(state);
     },
@@ -1277,12 +1313,12 @@ export async function startPipelineGallery(
       state.stages[index] = {
         ...current,
         status: "failed",
-        message
+        message,
       };
       markUpdated(state);
     },
     async close() {
       await closeServer();
-    }
+    },
   };
 }

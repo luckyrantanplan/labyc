@@ -3,7 +3,11 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { ensureCacheLayout, loadCacheManifest, saveCacheManifest } from "../src/cache.js";
+import {
+  ensureCacheLayout,
+  loadCacheManifest,
+  saveCacheManifest,
+} from "../src/cache.js";
 
 void test("loadCacheManifest returns an empty manifest when the file is missing", async () => {
   const projectDir = await mkdtemp(path.join(os.tmpdir(), "labynodejs-cache-"));
@@ -12,7 +16,7 @@ void test("loadCacheManifest returns an empty manifest when the file is missing"
 
   assert.deepEqual(manifest, {
     version: 1,
-    entries: {}
+    entries: {},
   });
 });
 
@@ -36,9 +40,9 @@ void test("saveCacheManifest persists entries atomically", async () => {
         payload: {},
         createdAt: "now",
         updatedAt: "now",
-        status: "completed" as const
-      }
-    }
+        status: "completed" as const,
+      },
+    },
   };
 
   await saveCacheManifest(layout.cachePath, manifest);
@@ -56,6 +60,6 @@ void test("loadCacheManifest falls back to an empty manifest for invalid JSON", 
 
   assert.deepEqual(manifest, {
     version: 1,
-    entries: {}
+    entries: {},
   });
 });

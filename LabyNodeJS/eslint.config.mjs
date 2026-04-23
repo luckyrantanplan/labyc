@@ -6,15 +6,15 @@ import { fileURLToPath } from "node:url";
 const tsconfigRootDir = fileURLToPath(new URL(".", import.meta.url));
 const typedTsConfigs = [
   ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked
+  ...tseslint.configs.stylisticTypeChecked,
 ].map((config) => ({
   ...config,
-  files: ["**/*.ts"]
+  files: ["**/*.ts"],
 }));
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "coverage/**"]
+    ignores: ["dist/**", "coverage/**"],
   },
   js.configs.recommended,
   {
@@ -22,9 +22,9 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         ...globals.node,
-        URL: "readonly"
-      }
-    }
+        URL: "readonly",
+      },
+    },
   },
   ...typedTsConfigs,
   {
@@ -33,11 +33,11 @@ export default tseslint.config(
       globals: globals.node,
       parserOptions: {
         project: "./tsconfig.json",
-        tsconfigRootDir
-      }
+        tsconfigRootDir,
+      },
     },
     rules: {
-      "no-console": "off"
-    }
-  }
+      "no-console": "off",
+    },
+  },
 );
