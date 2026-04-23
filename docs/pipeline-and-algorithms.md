@@ -115,7 +115,7 @@ Rendering is geometry-aware post-processing, not only serialization. It includes
 
 ## Field Generators And Noise Fields
 
-Some generator code sits beside the canonical CLI stages but is not exposed as a first-class protobuf workflow.
+Some generator code sits beside the original routing and rendering stages, but `HqNoise` and the field-driven `StreamLine` path are now exposed as first-class protobuf and LabyNodeJS workflow steps.
 
 ### `StreamLine`
 
@@ -124,13 +124,13 @@ Some generator code sits beside the canonical CLI stages but is not exposed as a
 - legacy regular-grid mode: if `Config.old_RegularGrid` is enabled, the constructor allocates a sampled vector field, `drawSpiral()` writes spiral vectors into that field, and `render()` traces radial and circular stream lines with `CGAL::Stream_lines_2`
 - polygon-driven triangular-field mode: `getRadial()` and `getLongitudinal()` sample polygon edges into point and vector constraints, build a `CGAL::Triangular_field_2`, and then trace stream lines through that interpolated field
 
-That makes `StreamLine` useful for experimental grid-like ribbon generation, but today it is an internal C++ utility and study path rather than a user-facing JSON stage.
+That still makes `StreamLine` useful as an internal C++ utility, but there is now also a user-facing field-driven stage that consumes a `ComplexField2DData` artifact.
 
 ### `HqNoise`
 
 `HqNoise1D` and `HqNoise2D` generate continuous noise fields in Fourier space, then sample them back in the spatial domain. They are currently used by `PenStroke` during standalone render stylization, not by the production `SkeletonGrid` stage or by the routing stages.
 
-If you want to create grid-like linework today, `StreamLine` is the relevant utility. If you want to perturb the final visual stroke, `HqNoise` is the relevant utility.
+In the field-driven pipeline, only four streamline parameters are user-controlled: `simplifyDistance`, `dRat`, `divisor`, and `strokeThickness`. `resolution` and `size` are derived from the field metadata, and `epsilon` remains a legacy regular-grid parameter rather than a field-driven one.
 
 ## Related Reading
 

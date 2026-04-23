@@ -9,16 +9,16 @@ async function main(): Promise<void> {
     pipeline(
       noise(
         {
-          maxN: 16,
+          maxN: 256,
           accuracy: 8,
           amplitude: 1,
           seed: 7,
-          gaussianFrequency: 2.5,
-          powerlawFrequency: 1.2,
+          gaussianFrequency: 4.5,
+          powerlawFrequency: 8.2,
           powerlawPower: 2,
           complex: true,
-          width: 64,
-          height: 64,
+          width: 256,
+          height: 256,
           scale: 0.25,
           previewMode: "ARROWS",
           previewStride: 2,

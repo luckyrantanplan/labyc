@@ -38,8 +38,8 @@ auto readTextFile(const fs::path& path) -> std::string {
     return std::string((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
 }
 
-auto createNoiseConfig(const fs::path& fieldPath, const fs::path& previewPath,
-                       uint32_t width = 32, uint32_t height = 32) -> proto::HqNoise {
+auto createNoiseConfig(const fs::path& fieldPath, const fs::path& previewPath, uint32_t width = 32,
+                       uint32_t height = 32) -> proto::HqNoise {
     proto::HqNoise config;
     config.mutable_filepaths()->set_outputfile(fieldPath.string());
     config.set_maxn(16);

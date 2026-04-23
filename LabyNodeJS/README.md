@@ -25,7 +25,7 @@ npm run lint
 npm test
 ```
 
-The test suite uses the built-in `node:test` runner. Coverage is enforced with `c8` and must stay above 80%.
+The test suite uses the built-in `node:test` runner with Node's experimental coverage mode. Coverage thresholds are enforced at 80% for lines, functions, and branches.
 
 ## Example
 

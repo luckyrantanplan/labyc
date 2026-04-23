@@ -30,8 +30,14 @@ auto buildNoiseConfig(const proto::HqNoise& config) -> HqNoiseConfig {
 
     const double maxX = static_cast<double>(config.width() - 1) * config.scale();
     const double maxY = static_cast<double>(config.height() - 1) * config.scale();
-    if (maxX > static_cast<double>(config.maxn()) || maxY > static_cast<double>(config.maxn())) {
-        throw std::runtime_error("hqNoise sampling domain exceeds maxN support");
+    const double maxN = static_cast<double>(config.maxn());
+    if (maxX > maxN || maxY > maxN) {
+        throw std::runtime_error(
+            "hqNoise sampling domain exceeds maxN support: "
+            "(width-1)*scale=" + std::to_string(maxX) +
+            " (height-1)*scale=" + std::to_string(maxY) +
+            " maxN=" + std::to_string(maxN) +
+            " — constraints: (width-1)*scale <= maxN and (height-1)*scale <= maxN");
     }
 
     HqNoiseConfig noiseConfig{};

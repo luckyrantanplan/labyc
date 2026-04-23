@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint . && tsc -p tsconfig.json  && prettier --write .",
-    "test": "c8 --check-coverage --lines 80 --functions 80 --branches 80 --statements 80 tsx --test tests/*.test.ts",
+    "test": "node --experimental-test-coverage --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 --import tsx --test tests/*.test.ts",
     "test:watch": "tsx --test --watch tests/*.test.ts",
     "example": "tsx examples/basic.ts",
     "example:streamline": "tsx examples/hqnoise-streamline.ts"
@@ -24,7 +24,6 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
-    "c8": "^10.1.3",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "prettier": "^3.8.3",
